@@ -1,0 +1,20 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=https://route-opt-backend-426674819922.us-central1.run.app'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoiZGF0YWJhcnEiLCJhIjoiY21nZjczdjBuMDVoZTJpc2F1Z21vYWpwYiJ9.JzyHzvz5q8e5XayOtQfkYg'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_APP_NAME=AI Route Optimization'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_APP_VERSION=1.0.0'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/barq-services/route-opt-frontend:latest'
+      - '.'
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/barq-services/route-opt-frontend:latest'
+timeout: 1200s
+options:
+  machineType: 'E2_HIGHCPU_8'

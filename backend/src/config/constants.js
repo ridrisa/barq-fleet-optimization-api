@@ -1,0 +1,252 @@
+/**
+ * Application-wide constants
+ * This file centralizes all magic numbers and configuration values
+ */
+
+// Geographic Constants
+const GEO = {
+  LAT_MIN: -90,
+  LAT_MAX: 90,
+  LNG_MIN: -180,
+  LNG_MAX: 180,
+  EARTH_RADIUS_KM: 6371,
+  DEGREES_TO_RADIANS: Math.PI / 180,
+};
+
+// Time Constants (in milliseconds)
+const TIME = {
+  ONE_SECOND: 1000,
+  ONE_MINUTE: 60000,
+  ONE_HOUR: 3600000,
+  SECONDS_PER_MINUTE: 60,
+  MINUTES_PER_HOUR: 60,
+  HOURS_PER_DAY: 24,
+};
+
+// Clustering Configuration
+const CLUSTERING = {
+  KMEANS_DEFAULT_K: 5,
+  KMEANS_MAX_ITERATIONS: 100,
+  DBSCAN_DEFAULT_EPSILON: 5,
+  DBSCAN_DEFAULT_MIN_POINTS: 3,
+  THRESHOLD_DISTANCE_RATIO: 0.7,
+  DENSITY_THRESHOLD: 0.5,
+  SIMILARITY_THRESHOLD: 0.9,
+  MIN_CLUSTER_SIZE: 2,
+  MAX_CLUSTER_SIZE: 10,
+};
+
+// Batching Configuration
+const BATCHING = {
+  MIN_ORDERS_FOR_BATCH: 2,
+  MAX_ORDERS_PER_BATCH: 10,
+  DISTANCE_THRESHOLD_KM: 5,
+  TIME_WINDOW_MINUTES: 30,
+  PRIORITY_WEIGHT: 0.5,
+  DISTANCE_WEIGHT: 0.5,
+};
+
+// Vehicle Configuration
+const VEHICLE = {
+  STANDARD_CAPACITY: 8,
+  LARGE_CAPACITY: 12,
+  XL_CAPACITY: 15,
+  MAX_CAPACITY: 20,
+  MIN_CAPACITY: 1,
+  SPEED_KM_PER_HOUR: 40,
+  AVERAGE_SPEED_MULTIPLIER: 0.8,
+};
+
+// Service Level Agreement (SLA)
+const SLA = {
+  STANDARD_DELIVERY_MINUTES: 30,
+  EXPRESS_DELIVERY_MINUTES: 15,
+  PREMIUM_DELIVERY_MINUTES: 10,
+  CRITICAL_THRESHOLD_PERCENTAGE: 80,
+  WARNING_THRESHOLD_PERCENTAGE: 70,
+  ACCEPTABLE_DEVIATION_PERCENTAGE: 10,
+};
+
+// Route Optimization
+const ROUTE = {
+  MAX_STOPS_PER_ROUTE: 10,
+  MIN_STOPS_PER_ROUTE: 2,
+  OPTIMIZATION_ITERATIONS: 100,
+  CONVERGENCE_THRESHOLD: 0.01,
+  MAX_ROUTE_DISTANCE_KM: 50,
+  MAX_ROUTE_DURATION_MINUTES: 240,
+  MIN_ROUTE_DURATION_MINUTES: 60,
+};
+
+// Cost Calculation
+const COST = {
+  PER_KM: 0.5,
+  PER_HOUR: 10,
+  PER_ORDER: 2,
+  BASE_DELIVERY_FEE: 5,
+  SURGE_MULTIPLIER: 1.5,
+  DISCOUNT_MAX_PERCENTAGE: 20,
+  TAX_PERCENTAGE: 10,
+};
+
+// Performance Thresholds
+const PERFORMANCE = {
+  MAX_RESPONSE_TIME_MS: 5000,
+  MAX_QUERY_TIME_MS: 1000,
+  MAX_FILE_SIZE_MB: 10,
+  MAX_CONCURRENT_REQUESTS: 100,
+  CACHE_TTL_SECONDS: 300,
+  RETRY_ATTEMPTS: 3,
+  RETRY_DELAY_MS: 1000,
+};
+
+// Pagination
+const PAGINATION = {
+  DEFAULT_PAGE: 1,
+  DEFAULT_LIMIT: 20,
+  MAX_LIMIT: 100,
+  MIN_LIMIT: 1,
+};
+
+// Validation
+const VALIDATION = {
+  MIN_PASSWORD_LENGTH: 8,
+  MAX_STRING_LENGTH: 500,
+  MAX_ARRAY_LENGTH: 100,
+  MAX_NAME_LENGTH: 100,
+  MAX_DESCRIPTION_LENGTH: 500,
+  MIN_RATING: 1,
+  MAX_RATING: 5,
+};
+
+// Agent Configuration
+const AGENT = {
+  MAX_RETRIES: 3,
+  TIMEOUT_MS: 30000,
+  BATCH_SIZE: 10,
+  POLLING_INTERVAL_MS: 5000,
+  MAX_CONCURRENT_TASKS: 5,
+  HEALTH_CHECK_INTERVAL_MS: 60000,
+};
+
+// Priority Levels
+const PRIORITY = {
+  CRITICAL: 5,
+  HIGH: 4,
+  MEDIUM: 3,
+  LOW: 2,
+  VERY_LOW: 1,
+};
+
+// Status Codes
+const STATUS = {
+  PENDING: 'pending',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+  CANCELLED: 'cancelled',
+  ON_HOLD: 'on_hold',
+};
+
+// Order Types
+const ORDER_TYPE = {
+  BARQ: 'BARQ',
+  BULLET: 'BULLET',
+  STANDARD: 'standard',
+  EXPRESS: 'express',
+  PREMIUM: 'premium',
+};
+
+// Alert Levels
+const ALERT = {
+  INFO: 'info',
+  WARNING: 'warning',
+  ERROR: 'error',
+  CRITICAL: 'critical',
+};
+
+// Database
+const DATABASE = {
+  CONNECTION_TIMEOUT_MS: 5000,
+  QUERY_TIMEOUT_MS: 10000,
+  MAX_CONNECTIONS: 20,
+  MIN_CONNECTIONS: 2,
+  IDLE_TIMEOUT_MS: 30000,
+};
+
+// Circuit Breaker
+const CIRCUIT_BREAKER = {
+  FAILURE_THRESHOLD: 5,
+  RESET_TIMEOUT_MS: 60000,
+  HALF_OPEN_MAX_CALLS: 3,
+};
+
+// Rate Limiting
+const RATE_LIMIT = {
+  WINDOW_MS: 900000, // 15 minutes
+  MAX_REQUESTS: 100,
+  DELAY_MS: 0,
+};
+
+// Logging
+const LOG = {
+  MAX_FILE_SIZE_MB: 10,
+  MAX_FILES: 5,
+  RETENTION_DAYS: 30,
+};
+
+// Scaling thresholds
+const SCALING = {
+  CPU_THRESHOLD_PERCENTAGE: 80,
+  MEMORY_THRESHOLD_PERCENTAGE: 85,
+  DISK_THRESHOLD_PERCENTAGE: 90,
+  MIN_INSTANCES: 1,
+  MAX_INSTANCES: 10,
+  SCALE_UP_THRESHOLD: 0.8,
+  SCALE_DOWN_THRESHOLD: 0.3,
+};
+
+// Distance and location precision
+const PRECISION = {
+  DECIMAL_PLACES: 6,
+  DISTANCE_DECIMAL_PLACES: 2,
+  DURATION_DECIMAL_PLACES: 1,
+  PERCENTAGE_DECIMAL_PLACES: 2,
+};
+
+// Defaults
+const DEFAULTS = {
+  LANGUAGE: 'en',
+  CURRENCY: 'USD',
+  TIMEZONE: 'UTC',
+  DATE_FORMAT: 'YYYY-MM-DD',
+  TIME_FORMAT: 'HH:mm:ss',
+  DATETIME_FORMAT: 'YYYY-MM-DD HH:mm:ss',
+};
+
+// Export all constants
+module.exports = {
+  GEO,
+  TIME,
+  CLUSTERING,
+  BATCHING,
+  VEHICLE,
+  SLA,
+  ROUTE,
+  COST,
+  PERFORMANCE,
+  PAGINATION,
+  VALIDATION,
+  AGENT,
+  PRIORITY,
+  STATUS,
+  ORDER_TYPE,
+  ALERT,
+  DATABASE,
+  CIRCUIT_BREAKER,
+  RATE_LIMIT,
+  LOG,
+  SCALING,
+  PRECISION,
+  DEFAULTS,
+};

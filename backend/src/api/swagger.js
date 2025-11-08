@@ -1,0 +1,588 @@
+/**
+ * Swagger Configuration
+ * Sets up the Swagger/OpenAPI documentation
+ */
+
+// Configuration options for Swagger
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      version: '1.0.0',
+      title: 'Route Optimization API',
+      description: 'API documentation for the AI-powered logistics optimization platform',
+      license: {
+        name: 'MIT',
+      },
+      contact: {
+        name: 'API Support',
+        email: '89.kurdi@gmail.com',
+      },
+    },
+    servers: [
+      {
+        url: 'http://localhost:3002',
+        description: 'Development server',
+      },
+    ],
+    components: {
+      schemas: {
+        OptimizationRequest: {
+          type: 'object',
+          properties: {
+            pickupPoints: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/PickupPoint',
+              },
+            },
+            deliveryPoints: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/DeliveryPoint',
+              },
+            },
+            fleet: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/Vehicle',
+              },
+            },
+            businessRules: {
+              $ref: '#/components/schemas/BusinessRules',
+            },
+            preferences: {
+              $ref: '#/components/schemas/Preferences',
+            },
+            context: {
+              $ref: '#/components/schemas/Context',
+            },
+            prompt: {
+              type: 'string',
+              description: 'Optional natural language prompt for specific optimization goals',
+            },
+          },
+          required: ['pickupPoints', 'deliveryPoints', 'fleet', 'businessRules'],
+        },
+        OptimizationResponse: {
+          type: 'object',
+          description:
+            'Standard API response structure for optimization results (v3.1.1 - Simplified structure)',
+          properties: {
+            success: {
+              type: 'boolean',
+              description: 'Whether the optimization was successful',
+            },
+            requestId: {
+              type: 'string',
+              description: 'Unique ID for the optimization request',
+            },
+            time_taken: {
+              type: 'number',
+              description: 'Time taken to process the request in milliseconds',
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Timestamp when the optimization was completed',
+            },
+            businessRules: {
+              $ref: '#/components/schemas/BusinessRules',
+              description: 'The business rules used for this optimization.',
+            },
+            allowedZones: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/AreaDefinition' },
+              description: 'Allowed driving zones used (derived from business rules).',
+            },
+            restrictedAreas: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/AreaDefinition' },
+              description: 'Restricted driving areas used (derived from business rules).',
+            },
+            routes: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/Route' },
+              description: 'List of optimized routes.',
+            },
+            summary: {
+              $ref: '#/components/schemas/Summary',
+              description: 'Overall summary statistics for the optimization plan.',
+            },
+            insights: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'AI-generated insights or notes about the optimization plan.',
+            },
+            unserviceablePoints: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/UnserviceablePoint' },
+              description:
+                'Points that could not be included in routes (e.g., due to restricted areas).',
+            },
+            error: {
+              type: 'string',
+              description: 'Error message if optimization failed',
+              nullable: true,
+            },
+          },
+        },
+        PickupPoint: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Unique identifier for the pickup point',
+            },
+            lat: {
+              type: 'number',
+              description: 'Latitude of the pickup point',
+            },
+            lng: {
+              type: 'number',
+              description: 'Longitude of the pickup point',
+            },
+            type: {
+              type: 'string',
+              enum: ['outlet', 'warehouse', 'hub', 'depot', 'store'],
+              description: 'Type of pickup point',
+            },
+            name: {
+              type: 'string',
+              description: 'Name of the pickup point',
+            },
+            working_hours: {
+              $ref: '#/components/schemas/WorkingHours',
+            },
+          },
+          required: ['id', 'lat', 'lng', 'name'],
+        },
+        DeliveryPoint: {
+          type: 'object',
+          properties: {
+            lat: {
+              type: 'number',
+              description: 'Latitude of the delivery point',
+            },
+            lng: {
+              type: 'number',
+              description: 'Longitude of the delivery point',
+            },
+            type: {
+              type: 'string',
+              enum: ['delivery', 'pickup'],
+              description: 'Type of delivery point',
+            },
+            order_id: {
+              type: 'string',
+              description: 'Order ID for the delivery',
+            },
+            customer_name: {
+              type: 'string',
+              description: 'Customer name for the delivery',
+              example: 'محمد العتيبي',
+            },
+            load_kg: {
+              type: 'number',
+              description: 'Weight of the delivery in kg',
+            },
+            time_window: {
+              type: 'string',
+              description: 'Time window for delivery in format HH:MM-HH:MM',
+            },
+            priority: {
+              type: 'string',
+              enum: ['HIGH', 'MEDIUM', 'LOW'],
+              description: 'Priority of the delivery',
+            },
+          },
+          required: ['lat', 'lng', 'order_id', 'customer_name'],
+        },
+        Vehicle: {
+          type: 'object',
+          properties: {
+            fleet_id: {
+              type: 'string',
+              description: 'ID of the vehicle in the fleet',
+            },
+            vehicle_type: {
+              type: 'string',
+              enum: ['TRUCK', 'CAR', 'VAN', 'MOTORCYCLE'],
+              description: 'Type of vehicle',
+            },
+            capacity_kg: {
+              type: 'number',
+              description: 'Capacity of the vehicle in kg',
+            },
+            current_latitude: {
+              type: 'number',
+              description: 'Current latitude of the vehicle',
+            },
+            current_longitude: {
+              type: 'number',
+              description: 'Current longitude of the vehicle',
+            },
+            outlet_id: {
+              type: 'number',
+              description: 'ID of the outlet this vehicle belongs to',
+            },
+            status: {
+              type: 'string',
+              enum: ['AVAILABLE', 'UNAVAILABLE', 'DELIVERING', 'RETURNING'],
+              description: 'Status of the vehicle',
+            },
+          },
+          required: [
+            'fleet_id',
+            'vehicle_type',
+            'capacity_kg',
+            'current_latitude',
+            'current_longitude',
+            'outlet_id',
+            'status',
+          ],
+        },
+        BusinessRules: {
+          type: 'object',
+          properties: {
+            maxDriverHours: {
+              type: 'number',
+              description: 'Maximum hours a driver can work',
+            },
+            restPeriodMinutes: {
+              type: 'number',
+              description: 'Required rest period in minutes',
+            },
+            maxConsecutiveDriveTime: {
+              type: 'number',
+              description: 'Maximum consecutive drive time in hours',
+            },
+            allowedZones: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/AreaDefinition',
+              },
+              description: 'Zones where driving is allowed, defined by polygons',
+            },
+            restrictedAreas: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/AreaDefinition',
+              },
+              description: 'Areas where driving is restricted, defined by polygons',
+            },
+          },
+        },
+        AreaDefinition: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Unique identifier for the area',
+            },
+            name: {
+              type: 'string',
+              description: 'Name of the area',
+            },
+            area: {
+              type: 'array',
+              items: {
+                type: 'array',
+                items: {
+                  type: 'number',
+                },
+              },
+              description: 'Polygon defining the area as pairs of [lat, lng]',
+            },
+            timeRestriction: {
+              type: 'string',
+              description:
+                'Time when the area is restricted in format HH:MM-HH:MM (for restricted areas only)',
+            },
+          },
+          required: ['id', 'name', 'area'],
+        },
+        RestrictedArea: {
+          type: 'object',
+          properties: {
+            polygon: {
+              type: 'array',
+              items: {
+                type: 'array',
+                items: {
+                  type: 'number',
+                },
+              },
+              description: 'Polygon defining the restricted area',
+            },
+            timeRestriction: {
+              type: 'string',
+              description: 'Time when the area is restricted in format HH:MM-HH:MM',
+            },
+          },
+        },
+        Preferences: {
+          type: 'object',
+          properties: {
+            sustainabilityScore: {
+              type: 'number',
+              minimum: 0,
+              maximum: 1,
+              description: 'Weight for sustainability in optimization (0-1)',
+            },
+            costScore: {
+              type: 'number',
+              minimum: 0,
+              maximum: 1,
+              description: 'Weight for cost in optimization (0-1)',
+            },
+            serviceScore: {
+              type: 'number',
+              minimum: 0,
+              maximum: 1,
+              description: 'Weight for service quality in optimization (0-1)',
+            },
+            distribution_strategy: {
+              type: 'string',
+              enum: [
+                'single_vehicle',
+                'balanced_vehicles',
+                'proximity_based',
+                'capacity_based',
+                'auto',
+              ],
+              default: 'auto',
+              description:
+                'Strategy for distributing deliveries across vehicles. In "auto" mode, the system intelligently selects the best strategy based on the scenario.',
+            },
+          },
+        },
+        Context: {
+          type: 'object',
+          properties: {
+            weatherConditions: {
+              type: 'string',
+              enum: ['sunny', 'rainy', 'cloudy', 'snowy', 'normal'],
+              description: 'Current weather conditions',
+            },
+            trafficData: {
+              type: 'string',
+              enum: ['light', 'medium', 'heavy', 'normal'],
+              description: 'Current traffic conditions',
+            },
+            specialEvents: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+              description: 'Special events affecting routing',
+            },
+            historicalData: {
+              type: 'boolean',
+              description: 'Whether to use historical data',
+            },
+          },
+        },
+        WorkingHours: {
+          type: 'object',
+          properties: {
+            sun: {
+              type: 'string',
+              description: 'Sunday working hours in format HH:MM-HH:MM or "closed"',
+            },
+            mon: {
+              type: 'string',
+              description: 'Monday working hours in format HH:MM-HH:MM or "closed"',
+            },
+            tue: {
+              type: 'string',
+              description: 'Tuesday working hours in format HH:MM-HH:MM or "closed"',
+            },
+            wed: {
+              type: 'string',
+              description: 'Wednesday working hours in format HH:MM-HH:MM or "closed"',
+            },
+            thu: {
+              type: 'string',
+              description: 'Thursday working hours in format HH:MM-HH:MM or "closed"',
+            },
+            fri: {
+              type: 'string',
+              description: 'Friday working hours in format HH:MM-HH:MM or "closed"',
+            },
+            sat: {
+              type: 'string',
+              description: 'Saturday working hours in format HH:MM-HH:MM or "closed"',
+            },
+          },
+        },
+        Route: {
+          type: 'object',
+          properties: {
+            trip_id: {
+              type: 'string',
+              description: 'Unique ID for the trip',
+            },
+            vehicle: {
+              $ref: '#/components/schemas/VehicleInfo',
+            },
+            waypoints: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/Waypoint',
+              },
+              description: 'Waypoints for the route',
+            },
+            distance: {
+              type: 'number',
+              description: 'Total distance of the route in km',
+            },
+            duration: {
+              type: 'number',
+              description: 'Total duration of the route in minutes',
+            },
+            deliveries: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/DeliveryInfo',
+              },
+              description: 'Deliveries in this route',
+            },
+            geometry: {
+              type: 'string',
+              description: 'Encoded polyline geometry of the route',
+            },
+            load_kg: {
+              type: 'number',
+              description: 'Total load of the route in kg',
+            },
+          },
+        },
+        VehicleInfo: {
+          type: 'object',
+          properties: {
+            fleet_id: {
+              type: 'string',
+              description: 'ID of the vehicle in the fleet',
+            },
+            vehicle_type: {
+              type: 'string',
+              description: 'Type of vehicle',
+            },
+            capacity_kg: {
+              type: 'number',
+              description: 'Capacity of the vehicle in kg',
+            },
+          },
+        },
+        Waypoint: {
+          type: 'object',
+          properties: {
+            type: {
+              type: 'string',
+              enum: ['start', 'delivery', 'end'],
+              description: 'Type of waypoint',
+            },
+            location: {
+              type: 'object',
+              properties: {
+                lat: {
+                  type: 'number',
+                  description: 'Latitude of the waypoint',
+                },
+                lng: {
+                  type: 'number',
+                  description: 'Longitude of the waypoint',
+                },
+              },
+            },
+            name: {
+              type: 'string',
+              description: 'Name of the waypoint (for start/end)',
+            },
+            delivery: {
+              $ref: '#/components/schemas/DeliveryInfo',
+              description: 'Delivery information (for delivery waypoints)',
+            },
+          },
+        },
+        DeliveryInfo: {
+          type: 'object',
+          properties: {
+            order_id: {
+              type: 'string',
+              description: 'Order ID for the delivery',
+            },
+            customer_name: {
+              type: 'string',
+              description: 'Customer name for the delivery',
+              example: 'فاطمة الشمري',
+            },
+            load_kg: {
+              type: 'number',
+              description: 'Weight of the delivery in kg',
+            },
+          },
+        },
+        Summary: {
+          type: 'object',
+          properties: {
+            total_routes: {
+              type: 'number',
+              description: 'Total number of routes',
+            },
+            total_distance: {
+              type: 'number',
+              description: 'Total distance of all routes in km',
+            },
+            total_duration: {
+              type: 'number',
+              description: 'Total duration of all routes in minutes',
+            },
+            total_deliveries: {
+              type: 'number',
+              description: 'Total number of deliveries',
+            },
+            total_load: {
+              type: 'number',
+              description: 'Total load of all routes in kg',
+            },
+          },
+        },
+        UnserviceablePoint: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'ID of the point (e.g., order ID or internal ID)',
+            },
+            location: {
+              type: 'object',
+              properties: {
+                lat: { type: 'number', description: 'Latitude' },
+                lng: { type: 'number', description: 'Longitude' },
+              },
+              description: 'Coordinates of the unserviceable point',
+            },
+            reason: {
+              type: 'string',
+              description: 'Reason why the point was unserviceable (e.g., inside restricted area)',
+            },
+          },
+        },
+      },
+    },
+  },
+  apis: ['./src/routes/*.js', './src/controllers/*.js'], // Path to the API docs
+};
+
+// UI options for Swagger
+const uiOptions = {
+  customCss: '.swagger-ui .topbar { display: none }',
+  explorer: true,
+};
+
+module.exports = {
+  options,
+  uiOptions,
+};

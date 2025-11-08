@@ -1,0 +1,446 @@
+# ================================================================
+# BARQ Fleet Management - Advanced Alerting Rules
+# ================================================================
+# Comprehensive alerting for production monitoring
+#
+# Alert Severity Levels:
+# - critical: Immediate action required (P1)
+# - warning: Action required within 24h (P2)
+# - info: Informational, monitor trend (P3)
+#
+# ================================================================
+
+groups:
+  # ================================================================
+  # Service Availability Alerts
+  # ================================================================
+  - name: service_availability
+    interval: 30s
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 2 minutes. Immediate action required."
+          runbook: "https://docs.barqfleet.com/runbooks/service-down"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: errors
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+          runbook: "https://docs.barqfleet.com/runbooks/high-error-rate"
+
+      - alert: ServiceLatencyHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High latency on {{ $labels.service }}"
+          description: "95th percentile latency is {{ $value }}s (threshold: 1s)"
+          runbook: "https://docs.barqfleet.com/runbooks/high-latency"
+
+  # ================================================================
+  # Database Alerts
+  # ================================================================
+  - name: database
+    interval: 1m
+    rules:
+      - alert: DatabaseDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "Database {{ $labels.database }} has been unreachable for 1 minute"
+          runbook: "https://docs.barqfleet.com/runbooks/database-down"
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: pg_stat_activity_count > pg_settings_max_connections * 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Database connection pool near exhaustion"
+          description: "Using {{ $value }} connections (90% of max)"
+          runbook: "https://docs.barqfleet.com/runbooks/connection-pool"
+
+      - alert: DatabaseReplicationLagHigh
+        expr: pg_replication_lag_seconds > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "High replication lag on {{ $labels.replica }}"
+          description: "Replication lag is {{ $value }}s (threshold: 10s)"
+          runbook: "https://docs.barqfleet.com/runbooks/replication-lag"
+
+      - alert: DatabaseDiskSpacelow
+        expr: (pg_database_size_bytes / pg_settings_data_directory_disk_total_bytes) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Database disk space running low"
+          description: "Disk usage is {{ $value | humanizePercentage }} (threshold: 85%)"
+          runbook: "https://docs.barqfleet.com/runbooks/disk-space"
+
+      - alert: DatabaseSlowQueries
+        expr: rate(pg_slow_queries_total[5m]) > 10
+        for: 10m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "High number of slow queries"
+          description: "{{ $value }} slow queries per second"
+          runbook: "https://docs.barqfleet.com/runbooks/slow-queries"
+
+  # ================================================================
+  # Redis Cache Alerts
+  # ================================================================
+  - name: redis
+    interval: 1m
+    rules:
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: cache
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis instance {{ $labels.instance }} is unreachable"
+          runbook: "https://docs.barqfleet.com/runbooks/redis-down"
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: cache
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Memory usage is {{ $value | humanizePercentage }} (threshold: 90%)"
+          runbook: "https://docs.barqfleet.com/runbooks/redis-memory"
+
+      - alert: RedisRejectedConnections
+        expr: rate(redis_rejected_connections_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          category: cache
+        annotations:
+          summary: "Redis rejecting connections"
+          description: "{{ $value }} connections rejected per second"
+          runbook: "https://docs.barqfleet.com/runbooks/redis-connections"
+
+      - alert: RedisSlowCommands
+        expr: rate(redis_slowlog_length[5m]) > 1
+        for: 10m
+        labels:
+          severity: info
+          category: cache
+        annotations:
+          summary: "Redis slow commands detected"
+          description: "{{ $value }} slow commands per second"
+          runbook: "https://docs.barqfleet.com/runbooks/redis-slow"
+
+  # ================================================================
+  # CVRP Optimization Alerts
+  # ================================================================
+  - name: cvrp_optimization
+    interval: 1m
+    rules:
+      - alert: CVRPServiceDown
+        expr: up{job="cvrp-optimizer"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: optimization
+        annotations:
+          summary: "CVRP optimization service is down"
+          description: "CVRP service has been down for 2 minutes"
+          runbook: "https://docs.barqfleet.com/runbooks/cvrp-down"
+
+      - alert: CVRPOptimizationTimeout
+        expr: rate(cvrp_optimization_timeout_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: optimization
+        annotations:
+          summary: "High CVRP optimization timeout rate"
+          description: "{{ $value | humanizePercentage }} of optimizations timing out"
+          runbook: "https://docs.barqfleet.com/runbooks/cvrp-timeout"
+
+      - alert: CVRPOptimizationSlow
+        expr: histogram_quantile(0.95, rate(cvrp_optimization_duration_seconds_bucket[5m])) > 30
+        for: 10m
+        labels:
+          severity: warning
+          category: optimization
+        annotations:
+          summary: "CVRP optimizations are slow"
+          description: "95th percentile optimization time is {{ $value }}s (threshold: 30s)"
+          runbook: "https://docs.barqfleet.com/runbooks/cvrp-slow"
+
+      - alert: CVRPHighFailureRate
+        expr: rate(cvrp_optimization_failed_total[5m]) / rate(cvrp_optimization_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: optimization
+        annotations:
+          summary: "High CVRP optimization failure rate"
+          description: "Failure rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+          runbook: "https://docs.barqfleet.com/runbooks/cvrp-failures"
+
+  # ================================================================
+  # Resource Utilization Alerts
+  # ================================================================
+  - name: resources
+    interval: 1m
+    rules:
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 15m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% (threshold: 80%)"
+          runbook: "https://docs.barqfleet.com/runbooks/high-cpu"
+
+      - alert: HighMemoryUsage
+        expr: (process_resident_memory_bytes / process_virtual_memory_bytes) * 100 > 90
+        for: 15m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% (threshold: 90%)"
+          runbook: "https://docs.barqfleet.com/runbooks/high-memory"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 15
+        for: 10m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Available disk space is {{ $value }}% (threshold: 15%)"
+          runbook: "https://docs.barqfleet.com/runbooks/disk-space"
+
+  # ================================================================
+  # Business Metrics Alerts
+  # ================================================================
+  - name: business_metrics
+    interval: 5m
+    rules:
+      - alert: SLABreachRate
+        expr: rate(sla_breach_total[1h]) / rate(orders_total[1h]) > 0.05
+        for: 15m
+        labels:
+          severity: critical
+          category: sla
+        annotations:
+          summary: "High SLA breach rate"
+          description: "SLA breach rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+          runbook: "https://docs.barqfleet.com/runbooks/sla-breach"
+
+      - alert: OrderFailureRateHigh
+        expr: rate(orders_failed_total[5m]) / rate(orders_total[5m]) > 0.02
+        for: 10m
+        labels:
+          severity: warning
+          category: orders
+        annotations:
+          summary: "High order failure rate"
+          description: "Order failure rate is {{ $value | humanizePercentage }} (threshold: 2%)"
+          runbook: "https://docs.barqfleet.com/runbooks/order-failures"
+
+      - alert: LowOptimizationRate
+        expr: rate(optimization_requests_total[1h]) < 10
+        for: 30m
+        labels:
+          severity: info
+          category: business
+        annotations:
+          summary: "Low optimization request rate"
+          description: "Only {{ $value }} optimization requests per hour"
+          runbook: "https://docs.barqfleet.com/runbooks/low-requests"
+
+      - alert: DriverUtilizationLow
+        expr: avg(driver_utilization_percent) < 60
+        for: 1h
+        labels:
+          severity: info
+          category: business
+        annotations:
+          summary: "Low driver utilization"
+          description: "Average driver utilization is {{ $value }}% (target: 60%+)"
+          runbook: "https://docs.barqfleet.com/runbooks/driver-utilization"
+
+  # ================================================================
+  # Security Alerts
+  # ================================================================
+  - name: security
+    interval: 1m
+    rules:
+      - alert: SuspiciousAuthActivity
+        expr: rate(auth_failed_attempts_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Suspicious authentication activity"
+          description: "{{ $value }} failed auth attempts per second from {{ $labels.ip }}"
+          runbook: "https://docs.barqfleet.com/runbooks/auth-suspicious"
+
+      - alert: RateLimitExceeded
+        expr: rate(rate_limit_exceeded_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "High rate limit violations"
+          description: "{{ $value }} rate limit violations per second"
+          runbook: "https://docs.barqfleet.com/runbooks/rate-limit"
+
+      - alert: UnauthorizedAccessAttempts
+        expr: rate(http_requests_total{status="403"}[5m]) > 5
+        for: 10m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "High number of unauthorized access attempts"
+          description: "{{ $value }} 403 responses per second"
+          runbook: "https://docs.barqfleet.com/runbooks/unauthorized-access"
+
+  # ================================================================
+  # Agent System Alerts
+  # ================================================================
+  - name: agents
+    interval: 1m
+    rules:
+      - alert: AgentFailureRate
+        expr: rate(agent_execution_failed_total[5m]) / rate(agent_execution_total[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          category: agents
+        annotations:
+          summary: "High agent failure rate"
+          description: "Agent {{ $labels.agent_name }} has {{ $value | humanizePercentage }} failure rate"
+          runbook: "https://docs.barqfleet.com/runbooks/agent-failures"
+
+      - alert: AgentExecutionSlow
+        expr: histogram_quantile(0.95, rate(agent_execution_duration_seconds_bucket[5m])) > 60
+        for: 10m
+        labels:
+          severity: info
+          category: agents
+        annotations:
+          summary: "Slow agent execution"
+          description: "Agent {{ $labels.agent_name }} p95 execution time is {{ $value }}s"
+          runbook: "https://docs.barqfleet.com/runbooks/agent-slow"
+
+      - alert: AgentLLMTokensHigh
+        expr: rate(agent_llm_tokens_used_total[1h]) > 100000
+        for: 1h
+        labels:
+          severity: info
+          category: agents
+        annotations:
+          summary: "High LLM token usage"
+          description: "Using {{ $value }} tokens per hour (monitor costs)"
+          runbook: "https://docs.barqfleet.com/runbooks/llm-tokens"
+
+  # ================================================================
+  # Infrastructure Alerts
+  # ================================================================
+  - name: infrastructure
+    interval: 5m
+    rules:
+      - alert: PodCrashLooping
+        expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Pod {{ $labels.pod }} is crash looping"
+          description: "Pod has restarted {{ $value }} times in 15 minutes"
+          runbook: "https://docs.barqfleet.com/runbooks/pod-crash"
+
+      - alert: NodeNotReady
+        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Node {{ $labels.node }} is not ready"
+          description: "Node has been not ready for 5 minutes"
+          runbook: "https://docs.barqfleet.com/runbooks/node-not-ready"
+
+      - alert: PersistentVolumeSpaceLow
+        expr: kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "PV {{ $labels.persistentvolumeclaim }} space low"
+          description: "Only {{ $value | humanizePercentage }} space remaining"
+          runbook: "https://docs.barqfleet.com/runbooks/pv-space"
+
+  # ================================================================
+  # Backup & Data Alerts
+  # ================================================================
+  - name: backups
+    interval: 1h
+    rules:
+      - alert: BackupFailed
+        expr: time() - backup_last_success_timestamp_seconds > 86400
+        for: 1h
+        labels:
+          severity: critical
+          category: backups
+        annotations:
+          summary: "Backup has not succeeded in 24 hours"
+          description: "Last successful backup was {{ $value | humanizeDuration }} ago"
+          runbook: "https://docs.barqfleet.com/runbooks/backup-failed"
+
+      - alert: BackupSizeTooLarge
+        expr: backup_size_bytes > 10737418240  # 10GB
+        for: 1h
+        labels:
+          severity: info
+          category: backups
+        annotations:
+          summary: "Backup size is large"
+          description: "Backup size is {{ $value | humanizeBytes }}"
+          runbook: "https://docs.barqfleet.com/runbooks/backup-size"

@@ -1,0 +1,277 @@
+<html><head><meta charset="utf-8"/><title>BARQ Fleet Management - Test Report</title><style type="text/css">:root {
+  --text-primary: #111;
+  --text-secondary: #4f4f4f;
+  --success: #006633;
+  --success-bright: #80ffbf;
+  --danger: #cc071e;
+  --danger-bright: #fbdfe0;
+  --warning: #995c00;
+  --warning-bright: #ffeea8;
+  --panel: #eee;
+  --border: #949494;
+  --disabled: #6b6b6b;
+}
+
+html,
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  margin: 0;
+  padding: 0;
+  color: var(--text-primary);
+}
+body {
+  padding: 2rem 1rem;
+}
+.jesthtml-content {
+  margin: 0 auto;
+  max-width: 70rem;
+}
+header {
+  display: flex;
+  align-items: center;
+}
+#title {
+  margin: 0;
+  flex-grow: 1;
+}
+#logo {
+  height: 4rem;
+}
+#timestamp {
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+}
+
+#metadata-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.additional-information-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+}
+
+/** SUMMARY */
+#summary {
+  color: var(--text-primary);
+  display: flex;
+  font-family: monospace;
+  font-size: 1rem;
+}
+#summary > div {
+  margin-right: 0.5rem;
+  background: var(--panel);
+  padding: 1rem;
+  min-width: 15rem;
+}
+#summary > div:last-child {
+  margin-right: 0;
+}
+@media only screen and (max-width: 720px) {
+  #summary {
+    flex-direction: column;
+  }
+  #summary > div {
+    margin-right: 0;
+    margin-top: 1rem;
+  }
+  #summary > div:first-child {
+    margin-top: 0;
+  }
+}
+
+.summary-total {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.summary-passed {
+  color: var(--success);
+  border-left: 0.4rem solid var(--success);
+  padding-left: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+.summary-failed,
+.summary-obsolete-snapshots {
+  color: var(--danger);
+  border-left: 0.4rem solid var(--danger);
+  padding-left: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+.summary-pending {
+  color: var(--warning);
+  border-left: 0.4rem solid var(--warning);
+  padding-left: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+.summary-empty {
+  color: var(--disabled);
+  border-left: 0.4rem solid var(--disabled);
+  margin-bottom: 0.15rem;
+}
+
+.test-result {
+  padding: 1rem;
+  margin-bottom: 0.25rem;
+}
+.test-result:last-child {
+  border: 0;
+}
+.test-result.passed {
+  background-color: var(--success-bright);
+  color: var(--success);
+}
+.test-result.failed {
+  background-color: var(--danger-bright);
+  color: var(--danger);
+}
+.test-result.pending {
+  background-color: var(--warning-bright);
+  color: var(--warning);
+}
+
+.test-info {
+  display: flex;
+  justify-content: space-between;
+}
+.test-suitename {
+  width: 20%;
+  text-align: left;
+  font-weight: bold;
+  word-break: break-word;
+}
+.test-title {
+  width: 40%;
+  text-align: left;
+  font-style: italic;
+}
+.test-status {
+  width: 20%;
+  text-align: right;
+}
+.test-duration {
+  width: 10%;
+  text-align: right;
+  font-size: 0.85rem;
+}
+
+.failureMessages {
+  padding: 0 1rem;
+  margin-top: 1rem;
+  border-top: 1px dashed var(--danger);
+}
+.failureMessages.suiteFailure {
+  border-top: none;
+}
+.failureMsg {
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+
+.suite-container {
+  margin-bottom: 1rem;
+}
+.suite-info {
+  padding: 1rem;
+  background-color: var(--panel);
+  color: var(--text-secondary);
+  border: 0.15rem solid;
+  border-color: var(--panel);
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+.suite-info:hover {
+  border-color: var(--border);
+  cursor: pointer;
+}
+.suite-info .suite-path {
+  word-break: break-all;
+  flex-grow: 1;
+  font-family: monospace;
+  font-size: 1rem;
+}
+.suite-info .suite-time {
+  margin-left: 1rem;
+  padding: 0.2rem 0.3rem;
+  font-size: 0.85rem;
+}
+.suite-info .suite-time.warn {
+  background-color: var(--danger);
+  color: #fff;
+}
+.suite-info:before {
+  content: "\2303";
+  display: inline-block;
+  margin-right: 1rem;
+  transform: rotate(180deg) translateY(0.15rem);
+}
+.suite-container[open] .suite-info:before {
+  transform: rotate(0deg) translateY(0.15rem);
+}
+
+/* CONSOLE LOGS */
+.suite-consolelog {
+  margin-bottom: 0.25rem;
+  padding: 1rem;
+  background-color: var(--panel);
+}
+.suite-consolelog-header {
+  font-weight: bold;
+}
+.suite-consolelog-item {
+  padding: 0.5rem;
+}
+.suite-consolelog-item pre {
+  margin: 0.5rem 0;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+.suite-consolelog-item-origin {
+  color: var(--text-secondary);
+  font-weight: bold;
+}
+.suite-consolelog-item-message {
+  color: var(--text-primary);
+  font-size: 1rem;
+  padding: 0 0.5rem;
+}
+
+/* OBSOLETE SNAPSHOTS */
+.suite-obsolete-snapshots {
+  margin-bottom: 0.25rem;
+  padding: 1rem;
+  background-color: var(--danger-bright);
+  color: var(--danger);
+}
+.suite-obsolete-snapshots-header {
+  font-weight: bold;
+}
+.suite-obsolete-snapshots-item {
+  padding: 0.5rem;
+}
+.suite-obsolete-snapshots-item pre {
+  margin: 0.5rem 0;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+.suite-obsolete-snapshots-item-message {
+  color: var(--text-primary);
+  font-size: 1rem;
+  padding: 0 0.5rem;
+}
+</style></head><body><main class="jesthtml-content"><header><h1 id="title">BARQ Fleet Management - Test Report</h1></header><section id="metadata-container"><div id="timestamp">Started: 2025-11-05 22:20:38</div><div id="summary"><div id="suite-summary"><div class="summary-total">Suites (42)</div><div class="summary-passed ">27 passed</div><div class="summary-failed ">15 failed</div><div class="summary-pending  summary-empty">0 pending</div></div><div id="test-summary"><div class="summary-total">Tests (134)</div><div class="summary-passed ">134 passed</div><div class="summary-failed  summary-empty">0 failed</div><div class="summary-pending  summary-empty">0 pending</div></div></div></section><details id="suite-1" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/agents/fleet-status.agent.test.js</div><div class="suite-time">0.305s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; Constructor</div><div class="test-title">should initialize with correct capacity config</div><div class="test-status">passed</div><div class="test-duration">0.002s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; Constructor</div><div class="test-title">should initialize driver states map</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; execute()</div><div class="test-title">should return fleet snapshot with all required fields</div><div class="test-status">passed</div><div class="test-duration">0.005s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; execute()</div><div class="test-title">should categorize drivers by status</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; execute()</div><div class="test-title">should calculate capacity metrics</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; determineStatus()</div><div class="test-title">should return available for driver with no orders</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; determineStatus()</div><div class="test-title">should return busy for driver with active orders</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; determineStatus()</div><div class="test-title">should return offline for driver with old location update</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; determineStatus()</div><div class="test-title">should return break for driver on break</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; determineStatus()</div><div class="test-title">should return break for driver who worked 6+ hours with no orders</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; determineSLACapability()</div><div class="test-title">should allow BARQ for high-performing driver with low hours</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; determineSLACapability()</div><div class="test-title">should not allow BARQ for low-performing driver</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; determineSLACapability()</div><div class="test-title">should not allow BARQ for fatigued driver</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; determineSLACapability()</div><div class="test-title">should not allow BARQ for driver with 3+ BARQ orders</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; calculateFatigue()</div><div class="test-title">should return low fatigue for fresh driver</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; calculateFatigue()</div><div class="test-title">should return high fatigue for tired driver</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; calculateFatigue()</div><div class="test-title">should return medium fatigue for moderately tired driver</div><div class="test-status">passed</div><div class="test-duration">0.002s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; calculateFatigue()</div><div class="test-title">should recommend break when needed</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; calculateDriverScore()</div><div class="test-title">should return high score for excellent driver</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; calculateDriverScore()</div><div class="test-title">should return low score for fatigued driver</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; calculateDriverScore()</div><div class="test-title">should weight factors correctly</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; estimateNextAvailability()</div><div class="test-title">should return immediate for driver with no orders</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; estimateNextAvailability()</div><div class="test-title">should estimate based on BARQ orders</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; estimateNextAvailability()</div><div class="test-title">should estimate based on BULLET orders</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; estimateCompletionTime()</div><div class="test-title">should return 0 for no orders</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; estimateCompletionTime()</div><div class="test-title">should calculate time for BARQ orders</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; estimateCompletionTime()</div><div class="test-title">should calculate time for BULLET orders</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; estimateCompletionTime()</div><div class="test-title">should prioritize BARQ orders</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; calculateDistance()</div><div class="test-title">should calculate distance between two coordinates</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; calculateDistance()</div><div class="test-title">should return 999 for invalid coordinates</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; calculateDistance()</div><div class="test-title">should return 0 for same coordinates</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; getZoneForLocation()</div><div class="test-title">should return north for northern coordinates</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; getZoneForLocation()</div><div class="test-title">should return south for southern coordinates</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; getZoneForLocation()</div><div class="test-title">should return east for eastern coordinates</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; getZoneForLocation()</div><div class="test-title">should return west for western coordinates</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; getZoneForLocation()</div><div class="test-title">should return central for central coordinates</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; getZoneForLocation()</div><div class="test-title">should return central for invalid location</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; registerDriver()</div><div class="test-title">should register new driver successfully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; registerDriver()</div><div class="test-title">should handle registration errors gracefully</div><div class="test-status">passed</div><div class="test-duration">0.021s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; updateDriverLocation()</div><div class="test-title">should update driver location successfully</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; updateDriverLocation()</div><div class="test-title">should handle non-existent driver gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; getAvailableDrivers()</div><div class="test-title">should return only available drivers</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; getAvailableDrivers()</div><div class="test-title">should sort drivers by distance</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; getAvailableDrivers()</div><div class="test-title">should filter BARQ drivers by 5km radius</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; getStatus()</div><div class="test-title">should return fleet status summary</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; getStatus()</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; isHealthy()</div><div class="test-title">should return healthy when recently updated</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; isHealthy()</div><div class="test-title">should return unhealthy when not updated recently</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">Fleet Status Agent &gt; predictFleetAvailability()</div><div class="test-title">should predict availability for next 15 and 30 minutes</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div></div></details><details id="suite-2" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/agents/sla-monitor.agent.test.js</div><div class="suite-time">0.2s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; Constructor</div><div class="test-title">should initialize with correct SLA thresholds</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; Constructor</div><div class="test-title">should initialize empty breach history</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; Constructor</div><div class="test-title">should initialize active monitoring map</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; checkSLA()</div><div class="test-title">should return normal status for order on track</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; checkSLA()</div><div class="test-title">should return warning for order approaching SLA</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; checkSLA()</div><div class="test-title">should return critical for order near SLA breach</div><div class="test-status">passed</div><div class="test-duration">0.003s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; checkSLA()</div><div class="test-title">should return breach for order past SLA</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; checkSLA()</div><div class="test-title">should handle BULLET service type correctly</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; generateAlert()</div><div class="test-title">should generate warning alert</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; generateAlert()</div><div class="test-title">should generate critical alert</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; generateAlert()</div><div class="test-title">should generate breach alert</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; generateCorrectiveActions()</div><div class="test-title">should generate compensation actions for breached orders</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; generateCorrectiveActions()</div><div class="test-title">should generate emergency reassignment for critical orders that cannot meet SLA</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; generateCorrectiveActions()</div><div class="test-title">should generate expedite delivery for critical orders that can meet SLA</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; generateCorrectiveActions()</div><div class="test-title">should generate preventive actions for warning orders</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; generateCorrectiveActions()</div><div class="test-title">should not generate proactive communication for BULLET warnings</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; recordBreach()</div><div class="test-title">should record breach in history</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; recordBreach()</div><div class="test-title">should limit breach history to 100 entries</div><div class="test-status">passed</div><div class="test-duration">0.007s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; getBreachStats()</div><div class="test-title">should calculate total breaches</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; getBreachStats()</div><div class="test-title">should calculate breaches in last 24 hours</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; getBreachStats()</div><div class="test-title">should categorize by service type</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; predictDeliveryTime()</div><div class="test-title">should predict time for pending order</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; predictDeliveryTime()</div><div class="test-title">should predict time for assigned order</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; predictDeliveryTime()</div><div class="test-title">should predict time for order in pickup</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; predictDeliveryTime()</div><div class="test-title">should predict time for order in delivery</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; predictDeliveryTime()</div><div class="test-title">should use different times for BARQ vs BULLET</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; mapRiskToSeverity()</div><div class="test-title">should map risk levels correctly</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; getAlertType()</div><div class="test-title">should return correct alert types</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; getAtRiskOrders()</div><div class="test-title">should return at-risk and critical orders</div><div class="test-status">passed</div><div class="test-duration">0.083s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; getAtRiskOrders()</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; isHealthy()</div><div class="test-title">should return healthy when recently checked</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; isHealthy()</div><div class="test-title">should return unhealthy when not checked recently</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; predictSLACompliance()</div><div class="test-title">should predict breaches in next 15 and 30 minutes</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; predictSLACompliance()</div><div class="test-title">should generate urgent recommendations for immediate risk</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">SLA Monitor Agent &gt; predictSLACompliance()</div><div class="test-title">should generate capacity recommendations for high volume</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div></div></details><details id="suite-3" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/middleware/validation.middleware.test.js</div><div class="suite-time">0.15s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">validation.middleware Middleware &gt; Middleware Function</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">validation.middleware Middleware &gt; Middleware Function</div><div class="test-title">should be a function or object</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-4" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/middleware/security.middleware.test.js</div><div class="suite-time">0.1s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">security.middleware Middleware &gt; Middleware Function</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">security.middleware Middleware &gt; Middleware Function</div><div class="test-title">should be a function or object</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-5" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/middleware/error.middleware.test.js</div><div class="suite-time">0.035s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">error.middleware Middleware &gt; Middleware Function</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">error.middleware Middleware &gt; Middleware Function</div><div class="test-title">should be a function or object</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-6" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/middleware/auth.middleware.test.js</div><div class="suite-time">0.076s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">auth.middleware Middleware &gt; Middleware Function</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">auth.middleware Middleware &gt; Middleware Function</div><div class="test-title">should be a function or object</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-7" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/middleware/validator.test.js</div><div class="suite-time">0.083s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">validator Middleware &gt; Middleware Function</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">validator Middleware &gt; Middleware Function</div><div class="test-title">should be a function or object</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-8" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/autonomous-orchestrator.service.test.js</div><div class="suite-time">0.076s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">autonomous-orchestrator.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.053s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">autonomous-orchestrator.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div></div></details><details id="suite-9" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/action-authorization.service.test.js</div><div class="suite-time">0.036s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">action-authorization.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.012s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">action-authorization.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-10" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/enhanced-logistics.service.test.js</div><div class="suite-time">0.477s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">enhanced-logistics.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.453s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">enhanced-logistics.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-11" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/autonomous-initializer.test.js</div><div class="suite-time">0.045s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">autonomous-initializer Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.018s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">autonomous-initializer Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-12" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/agent-manager.service.test.js</div><div class="suite-time">0.074s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">agent-manager.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.041s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">agent-manager.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-13" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/reassignment.service.test.js</div><div class="suite-time">0.049s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">reassignment.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.021s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">reassignment.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-14" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/notification.service.test.js</div><div class="suite-time">0.061s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">notification.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.022s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">notification.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-15" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/driver-state.service.test.js</div><div class="suite-time">0.123s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">driver-state.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.07s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">driver-state.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-16" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/validation.service.test.js</div><div class="suite-time">0.104s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">validation.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.057s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">validation.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div></div></details><details id="suite-17" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/escalation.service.test.js</div><div class="suite-time">0.051s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">escalation.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.018s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">escalation.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div></div></details><details id="suite-18" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/logistics.service.test.js</div><div class="suite-time">0.163s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">logistics.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.133s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">logistics.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration">0.001s</div></div></div></div></details><details id="suite-19" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/agent-initializer.test.js</div><div class="suite-time">0.436s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">agent-initializer Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.413s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">agent-initializer Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-20" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/postgres.service.test.js</div><div class="suite-time">0.051s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">postgres.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.029s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">postgres.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-21" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/database.service.test.js</div><div class="suite-time">0.124s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">database.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.102s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">database.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-22" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/penalty.service.test.js</div><div class="suite-time">0.05s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">penalty.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.024s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">penalty.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-23" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/metrics.service.test.js</div><div class="suite-time">0.113s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">metrics.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.089s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">metrics.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-24" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/health.service.test.js</div><div class="suite-time">0.088s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">health.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.064s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">health.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-25" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/cache.service.test.js</div><div class="suite-time">0.062s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">cache.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.037s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">cache.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-26" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/audit.service.test.js</div><div class="suite-time">0.058s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">audit.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.029s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">audit.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details><details id="suite-27" class="suite-container" open=""><summary class="suite-info"><div class="suite-path">/Users/ramiz_new/Desktop/AI-Route-Optimization-API/backend/tests/unit/services/alert.service.test.js</div><div class="suite-time">0.1s</div></summary><div class="suite-tests"><div class="test-result passed"><div class="test-info"><div class="test-suitename">alert.service Service &gt; Service Instance</div><div class="test-title">should be defined</div><div class="test-status">passed</div><div class="test-duration">0.026s</div></div></div><div class="test-result passed"><div class="test-info"><div class="test-suitename">alert.service Service &gt; Error Handling</div><div class="test-title">should handle errors gracefully</div><div class="test-status">passed</div><div class="test-duration"> </div></div></div></div></details></main></body></html>

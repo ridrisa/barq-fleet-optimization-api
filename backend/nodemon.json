@@ -1,0 +1,14 @@
+{
+  "ignore": [
+    ".git",
+    "node_modules/**/node_modules",
+    "logs/*",
+    "*.log",
+    "src/db/*.json"
+  ],
+  "verbose": true,
+  "watch": [
+    "src/"
+  ],
+  "ext": "js,json"
+} 

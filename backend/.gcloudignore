@@ -1,0 +1,19 @@
+# Backend .gcloudignore
+# This ensures package-lock.json is included in Cloud Build even though it's not in git
+
+# Exclude node_modules
+node_modules/
+npm-debug.log
+
+# Exclude test files
+tests/
+*.test.js
+__tests__/
+
+# Exclude dev files
+.env
+.env.local
+.env.development
+
+# Force include package-lock.json (even if not in git)
+!package-lock.json

@@ -1,0 +1,222 @@
+version: '3.8'
+
+# CVRP Horizontal Scaling Configuration
+# This extends docker-compose.yml with multiple CVRP instances behind a load balancer
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.cvrp-cluster.yml up
+
+services:
+  # CVRP Optimizer Instance 1
+  cvrp-optimizer-1:
+    build:
+      context: ./backend/optimization-service
+      dockerfile: Dockerfile
+    container_name: barq-cvrp-optimizer-1
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: 5001
+      FLASK_ENV: production
+      LOG_LEVEL: INFO
+      CORS_ORIGINS: http://localhost:3001,http://localhost:3003
+      DEFAULT_TIME_LIMIT: 5
+      MAX_TIME_LIMIT: 30
+      INSTANCE_ID: "cvrp-1"
+      INSTANCE_WEIGHT: 1  # Load balancing weight
+    networks:
+      - barq-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "service.type=cvrp_optimizer"
+      - "service.instance=1"
+      - "lb.enabled=true"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # CVRP Optimizer Instance 2
+  cvrp-optimizer-2:
+    build:
+      context: ./backend/optimization-service
+      dockerfile: Dockerfile
+    container_name: barq-cvrp-optimizer-2
+    ports:
+      - "5002:5001"
+    environment:
+      PORT: 5001
+      FLASK_ENV: production
+      LOG_LEVEL: INFO
+      CORS_ORIGINS: http://localhost:3001,http://localhost:3003
+      DEFAULT_TIME_LIMIT: 5
+      MAX_TIME_LIMIT: 30
+      INSTANCE_ID: "cvrp-2"
+      INSTANCE_WEIGHT: 1
+    networks:
+      - barq-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "service.type=cvrp_optimizer"
+      - "service.instance=2"
+      - "lb.enabled=true"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # CVRP Optimizer Instance 3
+  cvrp-optimizer-3:
+    build:
+      context: ./backend/optimization-service
+      dockerfile: Dockerfile
+    container_name: barq-cvrp-optimizer-3
+    ports:
+      - "5003:5001"
+    environment:
+      PORT: 5001
+      FLASK_ENV: production
+      LOG_LEVEL: INFO
+      CORS_ORIGINS: http://localhost:3001,http://localhost:3003
+      DEFAULT_TIME_LIMIT: 5
+      MAX_TIME_LIMIT: 30
+      INSTANCE_ID: "cvrp-3"
+      INSTANCE_WEIGHT: 1
+    networks:
+      - barq-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "service.type=cvrp_optimizer"
+      - "service.instance=3"
+      - "lb.enabled=true"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Nginx Load Balancer for CVRP Cluster
+  cvrp-load-balancer:
+    image: nginx:alpine
+    container_name: barq-cvrp-lb
+    ports:
+      - "5000:80"  # Load balancer endpoint
+    volumes:
+      - ./backend/optimization-service/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./backend/optimization-service/nginx-health.html:/usr/share/nginx/html/lb-health.html:ro
+    networks:
+      - barq-network
+    depends_on:
+      cvrp-optimizer-1:
+        condition: service_healthy
+      cvrp-optimizer-2:
+        condition: service_healthy
+      cvrp-optimizer-3:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/lb-health.html"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "service.type=load_balancer"
+      - "lb.backend=cvrp_cluster"
+      - "lb.algorithm=least_conn"
+
+  # Load Balancer Stats and Monitoring
+  cvrp-lb-monitor:
+    image: nginx:alpine
+    container_name: barq-cvrp-lb-monitor
+    ports:
+      - "5099:80"  # Stats endpoint
+    volumes:
+      - ./monitoring/cvrp-lb-stats.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - barq-network
+    depends_on:
+      - cvrp-load-balancer
+    restart: unless-stopped
+    command: >
+      sh -c '
+        while true; do
+          echo "=== CVRP Load Balancer Statistics ==="
+          echo "Timestamp: $(date)"
+          echo ""
+          echo "Instance Health Status:"
+
+          # Check instance 1
+          if wget -q -O- --tries=1 --timeout=2 http://cvrp-optimizer-1:5001/health > /dev/null 2>&1; then
+            echo "  ✓ CVRP-1 (cvrp-optimizer-1:5001): HEALTHY"
+          else
+            echo "  ✗ CVRP-1 (cvrp-optimizer-1:5001): UNHEALTHY"
+          fi
+
+          # Check instance 2
+          if wget -q -O- --tries=1 --timeout=2 http://cvrp-optimizer-2:5001/health > /dev/null 2>&1; then
+            echo "  ✓ CVRP-2 (cvrp-optimizer-2:5001): HEALTHY"
+          else
+            echo "  ✗ CVRP-2 (cvrp-optimizer-2:5001): UNHEALTHY"
+          fi
+
+          # Check instance 3
+          if wget -q -O- --tries=1 --timeout=2 http://cvrp-optimizer-3:5001/health > /dev/null 2>&1; then
+            echo "  ✓ CVRP-3 (cvrp-optimizer-3:5001): HEALTHY"
+          else
+            echo "  ✗ CVRP-3 (cvrp-optimizer-3:5001): UNHEALTHY"
+          fi
+
+          echo ""
+          echo "Load Balancer Status:"
+          if wget -q -O- --tries=1 --timeout=2 http://cvrp-load-balancer/lb-health.html > /dev/null 2>&1; then
+            echo "  ✓ Load Balancer: OPERATIONAL"
+          else
+            echo "  ✗ Load Balancer: DOWN"
+          fi
+
+          echo ""
+          echo "========================================="
+          echo ""
+
+          sleep 30
+        done
+      '
+    labels:
+      - "monitoring.type=load_balancer"
+      - "monitoring.target=cvrp_cluster"
+
+# Networks
+# Note: To use with backend, configure CVRP_SERVICE_URL=http://cvrp-load-balancer:80
+networks:
+  barq-network:
+    driver: bridge
+    name: barq-network
+
+# Note: When used with main docker-compose.yml, it will use the existing barq-network

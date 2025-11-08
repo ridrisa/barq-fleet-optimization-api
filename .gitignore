@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+*.log
+
+# Production
+build/
+dist/
+.next/
+out/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.migration
+.env.aws-rds
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Database
+*.sqlite
+*.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Misc
+.cache/
+.temp/
+.tmp/
+
+# OS
+Thumbs.db
+
+# Private files
+barqfleet_db_files/
+*.pem
+*.key
+*.crt
+
+# Test results
+test-results*.txt
+
+# Backup files
+*.bak
+
+# Video files
+*.mp4
+*.avi
+*.mov
+
+# Large data files
+*.csv
+*.json.gz

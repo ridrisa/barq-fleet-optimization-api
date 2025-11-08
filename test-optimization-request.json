@@ -1,0 +1,37 @@
+{
+  "pickupPoints": [
+    {
+      "lat": 24.714,
+      "lng": 46.675,
+      "name": "Central Riyadh Hub",
+      "address": "King Fahd Road, Central Riyadh"
+    }
+  ],
+  "deliveryPoints": [
+    {
+      "lat": 24.7741,
+      "lng": 46.7388,
+      "name": "Customer A - Al Olaya",
+      "address": "Al Olaya, Riyadh",
+      "priority": 1
+    },
+    {
+      "lat": 24.6911,
+      "lng": 46.7081,
+      "name": "Customer B - Al Murabba",
+      "address": "Al Murabba, Riyadh",
+      "priority": 2
+    }
+  ],
+  "fleet": {
+    "vehicles": [
+      {
+        "id": "TRUCK-001",
+        "type": "TRUCK",
+        "capacity": 3000,
+        "startLat": 24.714,
+        "startLng": 46.675
+      }
+    ]
+  }
+}

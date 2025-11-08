@@ -1,0 +1,63 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+backend.log
+
+# Test files
+test
+tests
+*.test.js
+*.spec.js
+coverage
+.nyc_output
+
+# Development files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation (not needed in container)
+*.md
+!README.md
+docs
+
+# Database files (should be in volumes)
+database/*.db
+database/*.json
+database/backups
+
+# Temporary files
+tmp
+temp
+.tmp
+
+# Scripts (if not needed at runtime)
+scripts/*.sh
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml

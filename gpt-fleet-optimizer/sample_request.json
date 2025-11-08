@@ -1,0 +1,99 @@
+{
+  "pickupPoints": [
+    {
+      "id": "depot_riyadh",
+      "latitude": 24.7136,
+      "longitude": 46.6753,
+      "address": "BARQ Warehouse - Riyadh Distribution Center",
+      "name": "Main Depot"
+    }
+  ],
+  "deliveryPoints": [
+    {
+      "id": "customer_001",
+      "latitude": 24.7236,
+      "longitude": 46.6853,
+      "address": "King Fahd Road, Riyadh",
+      "demand": 5,
+      "timeWindow": {
+        "start": "09:00",
+        "end": "17:00"
+      }
+    },
+    {
+      "id": "customer_002",
+      "latitude": 24.7336,
+      "longitude": 46.6953,
+      "address": "Olaya District, Riyadh",
+      "demand": 8,
+      "timeWindow": {
+        "start": "10:00",
+        "end": "18:00"
+      }
+    },
+    {
+      "id": "customer_003",
+      "latitude": 24.7436,
+      "longitude": 46.7053,
+      "address": "Al Malqa, Riyadh",
+      "demand": 3,
+      "timeWindow": {
+        "start": "09:00",
+        "end": "15:00"
+      }
+    },
+    {
+      "id": "customer_004",
+      "latitude": 24.7536,
+      "longitude": 46.7153,
+      "address": "Al Nakheel, Riyadh",
+      "demand": 6,
+      "timeWindow": {
+        "start": "11:00",
+        "end": "19:00"
+      }
+    },
+    {
+      "id": "customer_005",
+      "latitude": 24.7636,
+      "longitude": 46.7253,
+      "address": "King Abdullah Financial District",
+      "demand": 4,
+      "timeWindow": {
+        "start": "09:00",
+        "end": "17:00"
+      }
+    }
+  ],
+  "fleet": [
+    {
+      "id": "vehicle_01",
+      "capacity": 50,
+      "driver": "Driver Ahmed",
+      "startLocation": {
+        "latitude": 24.7136,
+        "longitude": 46.6753
+      }
+    },
+    {
+      "id": "vehicle_02",
+      "capacity": 50,
+      "driver": "Driver Mohammed",
+      "startLocation": {
+        "latitude": 24.7136,
+        "longitude": 46.6753
+      }
+    }
+  ],
+  "serviceType": "BULLET",
+  "preferences": {
+    "useCVRP": true,
+    "fairDistribution": true,
+    "minimizeDistance": true
+  },
+  "businessRules": {
+    "maxStopsPerRoute": 10,
+    "maxRouteDistance": 50000,
+    "maxRouteDuration": 240
+  }
+}

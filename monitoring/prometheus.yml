@@ -1,0 +1,159 @@
+# Prometheus Configuration for Fleet Management System
+
+global:
+  scrape_interval: 15s        # How often to scrape targets
+  evaluation_interval: 15s    # How often to evaluate rules
+  external_labels:
+    monitor: 'fleet-monitor'
+    environment: 'production'
+
+# Rule files for alerts
+rule_files:
+  - 'alerts/*.yml'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - 'alertmanager:9093'
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # Fleet Management Backend API
+  - job_name: 'fleet-backend'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['backend:8080']
+        labels:
+          service: 'fleet-api'
+          component: 'backend'
+
+  # Agent Monitor Service
+  - job_name: 'agent-monitor'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['agent-monitor:9091']
+        labels:
+          service: 'agent-monitor'
+          component: 'monitoring'
+
+  # WebSocket Server
+  - job_name: 'websocket-server'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['websocket:8081']
+        labels:
+          service: 'websocket'
+          component: 'realtime'
+
+  # Node Exporter (for system metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+          component: 'infrastructure'
+
+  # PostgreSQL Exporter
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'postgresql'
+          component: 'database'
+
+  # Redis Exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'redis'
+          component: 'cache'
+
+  # Custom Metrics from Agent System
+  - job_name: 'agents'
+    scrape_interval: 30s
+    metrics_path: '/api/agents/metrics'
+    static_configs:
+      - targets: ['backend:8080']
+        labels:
+          service: 'agents'
+          component: 'ai'
+    metric_relabel_configs:
+      # Add labels for each agent type
+      - source_labels: [__name__]
+        regex: 'agent_(.+)_.*'
+        target_label: 'agent_type'
+        replacement: '$1'
+
+  # Service Discovery for Dynamic Targets
+  - job_name: 'kubernetes-pods'
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+            - fleet-management
+    relabel_configs:
+      # Only scrape pods with prometheus annotations
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      # Use the pod annotation for metrics path
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      # Use the pod annotation for scrape port
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      # Add kubernetes labels
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+
+# Recording rules for pre-computed metrics
+# These would be in separate rule files, but here's an example:
+# groups:
+#   - name: fleet_metrics
+#     interval: 30s
+#     rules:
+#       - record: sla_compliance_rate
+#         expr: |
+#           sum(rate(orders_completed_on_time[5m])) by (service)
+#           /
+#           sum(rate(orders_completed_total[5m])) by (service)
+#
+#       - record: driver_utilization_rate
+#         expr: |
+#           sum(driver_active_time) by (driver_id)
+#           /
+#           sum(driver_available_time) by (driver_id)
+#
+#       - record: overall_performance_score
+#         expr: |
+#           (
+#             sla_compliance_rate * 0.25 +
+#             driver_utilization_rate * 0.15 +
+#             (customer_satisfaction_score / 5) * 0.20 +
+#             order_completion_rate * 0.10 +
+#             (1 - (cost_per_delivery / target_cost)) * 0.10
+#           )

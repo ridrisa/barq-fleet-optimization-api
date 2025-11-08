@@ -1,0 +1,550 @@
+---
+# Kubernetes Deployment Configuration for BARQ/BULLET Fleet Management System
+# Production deployment with high availability and auto-scaling
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fleet-management
+
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fleet-config
+  namespace: fleet-management
+data:
+  NODE_ENV: "production"
+  SERVICE_NAME: "barq-bullet-fleet-management"
+  BARQ_ENABLED: "true"
+  BARQ_MAX_RADIUS: "5"
+  BARQ_MAX_TIME: "60"
+  BULLET_ENABLED: "true"
+  BULLET_MAX_RADIUS: "30"
+  BULLET_MAX_TIME: "240"
+  AGENTS_ENABLED: "true"
+  CONTINUOUS_MONITORING: "true"
+  AGENT_HEALTH_CHECK_INTERVAL: "60000"
+  SLA_COMPLIANCE_TARGET: "0.95"
+  MAX_RESPONSE_TIME: "1000"
+  MAX_OPTIMIZATION_TIME: "5000"
+  REDIS_PORT: "6379"
+  DB_PORT: "5432"
+
+---
+# Secret for sensitive data
+apiVersion: v1
+kind: Secret
+metadata:
+  name: fleet-secrets
+  namespace: fleet-management
+type: Opaque
+stringData:
+  DB_PASSWORD: "${DB_PASSWORD}"
+  JWT_SECRET: "${JWT_SECRET}"
+  GOOGLE_MAPS_API_KEY: "${GOOGLE_MAPS_API_KEY}"
+  LANGCHAIN_API_KEY: "${LANGCHAIN_API_KEY}"
+  OPENAI_API_KEY: "${OPENAI_API_KEY}"
+  TWILIO_ACCOUNT_SID: "${TWILIO_ACCOUNT_SID}"
+  TWILIO_AUTH_TOKEN: "${TWILIO_AUTH_TOKEN}"
+  SENDGRID_API_KEY: "${SENDGRID_API_KEY}"
+
+---
+# Main Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleet-backend
+  namespace: fleet-management
+  labels:
+    app: fleet-backend
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fleet-backend
+  template:
+    metadata:
+      labels:
+        app: fleet-backend
+        tier: backend
+    spec:
+      containers:
+      - name: backend
+        image: gcr.io/PROJECT_ID/fleet-backend:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8443
+          name: https
+        envFrom:
+        - configMapRef:
+            name: fleet-config
+        - secretRef:
+            name: fleet-secrets
+        env:
+        - name: DB_HOST
+          value: "postgres-service"
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: OSRM_URL
+          value: "http://osrm-service:5000"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: agent-data
+          mountPath: /app/data
+        - name: agent-logs
+          mountPath: /app/logs
+      volumes:
+      - name: agent-data
+        persistentVolumeClaim:
+          claimName: agent-data-pvc
+      - name: agent-logs
+        persistentVolumeClaim:
+          claimName: agent-logs-pvc
+
+---
+# Agent Monitor Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-monitor
+  namespace: fleet-management
+  labels:
+    app: agent-monitor
+    tier: monitoring
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: agent-monitor
+  template:
+    metadata:
+      labels:
+        app: agent-monitor
+        tier: monitoring
+    spec:
+      containers:
+      - name: agent-monitor
+        image: gcr.io/PROJECT_ID/fleet-backend:latest
+        command: ["node", "src/services/agent-monitor.js"]
+        envFrom:
+        - configMapRef:
+            name: fleet-config
+        - secretRef:
+            name: fleet-secrets
+        env:
+        - name: MONITORING_MODE
+          value: "true"
+        - name: DB_HOST
+          value: "postgres-service"
+        - name: REDIS_HOST
+          value: "redis-service"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        volumeMounts:
+        - name: agent-logs
+          mountPath: /app/logs
+      volumes:
+      - name: agent-logs
+        persistentVolumeClaim:
+          claimName: agent-logs-pvc
+
+---
+# WebSocket Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: websocket-server
+  namespace: fleet-management
+  labels:
+    app: websocket
+    tier: realtime
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: websocket
+  template:
+    metadata:
+      labels:
+        app: websocket
+        tier: realtime
+    spec:
+      containers:
+      - name: websocket
+        image: gcr.io/PROJECT_ID/fleet-backend:latest
+        command: ["node", "src/services/websocket-server.js"]
+        ports:
+        - containerPort: 8081
+          name: websocket
+        env:
+        - name: WS_PORT
+          value: "8081"
+        - name: REDIS_HOST
+          value: "redis-service"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+# Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: fleet-backend-service
+  namespace: fleet-management
+spec:
+  selector:
+    app: fleet-backend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  - name: https
+    port: 443
+    targetPort: 8443
+  type: LoadBalancer
+
+---
+# WebSocket Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: websocket-service
+  namespace: fleet-management
+spec:
+  selector:
+    app: websocket
+  ports:
+  - port: 8081
+    targetPort: 8081
+  type: LoadBalancer
+
+---
+# PostgreSQL StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: fleet-management
+spec:
+  serviceName: postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgis/postgis:15-3.3-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "fleet_management"
+        - name: POSTGRES_USER
+          value: "fleet_user"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fleet-secrets
+              key: DB_PASSWORD
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 20Gi
+
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: fleet-management
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+# Redis StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: fleet-management
+spec:
+  serviceName: redis-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - --appendonly
+        - "yes"
+        - --maxmemory
+        - "512mb"
+        - --maxmemory-policy
+        - "allkeys-lru"
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 5Gi
+
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: fleet-management
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+  type: ClusterIP
+
+---
+# OSRM Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: osrm
+  namespace: fleet-management
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: osrm
+  template:
+    metadata:
+      labels:
+        app: osrm
+    spec:
+      containers:
+      - name: osrm
+        image: osrm/osrm-backend:latest
+        command: ["osrm-routed", "--algorithm", "mld", "/data/saudi-arabia-latest.osrm"]
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: osrm-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+      volumes:
+      - name: osrm-data
+        persistentVolumeClaim:
+          claimName: osrm-data-pvc
+
+---
+# OSRM Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: osrm-service
+  namespace: fleet-management
+spec:
+  selector:
+    app: osrm
+  ports:
+  - port: 5000
+    targetPort: 5000
+  type: ClusterIP
+
+---
+# Horizontal Pod Autoscaler for Backend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-hpa
+  namespace: fleet-management
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fleet-backend
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+# Persistent Volume Claims
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-data-pvc
+  namespace: fleet-management
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-logs-pvc
+  namespace: fleet-management
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: osrm-data-pvc
+  namespace: fleet-management
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+# Ingress Configuration
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fleet-ingress
+  namespace: fleet-management
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/websocket-services: websocket-service
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+spec:
+  tls:
+  - hosts:
+    - api.fleet-management.com
+    - ws.fleet-management.com
+    secretName: fleet-tls-secret
+  rules:
+  - host: api.fleet-management.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: fleet-backend-service
+            port:
+              number: 80
+  - host: ws.fleet-management.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: websocket-service
+            port:
+              number: 8081

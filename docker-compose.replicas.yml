@@ -1,0 +1,213 @@
+version: '3.8'
+
+# PostgreSQL Read Replicas Configuration
+# This extends docker-compose.yml with read replica support for high availability and performance
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.replicas.yml up
+
+services:
+  # Primary PostgreSQL Database (Read-Write)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      # Replication settings
+      POSTGRES_REPLICATION_USER: ${DB_REPLICATION_USER:-replicator}
+      POSTGRES_REPLICATION_PASSWORD: ${DB_REPLICATION_PASSWORD:-replicator_password}
+    command: >
+      postgres
+      -c wal_level=replica
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c hot_standby=on
+      -c archive_mode=on
+      -c archive_command='cd .'
+      -c shared_preload_libraries=pg_stat_statements
+      -c logging_collector=on
+      -c log_statement=all
+      -c log_duration=on
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./backend/database/schema-enhanced.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./backend/database/replication-setup.sql:/docker-entrypoint-initdb.d/02-replication.sql:ro
+    labels:
+      - "db.role=primary"
+      - "db.replication=enabled"
+
+  # PostgreSQL Read Replica 1
+  postgres-replica-1:
+    image: postgres:15-alpine
+    container_name: barq-postgres-replica-1
+    environment:
+      POSTGRES_USER: ${DB_USER:-barq_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_NAME:-barq_logistics}
+      PGUSER: ${DB_USER:-barq_user}
+      PGPASSWORD: ${DB_PASSWORD:-changeme}
+      # Replication configuration
+      POSTGRES_PRIMARY_HOST: postgres
+      POSTGRES_PRIMARY_PORT: 5432
+      POSTGRES_REPLICATION_USER: ${DB_REPLICATION_USER:-replicator}
+      POSTGRES_REPLICATION_PASSWORD: ${DB_REPLICATION_PASSWORD:-replicator_password}
+    ports:
+      - "5433:5432"
+    networks:
+      - barq-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-barq_user} && test $(psql -U ${DB_USER:-barq_user} -d ${DB_NAME:-barq_logistics} -tAc \"SELECT pg_is_in_recovery()\") = 't'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - postgres-replica-1-data:/var/lib/postgresql/data
+      - ./backend/database/replica-entrypoint.sh:/docker-entrypoint-initdb.d/replica-entrypoint.sh:ro
+    labels:
+      - "db.role=replica"
+      - "db.replica_id=1"
+      - "db.replication_lag_monitor=enabled"
+
+  # PostgreSQL Read Replica 2
+  postgres-replica-2:
+    image: postgres:15-alpine
+    container_name: barq-postgres-replica-2
+    environment:
+      POSTGRES_USER: ${DB_USER:-barq_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_NAME:-barq_logistics}
+      PGUSER: ${DB_USER:-barq_user}
+      PGPASSWORD: ${DB_PASSWORD:-changeme}
+      # Replication configuration
+      POSTGRES_PRIMARY_HOST: postgres
+      POSTGRES_PRIMARY_PORT: 5432
+      POSTGRES_REPLICATION_USER: ${DB_REPLICATION_USER:-replicator}
+      POSTGRES_REPLICATION_PASSWORD: ${DB_REPLICATION_PASSWORD:-replicator_password}
+    ports:
+      - "5434:5432"
+    networks:
+      - barq-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-barq_user} && test $(psql -U ${DB_USER:-barq_user} -d ${DB_NAME:-barq_logistics} -tAc \"SELECT pg_is_in_recovery()\") = 't'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - postgres-replica-2-data:/var/lib/postgresql/data
+      - ./backend/database/replica-entrypoint.sh:/docker-entrypoint-initdb.d/replica-entrypoint.sh:ro
+    labels:
+      - "db.role=replica"
+      - "db.replica_id=2"
+      - "db.replication_lag_monitor=enabled"
+
+  # PgBouncer Connection Pooler (Optional but recommended for production)
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: barq-pgbouncer
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-barq_user}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-barq_logistics}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 25
+      MIN_POOL_SIZE: 5
+      RESERVE_POOL_SIZE: 5
+      SERVER_IDLE_TIMEOUT: 600
+      MAX_DB_CONNECTIONS: 50
+    ports:
+      - "6432:5432"
+    networks:
+      - barq-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "psql", "-h", "localhost", "-p", "5432", "-U", "${DB_USER:-barq_user}", "-d", "pgbouncer", "-c", "SHOW POOLS;"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "db.role=pooler"
+      - "db.pooler_type=pgbouncer"
+
+  # Replication Lag Monitor
+  replication-monitor:
+    image: postgres:15-alpine
+    container_name: barq-replication-monitor
+    environment:
+      POSTGRES_PRIMARY_HOST: postgres
+      POSTGRES_REPLICA_1_HOST: postgres-replica-1
+      POSTGRES_REPLICA_2_HOST: postgres-replica-2
+      DB_USER: ${DB_USER:-barq_user}
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      DB_NAME: ${DB_NAME:-barq_logistics}
+      CHECK_INTERVAL: 30
+      LAG_THRESHOLD_MB: 100
+      LAG_THRESHOLD_SECONDS: 10
+    networks:
+      - barq-network
+    depends_on:
+      - postgres
+      - postgres-replica-1
+      - postgres-replica-2
+    restart: unless-stopped
+    command: >
+      sh -c '
+        while true; do
+          echo "=== Checking Replication Status ===$(date)"
+
+          # Check replica 1 lag
+          LAG1=$(PGPASSWORD=$$DB_PASSWORD psql -h postgres-replica-1 -U $$DB_USER -d $$DB_NAME -tAc "SELECT EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))::int;" 2>/dev/null || echo "ERROR")
+          if [ "$$LAG1" = "ERROR" ] || [ -z "$$LAG1" ]; then
+            echo "❌ Replica 1: Connection failed or not in recovery mode"
+          else
+            echo "✓ Replica 1 lag: $$LAG1 seconds"
+            if [ $$LAG1 -gt $$LAG_THRESHOLD_SECONDS ]; then
+              echo "⚠️  WARNING: Replica 1 lag exceeds threshold ($$LAG_THRESHOLD_SECONDS seconds)"
+            fi
+          fi
+
+          # Check replica 2 lag
+          LAG2=$(PGPASSWORD=$$DB_PASSWORD psql -h postgres-replica-2 -U $$DB_USER -d $$DB_NAME -tAc "SELECT EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))::int;" 2>/dev/null || echo "ERROR")
+          if [ "$$LAG2" = "ERROR" ] || [ -z "$$LAG2" ]; then
+            echo "❌ Replica 2: Connection failed or not in recovery mode"
+          else
+            echo "✓ Replica 2 lag: $$LAG2 seconds"
+            if [ $$LAG2 -gt $$LAG_THRESHOLD_SECONDS ]; then
+              echo "⚠️  WARNING: Replica 2 lag exceeds threshold ($$LAG_THRESHOLD_SECONDS seconds)"
+            fi
+          fi
+
+          # Check replication slots
+          echo "--- Replication Slots ---"
+          PGPASSWORD=$$DB_PASSWORD psql -h postgres -U $$DB_USER -d $$DB_NAME -c "SELECT slot_name, active, restart_lsn FROM pg_replication_slots;" 2>/dev/null || echo "ERROR: Could not query replication slots"
+
+          echo ""
+          sleep $$CHECK_INTERVAL
+        done
+      '
+    labels:
+      - "monitoring.type=replication_lag"
+      - "monitoring.enabled=true"
+
+volumes:
+  postgres-data:
+    driver: local
+  postgres-replica-1-data:
+    driver: local
+  postgres-replica-2-data:
+    driver: local
+
+# Networks
+networks:
+  barq-network:
+    driver: bridge
+    name: barq-network
+
+# Note: When used with main docker-compose.yml, it will use the existing barq-network

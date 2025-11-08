@@ -1,0 +1,47 @@
+# Prometheus Alert Rules for BARQ Fleet Management
+
+groups:
+  - name: api_performance
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: rate(barq_http_requests_total{status_code=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High API error rate detected"
+          description: "Error rate is {{ $value }} errors/sec"
+
+      - alert: SlowResponseTime
+        expr: histogram_quantile(0.95, rate(barq_http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow API response time"
+          description: "95th percentile response time is {{ $value }}s"
+
+  - name: ai_agents
+    interval: 30s
+    rules:
+      - alert: AgentFailure
+        expr: barq_active_agents{status="error"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AI Agent failure"
+          description: "Agent {{ $labels.agent_name }} is in error state"
+
+  - name: database
+    interval: 30s
+    rules:
+      - alert: DatabaseConnectionPoolHigh
+        expr: barq_database_connections{state="active"} > 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connection usage"
+          description: "{{ $value }} active connections (max 20)"

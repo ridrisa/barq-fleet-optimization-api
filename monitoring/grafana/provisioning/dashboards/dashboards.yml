@@ -1,0 +1,16 @@
+# Grafana Dashboard Provisioning Configuration
+# Automatically loads dashboards from the dashboards directory
+
+apiVersion: 1
+
+providers:
+  - name: 'BARQ Fleet Management'
+    orgId: 1
+    folder: 'BARQ'
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
