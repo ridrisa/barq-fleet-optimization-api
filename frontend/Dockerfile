@@ -62,7 +62,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/next.config.js ./next.config.js
 
 # Set environment variables
 ENV NODE_ENV=production \
-    PORT=8080 \
+    PORT=3000 \
     HOSTNAME=0.0.0.0 \
     NEXT_TELEMETRY_DISABLED=1
 
@@ -70,11 +70,11 @@ ENV NODE_ENV=production \
 USER nodejs
 
 # Expose application port
-EXPOSE 8080
+EXPOSE 3000
 
 # Health check - verifies the app responds (uses PORT env var for Cloud Run compatibility)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 8080) + '/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 3000) + '/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
