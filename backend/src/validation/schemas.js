@@ -99,20 +99,36 @@ const schemas = {
       }),
     fleet: Joi.object({
       vehicleType: Joi.string()
-        .valid('car', 'motorcycle', 'bicycle', 'van', 'truck')
+        .valid('car', 'motorcycle', 'bicycle', 'van', 'truck', 'mixed')
         .default('car'),
       count: Joi.number().min(1).default(1),
       capacity: Joi.number().min(1).optional(),
       maxDistance: Joi.number().min(1).optional(),
       maxDuration: Joi.number().min(1).optional(),
+      costPerKm: Joi.number().min(0).optional(),
+      costPerHour: Joi.number().min(0).optional(),
+      vehicles: Joi.array().items(
+        Joi.object({
+          id: Joi.string().required(),
+          type: Joi.string().valid('car', 'motorcycle', 'bicycle', 'van', 'truck').required(),
+          capacity: Joi.number().min(1).required(),
+        })
+      ).optional(),
     }).optional(),
     options: Joi.object({
-      optimizationMode: Joi.string().valid('fastest', 'shortest', 'balanced').default('balanced'),
+      optimizationMode: Joi.string()
+        .valid('fastest', 'shortest', 'balanced', 'distance', 'time', 'priority')
+        .default('balanced'),
       avoidTolls: Joi.boolean().default(false),
       avoidHighways: Joi.boolean().default(false),
       trafficModel: Joi.string()
         .valid('best_guess', 'pessimistic', 'optimistic')
         .default('best_guess'),
+      clusteringEnabled: Joi.boolean().default(false),
+      balanceWorkload: Joi.boolean().default(false),
+      respectTimeWindows: Joi.boolean().default(false),
+      minimizeCost: Joi.boolean().default(false),
+      priorityWeighting: Joi.number().min(0).max(1).default(0.5),
     }).optional(),
   }),
 

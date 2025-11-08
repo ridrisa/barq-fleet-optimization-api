@@ -85,7 +85,7 @@ const PRODUCTION_QUERIES = {
       SELECT COALESCE(SUM(grand_total), 0.0) AS value
       FROM orders
       WHERE payment_type = 'cash_on_delivery'
-        AND status IN('delivered', 'returned')
+        AND status = 'delivered'
         AND delivered_at BETWEEN $1 AND $2
     `,
     params: ['start_date', 'end_date'],
@@ -100,8 +100,8 @@ const PRODUCTION_QUERIES = {
     category: 'delivery_performance',
     query: `
       SELECT COALESCE(
-        CAST(COUNT(*) FILTER(WHERE status IN('delivered','returned')) AS DECIMAL) * 100.0 /
-        NULLIF(COUNT(*) FILTER(WHERE status IN('delivered','failed','returned','cancelled')), 0),
+        CAST(COUNT(*) FILTER(WHERE status = 'delivered') AS DECIMAL) * 100.0 /
+        NULLIF(COUNT(*) FILTER(WHERE status IN('delivered','failed','cancelled')), 0),
         0.0
       ) AS value
       FROM orders

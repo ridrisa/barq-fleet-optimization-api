@@ -50,12 +50,11 @@ class ProductionMetricsService {
     const query = `
       SELECT
         COALESCE(
-          CAST(COUNT(*) FILTER(WHERE status IN('delivered','returned')) AS DECIMAL) * 100.0 /
-          NULLIF(COUNT(*) FILTER(WHERE status IN('delivered','failed','returned','cancelled')), 0),
+          CAST(COUNT(*) FILTER(WHERE status = 'delivered') AS DECIMAL) * 100.0 /
+          NULLIF(COUNT(*) FILTER(WHERE status IN('delivered','failed','cancelled')), 0),
           0.0
         ) AS completion_rate,
         COUNT(*) FILTER(WHERE status = 'delivered') as delivered_count,
-        COUNT(*) FILTER(WHERE status = 'returned') as returned_count,
         COUNT(*) FILTER(WHERE status = 'failed') as failed_count,
         COUNT(*) FILTER(WHERE status = 'cancelled') as cancelled_count
       FROM orders
@@ -67,7 +66,6 @@ class ProductionMetricsService {
       return {
         completion_rate: parseFloat(result.rows[0].completion_rate) || 0,
         delivered_count: parseInt(result.rows[0].delivered_count) || 0,
-        returned_count: parseInt(result.rows[0].returned_count) || 0,
         failed_count: parseInt(result.rows[0].failed_count) || 0,
         cancelled_count: parseInt(result.rows[0].cancelled_count) || 0,
       };
