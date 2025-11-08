@@ -92,17 +92,48 @@ app.use(hpp());
 // Hide Express version
 app.disable('x-powered-by');
 
-// Configure CORS
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
-    exposedHeaders: ['X-Request-ID'],
-    credentials: true,
-    maxAge: 86400, // 24 hours
-  })
-);
+// Configure CORS - Enhanced for production
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+
+    // If CORS_ORIGIN is set in env, use it (comma-separated list)
+    if (process.env.CORS_ORIGIN) {
+      const allowedOrigins = process.env.CORS_ORIGIN.split(',').map(o => o.trim());
+      if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    }
+
+    // Default: Allow all origins in development
+    callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Request-ID',
+    'X-API-Key',
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers'
+  ],
+  exposedHeaders: [
+    'X-Request-ID',
+    'X-Total-Count',
+    'X-Page-Number',
+    'X-Page-Size'
+  ],
+  credentials: true,
+  maxAge: 86400, // 24 hours - browser caches preflight response
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
 
 // Request logging with morgan, using the custom stream that sends to winston
 app.use(
