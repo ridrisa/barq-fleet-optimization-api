@@ -49,7 +49,7 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--port'
-      - '3000'
+      - '8080'
       - '--memory'
       - '2Gi'
       - '--cpu'
@@ -61,9 +61,9 @@ steps:
       - '--min-instances'
       - '1'
       - '--set-env-vars'
-      - 'NODE_ENV=production,PORT=3000'
+      - 'NODE_ENV=production'
       - '--set-secrets'
-      - 'POSTGRES_HOST=POSTGRES_HOST:latest,POSTGRES_PORT=POSTGRES_PORT:latest,POSTGRES_DB=POSTGRES_DB:latest,POSTGRES_USER=POSTGRES_USER:latest,POSTGRES_PASSWORD=POSTGRES_PASSWORD:latest'
+      - 'DB_HOST=POSTGRES_HOST:latest,DB_PORT=POSTGRES_PORT:latest,DB_NAME=POSTGRES_DB:latest,DB_USER=POSTGRES_USER:latest,DB_PASSWORD=POSTGRES_PASSWORD:latest'
     waitFor: ['push-backend', 'push-backend-latest']
 
   # ============================================

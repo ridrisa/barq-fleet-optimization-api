@@ -52,8 +52,9 @@ temp/
 *.tmp
 
 # Database files
-database/
-*.sql
+# Keep database code but exclude data files
+database/*.sql
+database/migrations/*.sql
 *.db
 
 # Documentation

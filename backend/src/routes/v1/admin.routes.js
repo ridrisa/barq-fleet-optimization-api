@@ -25,74 +25,6 @@ const ensureAgentsInitialized = (req, res, next) => {
   next();
 };
 
-// Apply authentication to all admin routes
-router.use(authenticate);
-router.use(authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER));
-
-// Apply initialization check to all routes
-router.use(ensureAgentsInitialized);
-
-/**
- * @swagger
- * /api/admin/agents/list:
- *   get:
- *     summary: List all available agents
- *     description: Get a simple list of all registered agent names
- *     tags: [Admin]
- *     responses:
- *       200:
- *         description: Agent list retrieved successfully
- */
-router.get(
-  '/agents/list',
-  asyncHandler(async (req, res) => {
-    const startTime = Date.now();
-
-    try {
-      const instance = AgentInitializer.getInstance();
-      const agentManager = instance.services.agentManager;
-
-      if (!agentManager) {
-        return res.status(503).json({
-          success: false,
-          error: 'Agent manager not available',
-        });
-      }
-
-      const agents = Array.from(agentManager.agents.keys()).map((name) => {
-        const stats = agentManager.executionStats.get(name) || {};
-        return {
-          name,
-          registered: true,
-          executionCount: stats.totalExecutions || 0,
-          isContinuous: agentManager.continuousAgents.has(name),
-        };
-      });
-
-      const responseTime = Date.now() - startTime;
-      logger.debug(`[Admin] Agent list retrieved in ${responseTime}ms`);
-
-      res.json({
-        success: true,
-        data: {
-          agents,
-          count: agents.length,
-        },
-        meta: {
-          timestamp: Date.now(),
-          responseTime,
-        },
-      });
-    } catch (error) {
-      logger.error('[Admin] Failed to get agent list', { error: error.message });
-      res.status(500).json({
-        success: false,
-        error: error.message,
-      });
-    }
-  })
-);
-
 /**
  * @swagger
  * /api/admin/agents/status:
@@ -303,6 +235,74 @@ function categorizeAgent(agentName) {
   };
   return categories[agentName] || 'General';
 }
+
+// Apply authentication to all admin routes
+router.use(authenticate);
+router.use(authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER));
+
+// Apply initialization check to all routes
+router.use(ensureAgentsInitialized);
+
+/**
+ * @swagger
+ * /api/admin/agents/list:
+ *   get:
+ *     summary: List all available agents
+ *     description: Get a simple list of all registered agent names
+ *     tags: [Admin]
+ *     responses:
+ *       200:
+ *         description: Agent list retrieved successfully
+ */
+router.get(
+  '/agents/list',
+  asyncHandler(async (req, res) => {
+    const startTime = Date.now();
+
+    try {
+      const instance = AgentInitializer.getInstance();
+      const agentManager = instance.services.agentManager;
+
+      if (!agentManager) {
+        return res.status(503).json({
+          success: false,
+          error: 'Agent manager not available',
+        });
+      }
+
+      const agents = Array.from(agentManager.agents.keys()).map((name) => {
+        const stats = agentManager.executionStats.get(name) || {};
+        return {
+          name,
+          registered: true,
+          executionCount: stats.totalExecutions || 0,
+          isContinuous: agentManager.continuousAgents.has(name),
+        };
+      });
+
+      const responseTime = Date.now() - startTime;
+      logger.debug(`[Admin] Agent list retrieved in ${responseTime}ms`);
+
+      res.json({
+        success: true,
+        data: {
+          agents,
+          count: agents.length,
+        },
+        meta: {
+          timestamp: Date.now(),
+          responseTime,
+        },
+      });
+    } catch (error) {
+      logger.error('[Admin] Failed to get agent list', { error: error.message });
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  })
+);
 
 /**
  * @swagger
