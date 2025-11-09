@@ -303,26 +303,44 @@ class ProductionMetricsService {
    */
   static async getComprehensiveDashboard(startDate, endDate) {
     try {
-      const [
-        onTimeRate,
-        completionRate,
-        avgDeliveryTime,
-        cancellationRate,
-        returnRate,
-        activeCouriers,
-        deliveriesPerCourier,
-        statusDistribution,
-      ] = await Promise.all([
-        this.getOnTimeDeliveryRate(startDate, endDate),
-        this.getOrderCompletionRate(startDate, endDate),
-        this.getAverageDeliveryTime(startDate, endDate),
-        this.getCancellationRate(startDate, endDate),
-        this.getReturnRate(startDate, endDate),
-        this.getActiveCouriers(startDate, endDate),
-        this.getDeliveriesPerCourier(startDate, endDate),
-        this.getOrderStatusDistribution(startDate, endDate),
-      ]);
+      logger.info('Starting comprehensive dashboard query', { startDate, endDate });
 
+      // Execute queries sequentially to identify which one hangs
+      logger.info('Executing on-time delivery rate query...');
+      const onTimeRate = await this.getOnTimeDeliveryRate(startDate, endDate);
+      logger.info('On-time delivery rate query completed');
+
+      logger.info('Executing completion rate query...');
+      const completionRate = await this.getOrderCompletionRate(startDate, endDate);
+      logger.info('Completion rate query completed');
+
+      logger.info('Executing average delivery time query...');
+      const avgDeliveryTime = await this.getAverageDeliveryTime(startDate, endDate);
+      logger.info('Average delivery time query completed');
+
+      logger.info('Executing cancellation rate query...');
+      const cancellationRate = await this.getCancellationRate(startDate, endDate);
+      logger.info('Cancellation rate query completed');
+
+      logger.info('Executing return rate query...');
+      const returnRate = await this.getReturnRate(startDate, endDate);
+      logger.info('Return rate query completed');
+
+      logger.info('Executing active couriers query...');
+      const activeCouriers = await this.getActiveCouriers(startDate, endDate);
+      logger.info('Active couriers query completed');
+
+      logger.info('Executing deliveries per courier query...');
+      const deliveriesPerCourier = await this.getDeliveriesPerCourier(startDate, endDate);
+      logger.info('Deliveries per courier query completed');
+
+      logger.info('Executing order status distribution query...');
+      const statusDistribution = await this.getOrderStatusDistribution(startDate, endDate);
+      logger.info('Order status distribution query completed');
+
+      logger.info('All queries completed successfully');
+
+      // Use the results from sequential execution
       return {
         timestamp: new Date().toISOString(),
         period: {
