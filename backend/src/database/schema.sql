@@ -13,35 +13,51 @@ EXCEPTION
 END $$;
 
 -- Order status enum
-CREATE TYPE order_status AS ENUM (
-  'pending',
-  'assigned',
-  'picked_up',
-  'in_transit',
-  'delivered',
-  'failed',
-  'cancelled'
-);
+DO $$ BEGIN
+    CREATE TYPE order_status AS ENUM (
+      'pending',
+      'assigned',
+      'picked_up',
+      'in_transit',
+      'delivered',
+      'failed',
+      'cancelled'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Driver status enum
-CREATE TYPE driver_status AS ENUM (
-  'available',
-  'busy',
-  'offline',
-  'on_break'
-);
+DO $$ BEGIN
+    CREATE TYPE driver_status AS ENUM (
+      'available',
+      'busy',
+      'offline',
+      'on_break'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Vehicle type enum
-CREATE TYPE vehicle_type AS ENUM (
-  'MOTORCYCLE',
-  'CAR',
-  'VAN',
-  'TRUCK',
-  'BICYCLE'
-);
+DO $$ BEGIN
+    CREATE TYPE vehicle_type AS ENUM (
+      'MOTORCYCLE',
+      'CAR',
+      'VAN',
+      'TRUCK',
+      'BICYCLE'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Alert level enum
-CREATE TYPE alert_level AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+DO $$ BEGIN
+    CREATE TYPE alert_level AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- ============================================
 -- DRIVERS TABLE
