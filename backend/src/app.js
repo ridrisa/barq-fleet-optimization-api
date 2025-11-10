@@ -40,6 +40,9 @@ const postgresService = require('./services/postgres.service');
 // Create Express app
 const app = express();
 
+// Application readiness flag (prevents 502 errors during startup)
+let isApplicationReady = false;
+
 // Initialize Sentry (must be first)
 const sentryInstance = initSentry(app);
 if (sentryInstance) {
@@ -142,6 +145,31 @@ app.use(logRequestResponse);
 
 // Metrics tracking middleware
 app.use(metricsService.trackHttpRequest());
+
+// ⚡ READINESS MIDDLEWARE - Prevents 502 errors during startup
+// Blocks all requests (except liveness probes) until initialization completes
+app.use((req, res, next) => {
+  // Always allow liveness probes (Cloud Run requirement)
+  if (req.path === '/health' || req.path === '/health/live' || req.path.includes('/live')) {
+    return next();
+  }
+
+  // Block requests if application not ready
+  if (!isApplicationReady) {
+    logger.warn('[Readiness] Request blocked - initialization in progress', {
+      path: req.path,
+      method: req.method
+    });
+    return res.status(503).json({
+      error: 'Service Initializing',
+      message: 'Application startup in progress. Please retry in a few seconds.',
+      status: 'initializing',
+      retryAfter: 5
+    });
+  }
+
+  next();
+});
 
 // Parse cookies
 app.use(cookieParser());
@@ -512,6 +540,12 @@ const server = app.listen(PORT, async () => {
       logger.warn('Server will continue without agent functionality');
     }
   }
+
+  // ⚡ CRITICAL: Mark application as ready
+  // This enables the readiness middleware to allow requests through
+  isApplicationReady = true;
+  logger.info('🚀 APPLICATION READY - Now accepting requests');
+  logger.info(`Server fully initialized in ${Math.round(process.uptime())}s`);
 });
 
 // Export the app for testing
