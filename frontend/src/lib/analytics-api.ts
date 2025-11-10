@@ -3,7 +3,10 @@
  * TypeScript client for BARQ Fleet Analytics Python service
  */
 
-const ANALYTICS_API_URL = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || 'http://localhost:8080';
+// Use backend URL as fallback for analytics (should be set via environment variable)
+const ANALYTICS_API_URL = process.env.NEXT_PUBLIC_ANALYTICS_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'https://route-opt-backend-sek7q2ajva-uc.a.run.app';
 
 // Type Definitions
 export interface AnalyticsResponse<T> {

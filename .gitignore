@@ -68,3 +68,9 @@ test-results*.txt
 # Large data files
 *.csv
 *.json.gz
+
+# Local environment reports (contain secrets)
+env_defaults_report.md
+env_report.md
+a.py
+aa.py

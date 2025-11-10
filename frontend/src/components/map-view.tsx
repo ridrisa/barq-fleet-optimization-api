@@ -277,7 +277,7 @@ export function MapView() {
   const [_forceRenderZones, setForceRenderZones] = useState<boolean>(false);
 
   // Get API base URL from environment
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://route-opt-backend-sek7q2ajva-uc.a.run.app';
 
   // Add state for selected stop
   const [selectedStop, setSelectedStop] = useState<{
