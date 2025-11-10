@@ -410,7 +410,7 @@ const initializeWebSocket = (httpServer) => {
 };
 
 // Start the server
-const server = app.listen(PORT, async () => {
+const server = app.listen(PORT, '0.0.0.0', async () => {
   logger.info(`Server running on port ${PORT}`);
   logger.info(`API Documentation available at http://localhost:${PORT}/api-docs`);
   logger.info(`Health check available at http://localhost:${PORT}/health`);
