@@ -63,7 +63,7 @@ steps:
       - '--set-env-vars'
       - 'NODE_ENV=production'
       - '--set-secrets'
-      - 'DB_HOST=POSTGRES_HOST:latest,DB_PORT=POSTGRES_PORT:latest,DB_NAME=POSTGRES_DB:latest,DB_USER=POSTGRES_USER:latest,DB_PASSWORD=POSTGRES_PASSWORD:latest'
+      - 'DB_HOST=POSTGRES_HOST:latest,DB_NAME=POSTGRES_DB:latest,DB_USER=POSTGRES_USER:latest,DB_PASSWORD=POSTGRES_PASSWORD:latest'
     waitFor: ['push-backend', 'push-backend-latest']
 
   # ============================================
