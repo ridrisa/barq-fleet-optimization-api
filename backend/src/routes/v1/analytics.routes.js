@@ -5,26 +5,15 @@
 
 const express = require('express');
 const router = express.Router();
-const { Pool } = require('pg');
+const pool = require('../../services/postgres.service');
 const { logger } = require('../../utils/logger');
-
-// Database connection pool
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'barq_logistics',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
 
 // SLA Targets (in minutes)
 const SLA_TARGETS = {
   BARQ: 60, // 1 hour
   BULLET: 240, // 4 hours
   EXPRESS: 30, // 30 minutes
+  STANDARD: 120, // 2 hours
 };
 
 /**
@@ -53,6 +42,7 @@ router.get('/sla/realtime', async (req, res) => {
             WHEN o.service_type = 'BARQ' THEN 60
             WHEN o.service_type = 'BULLET' THEN 240
             WHEN o.service_type = 'EXPRESS' THEN 30
+            WHEN o.service_type = 'STANDARD' THEN 120
             ELSE 60
           END as sla_target_minutes
         FROM orders o
@@ -185,6 +175,7 @@ router.get('/sla/compliance', async (req, res) => {
             WHEN o.service_type = 'BARQ' THEN 60
             WHEN o.service_type = 'BULLET' THEN 240
             WHEN o.service_type = 'EXPRESS' THEN 30
+            WHEN o.service_type = 'STANDARD' THEN 120
             ELSE 60
           END as sla_target_minutes,
           CASE
