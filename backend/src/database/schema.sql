@@ -97,9 +97,9 @@ CREATE TABLE IF NOT EXISTS drivers (
 );
 
 -- Indexes for drivers
-CREATE INDEX idx_drivers_status ON drivers(status);
-CREATE INDEX idx_drivers_location ON drivers(current_latitude, current_longitude);
-CREATE INDEX idx_drivers_service_types ON drivers USING GIN(service_types);
+CREATE INDEX IF NOT EXISTS idx_drivers_status ON drivers(status);
+CREATE INDEX IF NOT EXISTS idx_drivers_location ON drivers(current_latitude, current_longitude);
+CREATE INDEX IF NOT EXISTS idx_drivers_service_types ON drivers USING GIN(service_types);
 
 -- ============================================
 -- CUSTOMERS TABLE
@@ -126,8 +126,8 @@ CREATE TABLE IF NOT EXISTS customers (
 );
 
 -- Indexes for customers
-CREATE INDEX idx_customers_phone ON customers(phone);
-CREATE INDEX idx_customers_email ON customers(email);
+CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone);
+CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
 
 -- ============================================
 -- ORDERS TABLE
@@ -193,14 +193,14 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 -- Indexes for orders
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_orders_service_type ON orders(service_type);
-CREATE INDEX idx_orders_customer_id ON orders(customer_id);
-CREATE INDEX idx_orders_driver_id ON orders(driver_id);
-CREATE INDEX idx_orders_created_at ON orders(created_at DESC);
-CREATE INDEX idx_orders_sla_deadline ON orders(sla_deadline);
-CREATE INDEX idx_orders_pickup_location ON orders(pickup_latitude, pickup_longitude);
-CREATE INDEX idx_orders_dropoff_location ON orders(dropoff_latitude, dropoff_longitude);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_service_type ON orders(service_type);
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_driver_id ON orders(driver_id);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_sla_deadline ON orders(sla_deadline);
+CREATE INDEX IF NOT EXISTS idx_orders_pickup_location ON orders(pickup_latitude, pickup_longitude);
+CREATE INDEX IF NOT EXISTS idx_orders_dropoff_location ON orders(dropoff_latitude, dropoff_longitude);
 
 -- ============================================
 -- ROUTE_OPTIMIZATIONS TABLE
@@ -232,8 +232,8 @@ CREATE TABLE IF NOT EXISTS route_optimizations (
 );
 
 -- Indexes for route_optimizations
-CREATE INDEX idx_route_opt_driver_id ON route_optimizations(driver_id);
-CREATE INDEX idx_route_opt_created_at ON route_optimizations(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_route_opt_driver_id ON route_optimizations(driver_id);
+CREATE INDEX IF NOT EXISTS idx_route_opt_created_at ON route_optimizations(created_at DESC);
 
 -- ============================================
 -- SLA_VIOLATIONS TABLE
@@ -266,10 +266,10 @@ CREATE TABLE IF NOT EXISTS sla_violations (
 );
 
 -- Indexes for sla_violations
-CREATE INDEX idx_sla_violations_order_id ON sla_violations(order_id);
-CREATE INDEX idx_sla_violations_driver_id ON sla_violations(driver_id);
-CREATE INDEX idx_sla_violations_severity ON sla_violations(severity);
-CREATE INDEX idx_sla_violations_resolved ON sla_violations(resolved);
+CREATE INDEX IF NOT EXISTS idx_sla_violations_order_id ON sla_violations(order_id);
+CREATE INDEX IF NOT EXISTS idx_sla_violations_driver_id ON sla_violations(driver_id);
+CREATE INDEX IF NOT EXISTS idx_sla_violations_severity ON sla_violations(severity);
+CREATE INDEX IF NOT EXISTS idx_sla_violations_resolved ON sla_violations(resolved);
 
 -- ============================================
 -- EVENTS TABLE (Audit Log)
@@ -295,9 +295,9 @@ CREATE TABLE IF NOT EXISTS events (
 );
 
 -- Indexes for events
-CREATE INDEX idx_events_entity ON events(entity_type, entity_id);
-CREATE INDEX idx_events_occurred_at ON events(occurred_at DESC);
-CREATE INDEX idx_events_event_type ON events(event_type);
+CREATE INDEX IF NOT EXISTS idx_events_entity ON events(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_events_occurred_at ON events(occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_events_event_type ON events(event_type);
 
 -- ============================================
 -- METRICS TABLE (Time-series metrics)
@@ -320,9 +320,9 @@ CREATE TABLE IF NOT EXISTS metrics (
 );
 
 -- Indexes for metrics
-CREATE INDEX idx_metrics_name_time ON metrics(metric_name, recorded_at DESC);
-CREATE INDEX idx_metrics_service_type ON metrics(service_type);
-CREATE INDEX idx_metrics_tags ON metrics USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_metrics_name_time ON metrics(metric_name, recorded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_metrics_service_type ON metrics(service_type);
+CREATE INDEX IF NOT EXISTS idx_metrics_tags ON metrics USING GIN(tags);
 
 -- ============================================
 -- ZONES TABLE (Delivery zones)
@@ -353,9 +353,9 @@ CREATE TABLE IF NOT EXISTS zones (
 );
 
 -- Indexes for zones
-CREATE INDEX idx_zones_center_location ON zones(center_latitude, center_longitude);
-CREATE INDEX idx_zones_type ON zones(zone_type);
-CREATE INDEX idx_zones_active ON zones(is_active);
+CREATE INDEX IF NOT EXISTS idx_zones_center_location ON zones(center_latitude, center_longitude);
+CREATE INDEX IF NOT EXISTS idx_zones_type ON zones(zone_type);
+CREATE INDEX IF NOT EXISTS idx_zones_active ON zones(is_active);
 
 -- ============================================
 -- AGENT_ACTIVITIES TABLE
@@ -385,9 +385,9 @@ CREATE TABLE IF NOT EXISTS agent_activities (
 );
 
 -- Indexes for agent_activities
-CREATE INDEX idx_agent_activities_agent ON agent_activities(agent_name);
-CREATE INDEX idx_agent_activities_type ON agent_activities(activity_type);
-CREATE INDEX idx_agent_activities_started ON agent_activities(started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_activities_agent ON agent_activities(agent_name);
+CREATE INDEX IF NOT EXISTS idx_agent_activities_type ON agent_activities(activity_type);
+CREATE INDEX IF NOT EXISTS idx_agent_activities_started ON agent_activities(started_at DESC);
 
 -- ============================================
 -- FUNCTIONS AND TRIGGERS
@@ -530,11 +530,11 @@ INSERT INTO zones (name, zone_type, boundary, center_latitude, center_longitude,
 ON CONFLICT DO NOTHING;
 
 -- Create indexes for performance
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_status_created
+CREATE INDEX IF NOT EXISTS CONCURRENTLY IF NOT EXISTS idx_orders_status_created
   ON orders(status, created_at DESC)
   WHERE status IN ('pending', 'assigned');
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_drivers_available
+CREATE INDEX IF NOT EXISTS CONCURRENTLY IF NOT EXISTS idx_drivers_available
   ON drivers(status, service_types)
   WHERE status = 'available';
 
