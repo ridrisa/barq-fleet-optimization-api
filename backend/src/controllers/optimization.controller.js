@@ -517,6 +517,11 @@ const OptimizationController = {
         restrictedAreas: businessRules.restrictedAreas || [],
         // Include the rest of the result data directly
         ...result,
+        // Ensure routes are properly included from the result data
+        routes: result.result?.routes || result.routes || [],
+        summary: result.result?.summary || result.summary || {},
+        insights: result.result?.insights || result.insights || [],
+        metrics: result.result?.metrics || result.metrics || {},
       });
     } catch (error) {
       logger.error(`Error getting optimization result: ${error.message}`, {
