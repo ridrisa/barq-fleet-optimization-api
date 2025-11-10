@@ -330,7 +330,6 @@ class OSRMService {
 
     return legs;
   }
-
 }
 
 // Export singleton instance

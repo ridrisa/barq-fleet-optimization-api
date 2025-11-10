@@ -29,18 +29,27 @@ class HybridOptimizationService {
    * @param {Object} request - Optimization request
    * @returns {Object} - Decision with engine and reason
    */
-  decideOptimizationEngine(request) {
+  async decideOptimizationEngine(request) {
     const deliveryCount = request.deliveryPoints?.length || 0;
     const serviceType = request.serviceType || request.context?.serviceType;
     const useCVRP = request.preferences?.useCVRP;
     const fairDistribution = request.preferences?.fairDistribution;
 
-    // Force CVRP if explicitly requested
+    // Force CVRP if explicitly requested AND service is healthy
     if (useCVRP === true) {
-      return {
-        engine: 'CVRP',
-        reason: 'Explicitly requested via preferences.useCVRP',
-      };
+      try {
+        const health = await cvrpClient.healthCheck();
+        if (health.healthy) {
+          return {
+            engine: 'CVRP',
+            reason: 'Explicitly requested via preferences.useCVRP',
+          };
+        } else {
+          console.warn('CVRP explicitly requested but service unhealthy, using OSRM');
+        }
+      } catch (error) {
+        console.warn('CVRP health check failed, using OSRM:', error.message);
+      }
     }
 
     // Disable CVRP if explicitly disabled
@@ -51,36 +60,26 @@ class HybridOptimizationService {
       };
     }
 
-    // Use CVRP for BULLET service (batch, non-urgent)
-    if (serviceType === 'BULLET' && deliveryCount >= this.cvrpMinDeliveries) {
-      return {
-        engine: 'CVRP',
-        reason: `BULLET service with ${deliveryCount} deliveries (>=${this.cvrpMinDeliveries})`,
-      };
+    // Only use CVRP for large batches if service is healthy
+    if (deliveryCount >= 50) {
+      // Increased threshold to reduce CVRP usage
+      try {
+        const health = await cvrpClient.healthCheck();
+        if (health.healthy) {
+          return {
+            engine: 'CVRP',
+            reason: `Large batch (${deliveryCount} deliveries >= 50) with healthy CVRP service`,
+          };
+        }
+      } catch (error) {
+        console.warn('CVRP health check failed for large batch, using OSRM:', error.message);
+      }
     }
 
-    // Use CVRP for fair distribution scenarios
-    if (fairDistribution && deliveryCount >= this.cvrpMinDeliveries) {
-      return {
-        engine: 'CVRP',
-        reason: `Fair distribution requested with ${deliveryCount} deliveries`,
-      };
-    }
-
-    // Use CVRP for large batches regardless of service type
-    if (deliveryCount >= 20) {
-      return {
-        engine: 'CVRP',
-        reason: `Large batch (${deliveryCount} deliveries >= 20)`,
-      };
-    }
-
-    // Default to OSRM for BARQ (urgent) or small batches
+    // Default to OSRM for all other cases - it's more reliable
     return {
       engine: 'OSRM',
-      reason: serviceType === 'BARQ'
-        ? `BARQ service (urgent, ${deliveryCount} deliveries)`
-        : `Small batch (${deliveryCount} deliveries < ${this.cvrpMinDeliveries})`,
+      reason: `Using reliable OSRM optimization (${deliveryCount} deliveries)`,
     };
   }
 
@@ -138,7 +137,7 @@ class HybridOptimizationService {
   async optimize(request, osrmOptimizer) {
     try {
       // Decide which engine to use
-      const decision = this.decideOptimizationEngine(request);
+      const decision = await this.decideOptimizationEngine(request);
 
       logger.info('Optimization engine decision', {
         engine: decision.engine,

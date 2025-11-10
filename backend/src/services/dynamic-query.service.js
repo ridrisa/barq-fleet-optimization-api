@@ -482,12 +482,14 @@ class DynamicQueryService {
     const queryDef = PRODUCTION_QUERIES[queryName];
 
     if (!queryDef) {
-      throw new Error(`Query '${queryName}' not found. Available queries: ${Object.keys(PRODUCTION_QUERIES).join(', ')}`);
+      throw new Error(
+        `Query '${queryName}' not found. Available queries: ${Object.keys(PRODUCTION_QUERIES).join(', ')}`
+      );
     }
 
     try {
       // Build parameters array
-      const queryParams = queryDef.params.map(paramName => {
+      const queryParams = queryDef.params.map((paramName) => {
         if (!params[paramName]) {
           // Use defaults
           if (paramName === 'start_date') {
@@ -550,14 +552,12 @@ class DynamicQueryService {
    * Get all categories
    */
   static getCategories() {
-    const categories = [...new Set(
-      Object.values(PRODUCTION_QUERIES).map(def => def.category)
-    )];
+    const categories = [...new Set(Object.values(PRODUCTION_QUERIES).map((def) => def.category))];
 
-    return categories.map(category => ({
+    return categories.map((category) => ({
       name: category,
-      query_count: Object.values(PRODUCTION_QUERIES)
-        .filter(def => def.category === category).length,
+      query_count: Object.values(PRODUCTION_QUERIES).filter((def) => def.category === category)
+        .length,
       queries: this.getQueriesByCategory(category),
     }));
   }
@@ -567,7 +567,7 @@ class DynamicQueryService {
    */
   static async executeMultiple(queries, params = {}) {
     const results = await Promise.allSettled(
-      queries.map(queryName => this.executeQuery(queryName, params))
+      queries.map((queryName) => this.executeQuery(queryName, params))
     );
 
     return results.map((result, index) => ({
@@ -642,7 +642,12 @@ class DynamicQueryService {
     }
 
     // Default: return comprehensive metrics
-    return ['total_orders', 'on_time_delivery_rate', 'order_completion_rate', 'average_delivery_time'];
+    return [
+      'total_orders',
+      'on_time_delivery_rate',
+      'order_completion_rate',
+      'average_delivery_time',
+    ];
   }
 }
 

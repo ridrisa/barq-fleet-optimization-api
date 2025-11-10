@@ -1877,48 +1877,59 @@ Your response should be in a structured JSON format that includes all routes wit
       return deliveries;
     }
 
-    console.log(
-      `Optimizing sequence for ${deliveries.length} deliveries using Nearest Neighbor algorithm`
-    );
+    try {
+      console.log(
+        `Optimizing sequence for ${deliveries.length} deliveries using Nearest Neighbor algorithm`
+      );
 
-    // Create a copy to avoid modifying original
-    const unvisited = [...deliveries];
-    const optimized = [];
+      // Create a copy to avoid modifying original
+      const unvisited = [...deliveries];
+      const optimized = [];
 
-    // Start from the pickup location
-    let currentLat = startLocation.latitude;
-    let currentLng = startLocation.longitude;
+      // Start from the pickup location
+      let currentLat = startLocation.latitude;
+      let currentLng = startLocation.longitude;
 
-    // While there are unvisited deliveries
-    while (unvisited.length > 0) {
-      let nearestIndex = 0;
-      let nearestDistance = Infinity;
+      // While there are unvisited deliveries
+      while (unvisited.length > 0) {
+        let nearestIndex = 0;
+        let nearestDistance = Infinity;
 
-      // Find the nearest unvisited delivery
-      for (let i = 0; i < unvisited.length; i++) {
-        const delivery = unvisited[i];
-        const deliveryLat = delivery.location?.latitude || delivery.lat;
-        const deliveryLng = delivery.location?.longitude || delivery.lng;
+        // Find the nearest unvisited delivery
+        for (let i = 0; i < unvisited.length; i++) {
+          const delivery = unvisited[i];
+          const deliveryLat = delivery.location?.latitude || delivery.lat;
+          const deliveryLng = delivery.location?.longitude || delivery.lng;
 
-        const distance = this.calculateDistance(currentLat, currentLng, deliveryLat, deliveryLng);
+          if (!deliveryLat || !deliveryLng) {
+            console.warn(`Delivery ${i} missing location data, skipping`);
+            continue;
+          }
 
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestIndex = i;
+          const distance = this.calculateDistance(currentLat, currentLng, deliveryLat, deliveryLng);
+
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestIndex = i;
+          }
         }
+
+        // Add nearest delivery to optimized route
+        const nearest = unvisited.splice(nearestIndex, 1)[0];
+        optimized.push(nearest);
+
+        // Update current location to the delivery we just added
+        currentLat = nearest.location?.latitude || nearest.lat;
+        currentLng = nearest.location?.longitude || nearest.lng;
       }
 
-      // Add nearest delivery to optimized route
-      const nearest = unvisited.splice(nearestIndex, 1)[0];
-      optimized.push(nearest);
-
-      // Update current location to the delivery we just added
-      currentLat = nearest.location?.latitude || nearest.lat;
-      currentLng = nearest.location?.longitude || nearest.lng;
+      console.log(`Route optimization complete - delivery sequence optimized`);
+      return optimized;
+    } catch (error) {
+      console.error(`Error in delivery sequence optimization: ${error.message}`);
+      // Return original deliveries if optimization fails
+      return deliveries;
     }
-
-    console.log(`Route optimization complete - delivery sequence optimized`);
-    return optimized;
   }
 
   /**

@@ -68,7 +68,9 @@ class DynamicRouteOptimizer {
   async monitorAndOptimize() {
     const activeDrivers = await this.getActiveDrivers();
 
-    logger.info(`📊 Monitoring ${activeDrivers.length} active drivers for optimization opportunities`);
+    logger.info(
+      `📊 Monitoring ${activeDrivers.length} active drivers for optimization opportunities`
+    );
 
     let optimizedCount = 0;
 
@@ -157,7 +159,7 @@ class DynamicRouteOptimizer {
     const optimizedRoute = await this.calculateOptimizedRoute(
       {
         lat: driver.current_latitude,
-        lng: driver.current_longitude
+        lng: driver.current_longitude,
       },
       remainingStops
     );
@@ -165,7 +167,9 @@ class DynamicRouteOptimizer {
     // Compare improvement
     const improvement = this.calculateImprovement(currentRoute, optimizedRoute);
 
-    logger.info(`Driver ${driver.name}: Current ${currentRoute.duration}min, Optimized ${optimizedRoute.duration}min, Improvement ${improvement.percentageSaved.toFixed(1)}%`);
+    logger.info(
+      `Driver ${driver.name}: Current ${currentRoute.duration}min, Optimized ${optimizedRoute.duration}min, Improvement ${improvement.percentageSaved.toFixed(1)}%`
+    );
 
     // Apply if improvement exceeds threshold
     if (improvement.percentageSaved >= this.improvementThreshold) {
@@ -175,7 +179,9 @@ class DynamicRouteOptimizer {
       // Log optimization
       await this.logOptimization(driver.id, currentRoute, optimizedRoute, improvement);
 
-      logger.info(`✅ Applied new route for driver ${driver.name} (saved ${improvement.timeSaved}min)`);
+      logger.info(
+        `✅ Applied new route for driver ${driver.name} (saved ${improvement.timeSaved}min)`
+      );
       return true;
     }
 
@@ -186,7 +192,8 @@ class DynamicRouteOptimizer {
    * Get remaining stops for driver
    */
   async getRemainingStops(driverId) {
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
         o.id,
         o.order_number,
@@ -229,22 +236,24 @@ class DynamicRouteOptimizer {
         o.priority DESC,
         o.sla_deadline ASC,
         dr.sequence_position ASC NULLS LAST
-    `, [driverId]);
+    `,
+      [driverId]
+    );
 
-    return result.rows.map(row => ({
+    return result.rows.map((row) => ({
       orderId: row.id,
       type: row.pickup_latitude ? 'PICKUP' : 'DELIVERY',
       location: {
         lat: row.pickup_latitude || row.dropoff_latitude,
         lng: row.pickup_longitude || row.dropoff_longitude,
-        address: row.pickup_address || row.dropoff_address
+        address: row.pickup_address || row.dropoff_address,
       },
       priority: row.priority,
       slaDeadline: row.sla_deadline,
       timeWindow: {
         start: row.delivery_time_window_start,
-        end: row.delivery_time_window_end
-      }
+        end: row.delivery_time_window_end,
+      },
     }));
   }
 
@@ -252,7 +261,8 @@ class DynamicRouteOptimizer {
    * Get current route plan
    */
   async getCurrentRoute(driverId) {
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
         dr.id,
         dr.total_distance_km,
@@ -265,13 +275,15 @@ class DynamicRouteOptimizer {
         AND dr.status = 'active'
       ORDER BY dr.optimized_at DESC
       LIMIT 1
-    `, [driverId]);
+    `,
+      [driverId]
+    );
 
     if (result.rows.length === 0) {
       return {
         distance: 0,
         duration: 0,
-        sequence: []
+        sequence: [],
       };
     }
 
@@ -281,7 +293,7 @@ class DynamicRouteOptimizer {
       distance: route.total_distance_km,
       duration: route.total_duration_minutes,
       sequence: route.route_sequence || [],
-      polyline: route.polyline
+      polyline: route.polyline,
     };
   }
 
@@ -292,13 +304,13 @@ class DynamicRouteOptimizer {
     // Build waypoints
     const waypoints = [
       currentLocation, // Start from current position
-      ...stops.map(stop => stop.location)
+      ...stops.map((stop) => stop.location),
     ];
 
     // Use OSRM for route calculation
     const route = await osrmService.calculateOptimizedRoute(waypoints, {
       optimize: 'time', // Or 'distance'
-      considerTraffic: true
+      considerTraffic: true,
     });
 
     // Apply constraints (SLA deadlines, time windows, priorities)
@@ -309,7 +321,7 @@ class DynamicRouteOptimizer {
       duration: route.duration / 60, // Convert to minutes
       sequence: optimizedSequence,
       polyline: route.polyline,
-      legs: route.legs
+      legs: route.legs,
     };
   }
 
@@ -342,7 +354,7 @@ class DynamicRouteOptimizer {
       orderId: stop.orderId,
       type: stop.type,
       location: stop.location,
-      eta: this.calculateETA(route, index)
+      eta: this.calculateETA(route, index),
     }));
   }
 
@@ -368,12 +380,12 @@ class DynamicRouteOptimizer {
   calculateImprovement(currentRoute, optimizedRoute) {
     const timeSaved = currentRoute.duration - optimizedRoute.duration;
     const distanceSaved = currentRoute.distance - optimizedRoute.distance;
-    const percentageSaved = ((timeSaved / currentRoute.duration) * 100) || 0;
+    const percentageSaved = (timeSaved / currentRoute.duration) * 100 || 0;
 
     return {
       timeSaved: Math.max(0, timeSaved),
       distanceSaved: Math.max(0, distanceSaved),
-      percentageSaved: Math.max(0, percentageSaved)
+      percentageSaved: Math.max(0, percentageSaved),
     };
   }
 
@@ -387,16 +399,20 @@ class DynamicRouteOptimizer {
       await client.query('BEGIN');
 
       // Mark old route as inactive
-      await client.query(`
+      await client.query(
+        `
         UPDATE driver_routes
         SET is_active = false,
             deactivated_at = NOW()
         WHERE driver_id = $1
           AND is_active = true
-      `, [driverId]);
+      `,
+        [driverId]
+      );
 
       // Insert new route
-      const routeResult = await client.query(`
+      const routeResult = await client.query(
+        `
         INSERT INTO driver_routes (
           driver_id,
           total_distance_km,
@@ -407,19 +423,22 @@ class DynamicRouteOptimizer {
           optimized_at
         ) VALUES ($1, $2, $3, $4, $5, true, NOW())
         RETURNING id
-      `, [
-        driverId,
-        optimizedRoute.distance,
-        optimizedRoute.duration,
-        JSON.stringify(optimizedRoute.sequence),
-        optimizedRoute.polyline
-      ]);
+      `,
+        [
+          driverId,
+          optimizedRoute.distance,
+          optimizedRoute.duration,
+          JSON.stringify(optimizedRoute.sequence),
+          optimizedRoute.polyline,
+        ]
+      );
 
       const newRouteId = routeResult.rows[0].id;
 
       // Update stop sequences
       for (const stop of optimizedRoute.sequence) {
-        await client.query(`
+        await client.query(
+          `
           INSERT INTO driver_route_stops (
             route_id,
             order_id,
@@ -431,13 +450,9 @@ class DynamicRouteOptimizer {
           DO UPDATE SET
             sequence_position = EXCLUDED.sequence_position,
             estimated_arrival = EXCLUDED.estimated_arrival
-        `, [
-          newRouteId,
-          stop.orderId,
-          stop.stopNumber,
-          stop.type,
-          stop.eta
-        ]);
+        `,
+          [newRouteId, stop.orderId, stop.stopNumber, stop.type, stop.eta]
+        );
 
         // Update order ETA
         await OrderModel.updateETA(stop.orderId, stop.eta);
@@ -465,8 +480,8 @@ class DynamicRouteOptimizer {
       data: {
         type: 'ROUTE_UPDATED',
         timeSaved: improvement.timeSaved.toString(),
-        distanceSaved: improvement.distanceSaved.toString()
-      }
+        distanceSaved: improvement.distanceSaved.toString(),
+      },
     };
 
     // TODO: Implement FCM push notification
@@ -535,17 +550,16 @@ class DynamicRouteOptimizer {
     for (const driver of affectedDrivers) {
       try {
         // Calculate alternate route avoiding incident area
-        const alternateRoute = await this.calculateAlternateRoute(
-          driver,
-          incident.location
-        );
+        const alternateRoute = await this.calculateAlternateRoute(driver, incident.location);
 
         // Apply if time saved > 5 minutes
         if (alternateRoute.timeSaved > 5) {
           await this.applyNewRoute(driver.id, alternateRoute);
           await this.notifyDriverTrafficReroute(driver.id, incident, alternateRoute);
 
-          logger.info(`✅ Rerouted driver ${driver.name} around traffic incident (saved ${alternateRoute.timeSaved}min)`);
+          logger.info(
+            `✅ Rerouted driver ${driver.name} around traffic incident (saved ${alternateRoute.timeSaved}min)`
+          );
         }
       } catch (error) {
         logger.error(`Failed to reroute driver ${driver.id}:`, error);
@@ -557,7 +571,8 @@ class DynamicRouteOptimizer {
    * Find drivers near traffic incident
    */
   async findDriversNearIncident(incident, radiusMeters) {
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
         d.id,
         d.name,
@@ -567,7 +582,9 @@ class DynamicRouteOptimizer {
       FROM drivers d
       JOIN driver_routes dr ON dr.driver_id = d.id AND dr.status = 'active'
       WHERE d.status = 'busy'
-    `, []);
+    `,
+      []
+    );
 
     return result.rows;
   }
@@ -582,12 +599,12 @@ class DynamicRouteOptimizer {
     const alternateRoute = await osrmService.calculateOptimizedRoute(
       [
         { lat: driver.current_latitude, lng: driver.current_longitude },
-        ...remainingStops.map(s => s.location)
+        ...remainingStops.map((s) => s.location),
       ],
       {
         optimize: 'time',
         avoid: [avoidLocation], // Avoid incident area
-        considerTraffic: true
+        considerTraffic: true,
       }
     );
 
@@ -596,7 +613,7 @@ class DynamicRouteOptimizer {
       duration: alternateRoute.duration / 60,
       sequence: this.applyConstraints(alternateRoute, remainingStops),
       polyline: alternateRoute.polyline,
-      timeSaved: (driver.current_route_duration - (alternateRoute.duration / 60))
+      timeSaved: driver.current_route_duration - alternateRoute.duration / 60,
     };
   }
 
@@ -610,8 +627,8 @@ class DynamicRouteOptimizer {
       data: {
         type: 'TRAFFIC_REROUTE',
         incidentType: incident.type,
-        timeSaved: alternateRoute.timeSaved.toString()
-      }
+        timeSaved: alternateRoute.timeSaved.toString(),
+      },
     };
 
     // TODO: Implement FCM push notification
@@ -622,7 +639,8 @@ class DynamicRouteOptimizer {
    * Log optimization event
    */
   async logOptimization(driverId, oldRoute, newRoute, improvement) {
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO route_optimizations (
         driver_id,
         old_route_id,
@@ -635,24 +653,27 @@ class DynamicRouteOptimizer {
         improvement_percentage,
         optimized_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-    `, [
-      driverId,
-      oldRoute.id,
-      oldRoute.distance,
-      oldRoute.duration,
-      newRoute.distance,
-      newRoute.duration,
-      improvement.timeSaved,
-      improvement.distanceSaved,
-      improvement.percentageSaved
-    ]);
+    `,
+      [
+        driverId,
+        oldRoute.id,
+        oldRoute.distance,
+        oldRoute.duration,
+        newRoute.distance,
+        newRoute.duration,
+        improvement.timeSaved,
+        improvement.distanceSaved,
+        improvement.percentageSaved,
+      ]
+    );
   }
 
   /**
    * Get optimization statistics
    */
   async getStats(startDate, endDate) {
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
         COUNT(*) AS total_optimizations,
         AVG(time_saved_minutes) AS avg_time_saved,
@@ -662,7 +683,9 @@ class DynamicRouteOptimizer {
         AVG(improvement_percentage) AS avg_improvement_percentage
       FROM route_optimizations
       WHERE optimized_at BETWEEN $1 AND $2
-    `, [startDate, endDate]);
+    `,
+      [startDate, endDate]
+    );
 
     return result.rows[0];
   }

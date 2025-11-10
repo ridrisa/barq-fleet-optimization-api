@@ -131,25 +131,25 @@ class AutoDispatchEngine {
 
     // Score each driver
     const scoredDrivers = await Promise.all(
-      eligibleDrivers.map(driver => this.scoreDriver(driver, order))
+      eligibleDrivers.map((driver) => this.scoreDriver(driver, order))
     );
 
     // Sort by score (highest first)
     scoredDrivers.sort((a, b) => b.totalScore - a.totalScore);
 
-    logger.info(`Found ${scoredDrivers.length} eligible drivers, top score: ${scoredDrivers[0].totalScore.toFixed(2)}`);
+    logger.info(
+      `Found ${scoredDrivers.length} eligible drivers, top score: ${scoredDrivers[0].totalScore.toFixed(2)}`
+    );
 
     // Try to offer to best drivers (top 3)
     for (let i = 0; i < Math.min(this.maxOffersPerOrder, scoredDrivers.length); i++) {
       const scored = scoredDrivers[i];
 
-      logger.info(`Offering order to driver ${scored.driver.name} (score: ${scored.totalScore.toFixed(2)})`);
-
-      const accepted = await this.offerToDriver(
-        scored.driver.id,
-        orderId,
-        this.offerTimeout
+      logger.info(
+        `Offering order to driver ${scored.driver.name} (score: ${scored.totalScore.toFixed(2)})`
       );
+
+      const accepted = await this.offerToDriver(scored.driver.id, orderId, this.offerTimeout);
 
       if (accepted) {
         logger.info(`✅ Driver ${scored.driver.name} accepted order ${order.tracking_number}`);
@@ -170,7 +170,9 @@ class AutoDispatchEngine {
     }
 
     // No driver accepted - fallback to force assignment
-    logger.warn(`No driver accepted order ${order.tracking_number}, force-assigning to best driver`);
+    logger.warn(
+      `No driver accepted order ${order.tracking_number}, force-assigning to best driver`
+    );
 
     const bestDriver = scoredDrivers[0].driver;
     await OrderModel.assignDriver(orderId, bestDriver.id);
@@ -184,7 +186,8 @@ class AutoDispatchEngine {
    * Find drivers eligible for this order
    */
   async findEligibleDrivers(order) {
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
         d.id,
         d.name,
@@ -260,15 +263,17 @@ class AutoDispatchEngine {
 
       ORDER BY distance_to_pickup ASC
       LIMIT 20
-    `, [
-      order.id,
-      order.pickup_longitude,
-      order.pickup_latitude,
-      order.dropoff_longitude,
-      order.dropoff_latitude,
-      5, // Max orders per driver
-      order.vehicle_type_required || null
-    ]);
+    `,
+      [
+        order.id,
+        order.pickup_longitude,
+        order.pickup_latitude,
+        order.dropoff_longitude,
+        order.dropoff_latitude,
+        5, // Max orders per driver
+        order.vehicle_type_required || null,
+      ]
+    );
 
     return result.rows;
   }
@@ -289,22 +294,21 @@ class AutoDispatchEngine {
       capacity: this.calculateCapacityScore(driver.active_orders),
 
       // 4. Zone experience (10% weight)
-      zoneExperience: this.calculateZoneScore(driver.deliveries_in_zone)
+      zoneExperience: this.calculateZoneScore(driver.deliveries_in_zone),
     };
 
     // Calculate weighted total
-    const totalScore = (
+    const totalScore =
       scores.proximity * 0.4 +
       scores.performance * 0.3 +
       scores.capacity * 0.2 +
-      scores.zoneExperience * 0.1
-    );
+      scores.zoneExperience * 0.1;
 
     return {
       driver,
       scores,
       totalScore,
-      reasoning: this.generateReasoningText(scores)
+      reasoning: this.generateReasoningText(scores),
     };
   }
 
@@ -334,7 +338,7 @@ class AutoDispatchEngine {
     const ratingScore = ((driver.average_rating || 3) / 5) * 100;
     const experienceScore = Math.min((driver.total_deliveries / 100) * 100, 100);
 
-    return (slaScore * 0.5 + ratingScore * 0.3 + experienceScore * 0.2);
+    return slaScore * 0.5 + ratingScore * 0.3 + experienceScore * 0.2;
   }
 
   /**
@@ -388,19 +392,23 @@ class AutoDispatchEngine {
     // Create offer in Redis with expiration
     const offerKey = `order_offer:${orderId}:${driverId}`;
 
-    await redis.setex(offerKey, timeoutSeconds, JSON.stringify({
-      orderId,
-      driverId,
-      offeredAt: Date.now(),
-      expiresAt: Date.now() + (timeoutSeconds * 1000)
-    }));
+    await redis.setex(
+      offerKey,
+      timeoutSeconds,
+      JSON.stringify({
+        orderId,
+        driverId,
+        offeredAt: Date.now(),
+        expiresAt: Date.now() + timeoutSeconds * 1000,
+      })
+    );
 
     // Send push notification to driver
     await this.sendOfferNotification(driverId, orderId);
 
     // Wait for response (check every 2 seconds)
     const startTime = Date.now();
-    while ((Date.now() - startTime) < (timeoutSeconds * 1000)) {
+    while (Date.now() - startTime < timeoutSeconds * 1000) {
       // Check if driver accepted
       const response = await redis.get(`order_response:${orderId}:${driverId}`);
 
@@ -417,7 +425,7 @@ class AutoDispatchEngine {
       }
 
       // Wait 2 seconds before checking again
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
     // Timeout
@@ -442,8 +450,8 @@ class AutoDispatchEngine {
         orderNumber: order.order_number,
         pickupAddress: order.pickup_address,
         deliveryFee: order.delivery_fee.toString(),
-        timeToAccept: this.offerTimeout
-      }
+        timeToAccept: this.offerTimeout,
+      },
     };
 
     // TODO: Implement FCM push notification
@@ -455,7 +463,8 @@ class AutoDispatchEngine {
    */
   async optimizeDriverRoute(driverId) {
     // Get all active orders for driver
-    const orders = await db.query(`
+    const orders = await db.query(
+      `
       SELECT
         id,
         pickup_latitude,
@@ -468,7 +477,9 @@ class AutoDispatchEngine {
       WHERE driver_id = $1
         AND status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
       ORDER BY priority DESC, sla_deadline ASC
-    `, [driverId]);
+    `,
+      [driverId]
+    );
 
     if (orders.rows.length === 0) return;
 
@@ -483,7 +494,8 @@ class AutoDispatchEngine {
    * Log assignment for audit trail
    */
   async logAssignment(orderId, driverId, assignmentType, scoringData) {
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO assignment_logs (
         order_id,
         driver_id,
@@ -496,17 +508,19 @@ class AutoDispatchEngine {
         reasoning,
         assigned_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-    `, [
-      orderId,
-      driverId,
-      assignmentType,
-      scoringData.scores.proximity,
-      scoringData.scores.performance,
-      scoringData.scores.capacity,
-      scoringData.scores.zoneExperience,
-      scoringData.totalScore,
-      scoringData.reasoning
-    ]);
+    `,
+      [
+        orderId,
+        driverId,
+        assignmentType,
+        scoringData.scores.proximity,
+        scoringData.scores.performance,
+        scoringData.scores.capacity,
+        scoringData.scores.zoneExperience,
+        scoringData.totalScore,
+        scoringData.reasoning,
+      ]
+    );
   }
 
   /**
@@ -516,7 +530,8 @@ class AutoDispatchEngine {
     logger.error(`🚨 No driver available for critical order ${order.tracking_number}`);
 
     // Create alert
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO dispatch_alerts (
         order_id,
         alert_type,
@@ -524,12 +539,14 @@ class AutoDispatchEngine {
         message,
         created_at
       ) VALUES ($1, $2, $3, $4, NOW())
-    `, [
-      order.id,
-      'NO_DRIVER_AVAILABLE',
-      'CRITICAL',
-      `Order ${order.tracking_number} has ${order.minutes_to_sla.toFixed(0)} minutes until SLA breach but no drivers available`
-    ]);
+    `,
+      [
+        order.id,
+        'NO_DRIVER_AVAILABLE',
+        'CRITICAL',
+        `Order ${order.tracking_number} has ${order.minutes_to_sla.toFixed(0)} minutes until SLA breach but no drivers available`,
+      ]
+    );
 
     // Send Slack/Teams notification
     // TODO: Implement webhook notification
@@ -539,7 +556,8 @@ class AutoDispatchEngine {
    * Get assignment statistics
    */
   async getStats(startDate, endDate) {
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
         COUNT(*) AS total_assignments,
         COUNT(*) FILTER (WHERE assignment_type = 'AUTO_ASSIGNED') AS auto_assigned,
@@ -549,7 +567,9 @@ class AutoDispatchEngine {
       FROM assignment_logs al
       JOIN orders o ON o.id = al.order_id
       WHERE al.assigned_at BETWEEN $1 AND $2
-    `, [startDate, endDate]);
+    `,
+      [startDate, endDate]
+    );
 
     return result.rows[0];
   }

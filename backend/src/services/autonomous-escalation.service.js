@@ -32,7 +32,7 @@ class AutonomousEscalationEngine {
       high: 30, // < 30 min to SLA breach
       medium: 60, // < 1 hour to SLA breach
       stuckOrderMinutes: 30, // No update in 30 min
-      driverUnresponsiveMinutes: 15 // Driver not responding
+      driverUnresponsiveMinutes: 15, // Driver not responding
     };
 
     // Track escalation actions to avoid duplicates
@@ -105,7 +105,7 @@ class AutonomousEscalationEngine {
   async checkSLARiskOrders() {
     // Use SLA Monitor Agent to identify at-risk orders
     const atRiskOrders = await slaMonitorAgent.getAtRiskOrders({
-      thresholds: this.thresholds
+      thresholds: this.thresholds,
     });
 
     if (!atRiskOrders || atRiskOrders.length === 0) {
@@ -136,7 +136,9 @@ class AutonomousEscalationEngine {
       return;
     }
 
-    logger.warn(`⚠️ Order ${order.tracking_number} at risk (${minutesRemaining}min remaining, severity: ${severity})`);
+    logger.warn(
+      `⚠️ Order ${order.tracking_number} at risk (${minutesRemaining}min remaining, severity: ${severity})`
+    );
 
     if (severity === 'CRITICAL') {
       // CRITICAL: < 15 minutes - Immediate action
@@ -157,14 +159,16 @@ class AutonomousEscalationEngine {
    * Handle critical order (< 15 min to breach)
    */
   async handleCriticalOrder(order, minutesRemaining) {
-    logger.error(`🔴 CRITICAL: Order ${order.tracking_number} will breach in ${minutesRemaining}min`);
+    logger.error(
+      `🔴 CRITICAL: Order ${order.tracking_number} will breach in ${minutesRemaining}min`
+    );
 
     // Use Emergency Escalation Agent for intelligent decision
     const escalationDecision = await emergencyEscalationAgent.handleCriticalOrder({
       order,
       minutesRemaining,
       currentDriver: order.driver_id ? await this.getDriverInfo(order.driver_id) : null,
-      fleetStatus: await fleetStatusAgent.getCurrentStatus()
+      fleetStatus: await fleetStatusAgent.getCurrentStatus(),
     });
 
     if (!escalationDecision) {
@@ -204,13 +208,17 @@ class AutonomousEscalationEngine {
    * Handle high risk order (15-30 min to breach)
    */
   async handleHighRiskOrder(order, minutesRemaining) {
-    logger.warn(`🟠 HIGH RISK: Order ${order.tracking_number} will breach in ${minutesRemaining}min`);
+    logger.warn(
+      `🟠 HIGH RISK: Order ${order.tracking_number} will breach in ${minutesRemaining}min`
+    );
 
     // Try to find a faster driver
     const fasterDriver = await this.findFasterDriver(order);
 
     if (fasterDriver && fasterDriver.estimatedSaving > 10) {
-      logger.info(`Found faster driver ${fasterDriver.name}, savings: ${fasterDriver.estimatedSaving}min`);
+      logger.info(
+        `Found faster driver ${fasterDriver.name}, savings: ${fasterDriver.estimatedSaving}min`
+      );
 
       // Auto-reassign to faster driver
       await this.reassignOrder(order.id, fasterDriver.id, 'AUTO_REASSIGN_SLA_RISK');
@@ -219,13 +227,17 @@ class AutonomousEscalationEngine {
       await customerCommunicationAgent.notifyReassignment({
         orderId: order.id,
         newDriver: fasterDriver,
-        reason: 'To ensure on-time delivery'
+        reason: 'To ensure on-time delivery',
       });
 
       await this.logEscalation(order.id, 'AUTO_REASSIGNED', { fasterDriver });
     } else {
       // Alert dispatch for manual intervention
-      await this.escalateToDispatch(order, `No faster driver available, ${minutesRemaining}min remaining`, 'HIGH');
+      await this.escalateToDispatch(
+        order,
+        `No faster driver available, ${minutesRemaining}min remaining`,
+        'HIGH'
+      );
     }
   }
 
@@ -233,10 +245,13 @@ class AutonomousEscalationEngine {
    * Handle medium risk order (30-60 min to breach)
    */
   async handleMediumRiskOrder(order, minutesRemaining) {
-    logger.info(`🟡 MEDIUM RISK: Order ${order.tracking_number} will breach in ${minutesRemaining}min`);
+    logger.info(
+      `🟡 MEDIUM RISK: Order ${order.tracking_number} will breach in ${minutesRemaining}min`
+    );
 
     // Monitor closely but don't take action yet
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO order_alerts (
         order_id,
         alert_type,
@@ -244,19 +259,23 @@ class AutonomousEscalationEngine {
         message,
         created_at
       ) VALUES ($1, $2, $3, $4, NOW())
-    `, [
-      order.id,
-      'SLA_RISK',
-      'MEDIUM',
-      `Order at risk: ${minutesRemaining} minutes until SLA breach`
-    ]);
+    `,
+      [
+        order.id,
+        'SLA_RISK',
+        'MEDIUM',
+        `Order at risk: ${minutesRemaining} minutes until SLA breach`,
+      ]
+    );
 
     // If driver is significantly off route, suggest optimization
     if (order.driver_id) {
       const routeOptimization = await this.analyzeDriverRoute(order.driver_id);
 
       if (routeOptimization.canOptimize) {
-        logger.info(`Suggesting route optimization for driver (potential saving: ${routeOptimization.savingMinutes}min)`);
+        logger.info(
+          `Suggesting route optimization for driver (potential saving: ${routeOptimization.savingMinutes}min)`
+        );
         // Dynamic route optimizer will pick this up
       }
     }
@@ -313,7 +332,9 @@ class AutonomousEscalationEngine {
       return;
     }
 
-    logger.warn(`⏸️ Order ${order.tracking_number} stuck for ${order.minutes_since_update.toFixed(0)}min`);
+    logger.warn(
+      `⏸️ Order ${order.tracking_number} stuck for ${order.minutes_since_update.toFixed(0)}min`
+    );
 
     if (!order.driver_id) {
       // No driver assigned - try auto-dispatch
@@ -335,9 +356,9 @@ class AutonomousEscalationEngine {
         driver: {
           id: order.driver_id,
           name: order.driver_name,
-          lastSeen: order.last_location_update
+          lastSeen: order.last_location_update,
         },
-        durationStuck: order.minutes_since_update
+        durationStuck: order.minutes_since_update,
       });
 
       if (recoveryAction.action === 'REASSIGN') {
@@ -347,7 +368,9 @@ class AutonomousEscalationEngine {
         // Flag driver as potentially offline
         await this.flagDriverOffline(order.driver_id, 'Unresponsive for order');
 
-        await this.logEscalation(order.id, 'AUTO_REASSIGN_STUCK', { reason: 'Driver unresponsive' });
+        await this.logEscalation(order.id, 'AUTO_REASSIGN_STUCK', {
+          reason: 'Driver unresponsive',
+        });
       } else if (recoveryAction.action === 'ALERT_DISPATCH') {
         await this.escalateToDispatch(order, recoveryAction.reason, 'HIGH');
       }
@@ -411,28 +434,38 @@ class AutonomousEscalationEngine {
       return;
     }
 
-    logger.error(`📵 Driver ${driver.name} unresponsive for ${driver.minutes_since_location.toFixed(0)}min with ${driver.active_orders} active orders`);
+    logger.error(
+      `📵 Driver ${driver.name} unresponsive for ${driver.minutes_since_location.toFixed(0)}min with ${driver.active_orders} active orders`
+    );
 
     // Try to contact driver
     const contacted = await this.attemptDriverContact(driver.id, 'LOCATION_CHECK');
 
     if (!contacted) {
       // Reassign all active orders
-      const orders = await db.query(`
+      const orders = await db.query(
+        `
         SELECT id, tracking_number
         FROM orders
         WHERE driver_id = $1
           AND status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
-      `, [driver.id]);
+      `,
+        [driver.id]
+      );
 
-      logger.warn(`Reassigning ${orders.rows.length} orders from unresponsive driver ${driver.name}`);
+      logger.warn(
+        `Reassigning ${orders.rows.length} orders from unresponsive driver ${driver.name}`
+      );
 
       for (const order of orders.rows) {
         await this.reassignOrder(order.id, 'auto', 'DRIVER_OFFLINE');
       }
 
       // Mark driver as offline
-      await this.flagDriverOffline(driver.id, `No location update for ${driver.minutes_since_location.toFixed(0)} minutes`);
+      await this.flagDriverOffline(
+        driver.id,
+        `No location update for ${driver.minutes_since_location.toFixed(0)} minutes`
+      );
 
       // Alert dispatch
       await this.createDispatchAlert({
@@ -440,7 +473,7 @@ class AutonomousEscalationEngine {
         severity: 'HIGH',
         driverId: driver.id,
         message: `Driver ${driver.name} unresponsive, reassigned ${orders.rows.length} orders`,
-        ordersAffected: orders.rows.length
+        ordersAffected: orders.rows.length,
       });
     }
 
@@ -495,14 +528,16 @@ class AutonomousEscalationEngine {
    * Handle failed delivery
    */
   async handleFailedDelivery(order) {
-    logger.warn(`❌ Processing failed delivery: ${order.tracking_number}, reason: ${order.failure_reason}`);
+    logger.warn(
+      `❌ Processing failed delivery: ${order.tracking_number}, reason: ${order.failure_reason}`
+    );
 
     // Use Order Recovery Agent for intelligent recovery strategy
     const recoveryStrategy = await orderRecoveryAgent.analyzeFailedDelivery({
       order,
       failureReason: order.failure_reason,
       attemptNumber: order.attempt_number,
-      timeSinceFailure: order.minutes_since_failure
+      timeSinceFailure: order.minutes_since_failure,
     });
 
     if (!recoveryStrategy) {
@@ -518,7 +553,11 @@ class AutonomousEscalationEngine {
         break;
 
       case 'SCHEDULE_RETRY':
-        await this.scheduleRetry(order.id, recoveryStrategy.retryTime, recoveryStrategy.instructions);
+        await this.scheduleRetry(
+          order.id,
+          recoveryStrategy.retryTime,
+          recoveryStrategy.instructions
+        );
         break;
 
       case 'CONTACT_CUSTOMER':
@@ -538,14 +577,17 @@ class AutonomousEscalationEngine {
     }
 
     // Log recovery attempt
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO order_recovery_attempts (
         order_id,
         recovery_action,
         reasoning,
         created_at
       ) VALUES ($1, $2, $3, NOW())
-    `, [order.id, recoveryStrategy.action, recoveryStrategy.reasoning]);
+    `,
+      [order.id, recoveryStrategy.action, recoveryStrategy.reasoning]
+    );
   }
 
   /**
@@ -588,7 +630,7 @@ class AutonomousEscalationEngine {
    * Helper: Cleanup old escalation cache
    */
   cleanupEscalationCache() {
-    const cutoffTime = Date.now() - (20 * 60 * 1000); // 20 minutes
+    const cutoffTime = Date.now() - 20 * 60 * 1000; // 20 minutes
 
     for (const [key, timestamp] of this.recentEscalations.entries()) {
       if (timestamp < cutoffTime) {
@@ -602,10 +644,15 @@ class AutonomousEscalationEngine {
    */
   async findFasterDriver(order) {
     // Get current driver's ETA
-    const currentETA = await this.estimateDriverETA(order.driver_id, order.dropoff_latitude, order.dropoff_longitude);
+    const currentETA = await this.estimateDriverETA(
+      order.driver_id,
+      order.dropoff_latitude,
+      order.dropoff_longitude
+    );
 
     // Find available drivers closer to delivery location
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
         d.id,
         d.name,
@@ -625,17 +672,23 @@ class AutonomousEscalationEngine {
         ) < $4
       ORDER BY distance_to_delivery ASC
       LIMIT 5
-    `, [order.dropoff_longitude, order.dropoff_latitude, order.driver_id, currentETA.distance * 1000]);
+    `,
+      [order.dropoff_longitude, order.dropoff_latitude, order.driver_id, currentETA.distance * 1000]
+    );
 
     for (const driver of result.rows) {
-      const newETA = await this.estimateDriverETA(driver.id, order.dropoff_latitude, order.dropoff_longitude);
+      const newETA = await this.estimateDriverETA(
+        driver.id,
+        order.dropoff_latitude,
+        order.dropoff_longitude
+      );
       const timeSaving = currentETA.minutes - newETA.minutes;
 
       if (timeSaving > 10) {
         return {
           id: driver.id,
           name: driver.name,
-          estimatedSaving: timeSaving
+          estimatedSaving: timeSaving,
         };
       }
     }
@@ -649,18 +702,22 @@ class AutonomousEscalationEngine {
   async estimateDriverETA(driverId, lat, lng) {
     // Simplified ETA calculation
     // In production, use OSRM or Google Maps
-    const driver = await db.query(`
+    const driver = await db.query(
+      `
       SELECT current_latitude, current_longitude
       FROM drivers
       WHERE id = $1
-    `, [driverId]);
+    `,
+      [driverId]
+    );
 
     if (driver.rows.length === 0) {
       return { minutes: 999, distance: 999 };
     }
 
     const d = driver.rows[0];
-    const distance = this.calculateDistance(d.current_latitude, d.current_longitude, lat, lng) / 1000;
+    const distance =
+      this.calculateDistance(d.current_latitude, d.current_longitude, lat, lng) / 1000;
     const minutes = (distance / 30) * 60; // Assume 30 km/h average
 
     return { minutes, distance };
@@ -714,13 +771,16 @@ class AutonomousEscalationEngine {
    * Flag driver as offline
    */
   async flagDriverOffline(driverId, reason) {
-    await db.query(`
+    await db.query(
+      `
       UPDATE drivers
       SET status = 'OFFLINE',
           offline_reason = $2,
           offline_at = NOW()
       WHERE id = $1
-    `, [driverId, reason]);
+    `,
+      [driverId, reason]
+    );
 
     logger.warn(`Marked driver ${driverId} as OFFLINE: ${reason}`);
   }
@@ -729,7 +789,8 @@ class AutonomousEscalationEngine {
    * Escalate to dispatch team
    */
   async escalateToDispatch(order, message, severity) {
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO dispatch_alerts (
         order_id,
         alert_type,
@@ -737,7 +798,9 @@ class AutonomousEscalationEngine {
         message,
         created_at
       ) VALUES ($1, $2, $3, $4, NOW())
-    `, [order.id, 'MANUAL_INTERVENTION_REQUIRED', severity, message]);
+    `,
+      [order.id, 'MANUAL_INTERVENTION_REQUIRED', severity, message]
+    );
 
     // Send Slack/Teams notification
     // TODO: Implement webhook
@@ -748,7 +811,8 @@ class AutonomousEscalationEngine {
    * Log escalation event
    */
   async logEscalation(orderId, escalationType, data) {
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO escalation_logs (
         order_id,
         escalation_type,
@@ -757,20 +821,23 @@ class AutonomousEscalationEngine {
         metadata,
         created_at
       ) VALUES ($1, $2, $3, $4, $5, NOW())
-    `, [
-      orderId,
-      escalationType,
-      data.action || 'N/A',
-      data.reasoning || data.reason || 'Automated escalation',
-      JSON.stringify(data)
-    ]);
+    `,
+      [
+        orderId,
+        escalationType,
+        data.action || 'N/A',
+        data.reasoning || data.reason || 'Automated escalation',
+        JSON.stringify(data),
+      ]
+    );
   }
 
   /**
    * Get escalation statistics
    */
   async getStats(startDate, endDate) {
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
         COUNT(*) AS total_escalations,
         COUNT(*) FILTER (WHERE escalation_type = 'SLA_RISK_CRITICAL') AS critical_escalations,
@@ -780,7 +847,9 @@ class AutonomousEscalationEngine {
         COUNT(DISTINCT order_id) AS unique_orders_escalated
       FROM escalation_logs
       WHERE created_at BETWEEN $1 AND $2
-    `, [startDate, endDate]);
+    `,
+      [startDate, endDate]
+    );
 
     return result.rows[0];
   }
@@ -795,11 +864,15 @@ class AutonomousEscalationEngine {
   }
 
   async contactCustomerDelay(order, estimatedDelay) {
-    logger.info(`Should contact customer about ${estimatedDelay}min delay for order ${order.tracking_number}`);
+    logger.info(
+      `Should contact customer about ${estimatedDelay}min delay for order ${order.tracking_number}`
+    );
   }
 
   async prioritizeForDriver(order, instructions) {
-    logger.info(`Should prioritize order ${order.tracking_number} with instructions: ${instructions}`);
+    logger.info(
+      `Should prioritize order ${order.tracking_number} with instructions: ${instructions}`
+    );
   }
 
   async analyzeDriverRoute(driverId) {
@@ -816,7 +889,8 @@ class AutonomousEscalationEngine {
   }
 
   async createDispatchAlert(alert) {
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO dispatch_alerts (
         driver_id,
         alert_type,
@@ -824,7 +898,9 @@ class AutonomousEscalationEngine {
         message,
         created_at
       ) VALUES ($1, $2, $3, $4, NOW())
-    `, [alert.driverId, alert.type, alert.severity, alert.message]);
+    `,
+      [alert.driverId, alert.type, alert.severity, alert.message]
+    );
   }
 
   async retryDelivery(orderId, instructions) {

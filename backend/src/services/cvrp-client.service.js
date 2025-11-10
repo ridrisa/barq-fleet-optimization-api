@@ -266,9 +266,7 @@ class CVRPClientService {
       );
 
       if (response.data.success) {
-        logger.info(
-          `CVRP batch optimization successful: ${response.data.routes.length} routes`
-        );
+        logger.info(`CVRP batch optimization successful: ${response.data.routes.length} routes`);
       }
 
       return response.data;

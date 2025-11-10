@@ -157,8 +157,8 @@ router.post('/execute-batch', async (req, res) => {
 
     const results = await DynamicQueryService.executeMultiple(queries, processedParams);
 
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    const successful = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
 
     res.json({
       success: true,
@@ -227,12 +227,9 @@ router.post('/ask', async (req, res) => {
     }
 
     // Execute all suggested queries
-    const results = await DynamicQueryService.executeMultiple(
-      suggestedQueries,
-      processedParams
-    );
+    const results = await DynamicQueryService.executeMultiple(suggestedQueries, processedParams);
 
-    const successful = results.filter(r => r.status === 'fulfilled');
+    const successful = results.filter((r) => r.status === 'fulfilled');
 
     // Format response in natural language
     const answer = this.formatNaturalLanguageResponse(question, successful);
@@ -242,7 +239,7 @@ router.post('/ask', async (req, res) => {
       question,
       interpreted_queries: suggestedQueries,
       answer,
-      raw_results: successful.map(r => r.data),
+      raw_results: successful.map((r) => r.data),
       executed_at: new Date().toISOString(),
     });
   } catch (error) {
@@ -263,7 +260,7 @@ router.formatNaturalLanguageResponse = function (question, results) {
     return 'No data available for the specified period.';
   }
 
-  const responses = results.map(result => {
+  const responses = results.map((result) => {
     const data = result.data.data;
 
     if (result.data.query === 'total_orders') {

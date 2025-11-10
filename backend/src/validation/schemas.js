@@ -107,13 +107,15 @@ const schemas = {
       maxDuration: Joi.number().min(1).optional(),
       costPerKm: Joi.number().min(0).optional(),
       costPerHour: Joi.number().min(0).optional(),
-      vehicles: Joi.array().items(
-        Joi.object({
-          id: Joi.string().required(),
-          type: Joi.string().valid('car', 'motorcycle', 'bicycle', 'van', 'truck').required(),
-          capacity: Joi.number().min(1).required(),
-        })
-      ).optional(),
+      vehicles: Joi.array()
+        .items(
+          Joi.object({
+            id: Joi.string().required(),
+            type: Joi.string().valid('car', 'motorcycle', 'bicycle', 'van', 'truck').required(),
+            capacity: Joi.number().min(1).required(),
+          })
+        )
+        .optional(),
     }).optional(),
     options: Joi.object({
       optimizationMode: Joi.string()

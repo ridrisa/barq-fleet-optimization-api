@@ -35,10 +35,7 @@ class AutonomousWorker {
     try {
       // Reconstruct agent manager and agents from serialized data
       // Note: We need to recreate these objects in the worker thread context
-      this.orchestrator = new AutonomousOrchestratorService(
-        agentManagerData,
-        agentsData
-      );
+      this.orchestrator = new AutonomousOrchestratorService(agentManagerData, agentsData);
 
       logger.info('[AutonomousWorker] Orchestrator initialized');
 
@@ -179,7 +176,13 @@ class AutonomousWorker {
 
     // Give time for message to be sent before exiting
     setTimeout(() => {
-      process.exit(0);
+      // Use proper error handling instead of process.exit
+      parentPort.postMessage({
+        type: 'shutdown_complete',
+        final: true,
+      });
+      // Close the worker gracefully
+      parentPort.close();
     }, 100);
   }
 }

@@ -888,15 +888,18 @@ class SLAMonitorAgent {
 
         return orders;
       } catch (error) {
-        logger.error(`[SLAMonitor] Failed to get active orders (attempt ${attempt}/${maxRetries})`, {
-          error: error.message,
-          code: error.code,
-          willRetry: attempt < maxRetries
-        });
+        logger.error(
+          `[SLAMonitor] Failed to get active orders (attempt ${attempt}/${maxRetries})`,
+          {
+            error: error.message,
+            code: error.code,
+            willRetry: attempt < maxRetries,
+          }
+        );
 
         if (attempt < maxRetries) {
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+          await new Promise((resolve) => setTimeout(resolve, retryDelay * attempt));
         } else {
           // All retries failed, return empty array to prevent crash
           logger.error('[SLAMonitor] All retries failed, returning empty orders array');
@@ -1179,11 +1182,14 @@ class SLAMonitorAgent {
 
       // Trigger if conditions met
       if (shouldTrigger) {
-        logger.warn('[SLAMonitor] Critical conditions detected - triggering autonomous operations', {
-          reason,
-          priority,
-          context,
-        });
+        logger.warn(
+          '[SLAMonitor] Critical conditions detected - triggering autonomous operations',
+          {
+            reason,
+            priority,
+            context,
+          }
+        );
 
         const result = await agentTriggerService.triggerFromAgent(
           'sla-monitor',

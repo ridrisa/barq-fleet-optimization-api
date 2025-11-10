@@ -140,7 +140,7 @@ class ProductionMetricsService {
 
     try {
       const result = await pool.query(query, [startDate, endDate]);
-      return result.rows.map(row => ({
+      return result.rows.map((row) => ({
         driver_id: parseInt(row.driver_id),
         total_deliveries: parseInt(row.total_deliveries),
         completed: parseInt(row.completed),
@@ -287,7 +287,7 @@ class ProductionMetricsService {
 
     try {
       const result = await pool.query(query, [startDate, endDate]);
-      return result.rows.map(row => ({
+      return result.rows.map((row) => ({
         name: row.name,
         value: parseInt(row.value),
       }));

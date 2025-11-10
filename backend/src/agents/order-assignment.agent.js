@@ -596,7 +596,8 @@ class OrderAssignmentAgent {
       });
 
       // Total time = pickup travel + pickup service + delivery travel
-      const totalMinutes = pickupETA.totalMinutes + dynamicETA.stopTimes.pickup + deliveryETA.totalMinutes;
+      const totalMinutes =
+        pickupETA.totalMinutes + dynamicETA.stopTimes.pickup + deliveryETA.totalMinutes;
 
       // Check time window feasibility if provided
       let timeWindowStatus = null;

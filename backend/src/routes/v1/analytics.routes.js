@@ -255,7 +255,14 @@ router.get('/sla/compliance', async (req, res) => {
         max_breach_minutes: parseFloat(row.max_breach_minutes) || 0,
         median_duration: parseFloat(row.median_duration),
         p95_duration: parseFloat(row.p95_duration),
-        status: complianceRate >= 95 ? 'excellent' : complianceRate >= 90 ? 'good' : complianceRate >= 85 ? 'warning' : 'critical',
+        status:
+          complianceRate >= 95
+            ? 'excellent'
+            : complianceRate >= 90
+              ? 'good'
+              : complianceRate >= 85
+                ? 'warning'
+                : 'critical',
       };
 
       response.overall.total_deliveries += parseInt(row.total_deliveries);
@@ -265,7 +272,8 @@ router.get('/sla/compliance', async (req, res) => {
 
     // Calculate overall compliance
     if (response.overall.total_deliveries > 0) {
-      response.overall.compliance_rate = (response.overall.deliveries_on_time / response.overall.total_deliveries) * 100;
+      response.overall.compliance_rate =
+        (response.overall.deliveries_on_time / response.overall.total_deliveries) * 100;
     }
 
     logger.info(`SLA compliance: ${response.overall.compliance_rate.toFixed(1)}%`);
@@ -341,11 +349,17 @@ router.get('/sla/trend', async (req, res) => {
       trendsByServiceType[serviceType].previous_rate = data[0].compliance_rate;
 
       // Simple trend calculation
-      const slope = (trendsByServiceType[serviceType].current_rate - trendsByServiceType[serviceType].previous_rate) / days;
-      trendsByServiceType[serviceType].trend_direction = slope > 0.1 ? 'improving' : slope < -0.1 ? 'declining' : 'stable';
+      const slope =
+        (trendsByServiceType[serviceType].current_rate -
+          trendsByServiceType[serviceType].previous_rate) /
+        days;
+      trendsByServiceType[serviceType].trend_direction =
+        slope > 0.1 ? 'improving' : slope < -0.1 ? 'declining' : 'stable';
     });
 
-    logger.info(`SLA trend analysis complete for ${Object.keys(trendsByServiceType).length} service types`);
+    logger.info(
+      `SLA trend analysis complete for ${Object.keys(trendsByServiceType).length} service types`
+    );
     res.json({
       analysis_period_days: parseInt(days),
       trends_by_service_type: trendsByServiceType,
@@ -490,7 +504,10 @@ router.get('/dashboard/summary', async (req, res) => {
         active: parseInt(todayMetrics.active) || 0,
         on_time: parseInt(todayMetrics.on_time) || 0,
         breached: parseInt(todayMetrics.breached) || 0,
-        compliance_rate: todayMetrics.total_deliveries > 0 ? (parseInt(todayMetrics.on_time) / parseInt(todayMetrics.total_deliveries)) * 100 : 0,
+        compliance_rate:
+          todayMetrics.total_deliveries > 0
+            ? (parseInt(todayMetrics.on_time) / parseInt(todayMetrics.total_deliveries)) * 100
+            : 0,
       },
       week: {
         total_deliveries: parseInt(weekMetrics.total_deliveries) || 0,

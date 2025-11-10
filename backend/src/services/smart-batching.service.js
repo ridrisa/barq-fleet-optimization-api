@@ -163,10 +163,10 @@ class SmartBatchingEngine {
     try {
       const context = {
         totalOrders: orders.length,
-        serviceTypes: [...new Set(orders.map(o => o.service_type))],
+        serviceTypes: [...new Set(orders.map((o) => o.service_type))],
         averageMinutesToSLA: orders.reduce((sum, o) => sum + o.minutes_to_sla, 0) / orders.length,
         currentTime: new Date().toISOString(),
-        historicalData: await this.getHistoricalBatchingMetrics()
+        historicalData: await this.getHistoricalBatchingMetrics(),
       };
 
       // Ask master orchestrator if batching is appropriate
@@ -176,7 +176,7 @@ class SmartBatchingEngine {
         shouldBatch: decision.shouldBatch,
         maxBatchSize: decision.recommendedMaxSize || this.maxOrdersInBatch,
         maxDistance: decision.recommendedMaxDistance || this.maxDistance,
-        reasoning: decision.reasoning
+        reasoning: decision.reasoning,
       };
     } catch (error) {
       logger.error('Error consulting master orchestrator:', error);
@@ -185,7 +185,7 @@ class SmartBatchingEngine {
         shouldBatch: true,
         maxBatchSize: this.maxOrdersInBatch,
         maxDistance: this.maxDistance,
-        reasoning: 'Using default strategy'
+        reasoning: 'Using default strategy',
       };
     }
   }
@@ -262,7 +262,7 @@ class SmartBatchingEngine {
    */
   async checkOrderCompatibility(batch, newOrder) {
     // Check service type compatibility
-    const serviceTypes = new Set(batch.map(o => o.service_type));
+    const serviceTypes = new Set(batch.map((o) => o.service_type));
     serviceTypes.add(newOrder.service_type);
 
     if (serviceTypes.size > 1) {
@@ -271,14 +271,14 @@ class SmartBatchingEngine {
     }
 
     // Check SLA deadline compatibility
-    const slaDeadlines = batch.map(o => new Date(o.sla_deadline));
+    const slaDeadlines = batch.map((o) => new Date(o.sla_deadline));
     slaDeadlines.push(new Date(newOrder.sla_deadline));
 
     const minSLA = Math.min(...slaDeadlines);
     const maxSLA = Math.max(...slaDeadlines);
 
     // SLA spread should be < 1 hour
-    if ((maxSLA - minSLA) > (60 * 60 * 1000)) {
+    if (maxSLA - minSLA > 60 * 60 * 1000) {
       return false;
     }
 
@@ -300,7 +300,8 @@ class SmartBatchingEngine {
       await client.query('BEGIN');
 
       // Create batch record
-      const batchResult = await client.query(`
+      const batchResult = await client.query(
+        `
         INSERT INTO order_batches (
           batch_number,
           order_count,
@@ -310,22 +311,23 @@ class SmartBatchingEngine {
         ) VALUES (
           $1, $2, $3, 'PENDING', NOW()
         ) RETURNING id, batch_number
-      `, [
-        `BATCH-${Date.now()}`,
-        cluster.length,
-        cluster[0].service_type
-      ]);
+      `,
+        [`BATCH-${Date.now()}`, cluster.length, cluster[0].service_type]
+      );
 
       const batchId = batchResult.rows[0].id;
       const batchNumber = batchResult.rows[0].batch_number;
 
       // Associate orders with batch
       for (const order of cluster) {
-        await client.query(`
+        await client.query(
+          `
           UPDATE orders
           SET batch_id = $1
           WHERE id = $2
-        `, [batchId, order.id]);
+        `,
+          [batchId, order.id]
+        );
       }
 
       await client.query('COMMIT');
@@ -344,11 +346,14 @@ class SmartBatchingEngine {
         logger.warn(`No driver available for batch ${batchNumber}`);
 
         // Unlink orders from batch
-        await client.query(`
+        await client.query(
+          `
           UPDATE orders
           SET batch_id = NULL
           WHERE batch_id = $1
-        `, [batchId]);
+        `,
+          [batchId]
+        );
 
         return false;
       }
@@ -367,21 +372,21 @@ class SmartBatchingEngine {
     try {
       // Prepare context for Order Assignment Agent
       const assignmentContext = {
-        orderIds: orders.map(o => o.id),
+        orderIds: orders.map((o) => o.id),
         orderCount: orders.length,
         serviceType: orders[0].service_type,
-        pickupLocations: orders.map(o => ({
+        pickupLocations: orders.map((o) => ({
           lat: o.pickup_latitude,
           lng: o.pickup_longitude,
-          address: o.pickup_address
+          address: o.pickup_address,
         })),
-        deliveryLocations: orders.map(o => ({
+        deliveryLocations: orders.map((o) => ({
           lat: o.dropoff_latitude,
           lng: o.dropoff_longitude,
-          address: o.dropoff_address
+          address: o.dropoff_address,
         })),
         totalValue: orders.reduce((sum, o) => sum + (o.delivery_fee || 0), 0),
-        earliestSLA: Math.min(...orders.map(o => new Date(o.sla_deadline)))
+        earliestSLA: Math.min(...orders.map((o) => new Date(o.sla_deadline))),
       };
 
       // Use Order Assignment Agent to find best driver
@@ -397,13 +402,16 @@ class SmartBatchingEngine {
       }
 
       // Update batch status
-      await db.query(`
+      await db.query(
+        `
         UPDATE order_batches
         SET driver_id = $1,
             status = 'ASSIGNED',
             assigned_at = NOW()
         WHERE id = $2
-      `, [assignment.driverId, batchId]);
+      `,
+        [assignment.driverId, batchId]
+      );
 
       logger.info(`✅ Assigned batch to driver ${assignment.driverName}`);
 
@@ -420,7 +428,8 @@ class SmartBatchingEngine {
   async optimizeBatchRoute(batchId, driverId, orders) {
     try {
       // Get driver's current location
-      const driver = await db.query(`
+      const driver = await db.query(
+        `
         SELECT
           id,
           name,
@@ -428,7 +437,9 @@ class SmartBatchingEngine {
           current_longitude
         FROM drivers
         WHERE id = $1
-      `, [driverId]);
+      `,
+        [driverId]
+      );
 
       if (driver.rows.length === 0) {
         throw new Error('Driver not found');
@@ -436,7 +447,7 @@ class SmartBatchingEngine {
 
       const driverLocation = {
         lat: driver.rows[0].current_latitude,
-        lng: driver.rows[0].current_longitude
+        lng: driver.rows[0].current_longitude,
       };
 
       // Build stops list (pickups + deliveries)
@@ -450,9 +461,9 @@ class SmartBatchingEngine {
           location: {
             lat: order.pickup_latitude,
             lng: order.pickup_longitude,
-            address: order.pickup_address
+            address: order.pickup_address,
           },
-          timeWindow: null
+          timeWindow: null,
         });
 
         // Add delivery stop
@@ -462,12 +473,12 @@ class SmartBatchingEngine {
           location: {
             lat: order.dropoff_latitude,
             lng: order.dropoff_longitude,
-            address: order.dropoff_address
+            address: order.dropoff_address,
           },
           timeWindow: {
             start: null,
-            end: order.sla_deadline
-          }
+            end: order.sla_deadline,
+          },
         });
       }
 
@@ -479,11 +490,12 @@ class SmartBatchingEngine {
         constraints: {
           maxStops: stops.length,
           maxDuration: 240, // 4 hours max for BULLET
-          mustPickupBeforeDelivery: true
-        }
+          mustPickupBeforeDelivery: true,
+        },
       };
 
-      const optimizedRoute = await routeOptimizationAgent.optimizeMultiStopRoute(optimizationContext);
+      const optimizedRoute =
+        await routeOptimizationAgent.optimizeMultiStopRoute(optimizationContext);
 
       if (!optimizedRoute) {
         // Fallback to Hybrid Optimization Service
@@ -491,8 +503,8 @@ class SmartBatchingEngine {
 
         const fallbackRoute = await hybridOptimization.optimizeMultiStop({
           origin: driverLocation,
-          stops: stops.map(s => s.location),
-          serviceType: orders[0].service_type
+          stops: stops.map((s) => s.location),
+          serviceType: orders[0].service_type,
         });
 
         optimizedRoute = fallbackRoute;
@@ -514,7 +526,8 @@ class SmartBatchingEngine {
    * Save optimized route to database
    */
   async saveOptimizedRoute(driverId, batchId, route, stops) {
-    const routeResult = await db.query(`
+    const routeResult = await db.query(
+      `
       INSERT INTO driver_routes (
         driver_id,
         batch_id,
@@ -526,14 +539,16 @@ class SmartBatchingEngine {
         optimized_at
       ) VALUES ($1, $2, $3, $4, $5, $6, true, NOW())
       RETURNING id
-    `, [
-      driverId,
-      batchId,
-      route.distance / 1000,
-      route.duration / 60,
-      JSON.stringify(route.sequence || []),
-      route.polyline
-    ]);
+    `,
+      [
+        driverId,
+        batchId,
+        route.distance / 1000,
+        route.duration / 60,
+        JSON.stringify(route.sequence || []),
+        route.polyline,
+      ]
+    );
 
     const routeId = routeResult.rows[0].id;
 
@@ -542,7 +557,8 @@ class SmartBatchingEngine {
       const stop = stops[i];
       const eta = new Date(Date.now() + (route.duration / stops.length) * (i + 1) * 1000);
 
-      await db.query(`
+      await db.query(
+        `
         INSERT INTO driver_route_stops (
           route_id,
           order_id,
@@ -550,13 +566,9 @@ class SmartBatchingEngine {
           stop_type,
           estimated_arrival
         ) VALUES ($1, $2, $3, $4, $5)
-      `, [
-        routeId,
-        stop.orderId,
-        i + 1,
-        stop.type,
-        eta
-      ]);
+      `,
+        [routeId, stop.orderId, i + 1, stop.type, eta]
+      );
 
       // Update order ETA
       if (stop.type === 'DELIVERY') {
@@ -588,7 +600,8 @@ class SmartBatchingEngine {
    * Get batching statistics
    */
   async getStats(startDate, endDate) {
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
         COUNT(*) AS total_batches,
         AVG(order_count) AS avg_orders_per_batch,
@@ -599,7 +612,9 @@ class SmartBatchingEngine {
         ) AS avg_completion_time_minutes
       FROM order_batches
       WHERE created_at BETWEEN $1 AND $2
-    `, [startDate, endDate]);
+    `,
+      [startDate, endDate]
+    );
 
     return result.rows[0];
   }

@@ -162,15 +162,10 @@ class AutonomousInitializer {
   async initializeMainThread(agentManager, agents) {
     const AutonomousOrchestratorService = require('./autonomous-orchestrator.service');
 
-    logger.warn(
-      '[AutonomousInit] Running in main thread - may impact API performance'
-    );
+    logger.warn('[AutonomousInit] Running in main thread - may impact API performance');
 
     // Create autonomous orchestrator
-    this.autonomousOrchestrator = new AutonomousOrchestratorService(
-      agentManager,
-      agents
-    );
+    this.autonomousOrchestrator = new AutonomousOrchestratorService(agentManager, agents);
 
     // Start continuous operation cycle
     if (this.config.enableContinuousOperation) {
@@ -291,9 +286,7 @@ class AutonomousInitializer {
    */
   startContinuousOperation() {
     if (!this.autonomousOrchestrator) {
-      logger.warn(
-        '[AutonomousInit] Cannot start - orchestrator not initialized'
-      );
+      logger.warn('[AutonomousInit] Cannot start - orchestrator not initialized');
       return;
     }
 
@@ -433,10 +426,7 @@ class AutonomousInitializer {
       this.stopContinuousOperation();
 
       // Save learning data if needed
-      if (
-        this.autonomousOrchestrator &&
-        this.autonomousOrchestrator.learningData.length > 0
-      ) {
+      if (this.autonomousOrchestrator && this.autonomousOrchestrator.learningData.length > 0) {
         logger.info('[AutonomousInit] Saving learning data', {
           records: this.autonomousOrchestrator.learningData.length,
         });

@@ -288,7 +288,11 @@ class PostgresReplicatedService {
     // Read operations
     if (upperText.startsWith('SELECT') || upperText.startsWith('WITH')) {
       // Check for data modification in WITH clauses or subqueries
-      if (upperText.includes('INSERT') || upperText.includes('UPDATE') || upperText.includes('DELETE')) {
+      if (
+        upperText.includes('INSERT') ||
+        upperText.includes('UPDATE') ||
+        upperText.includes('DELETE')
+      ) {
         return false;
       }
       return true;
@@ -415,9 +419,7 @@ class PostgresReplicatedService {
     const primaryHealth = await this.checkPoolHealth(this.primaryPool, 'PRIMARY');
 
     const replicaHealth = await Promise.all(
-      this.replicaPools.map((pool, index) =>
-        this.checkPoolHealth(pool, `REPLICA ${index + 1}`)
-      )
+      this.replicaPools.map((pool, index) => this.checkPoolHealth(pool, `REPLICA ${index + 1}`))
     );
 
     const healthyReplicas = replicaHealth.filter((h) => h.status === 'healthy').length;

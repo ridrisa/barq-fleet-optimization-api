@@ -171,7 +171,8 @@ export default function DemoDashboard() {
   const startDemo = async () => {
     setIsStarting(true);
     try {
-      const data = await apiClient.post('/start', config);
+      const httpBase = apiClient.getWsHttpBaseUrl();
+      const data = await apiClient.postAbsolute(`${httpBase}/demo/start`, config);
       if (data.success) {
         dispatch(setDemoStatus(true));
       }
@@ -184,7 +185,8 @@ export default function DemoDashboard() {
   const stopDemo = async () => {
     setIsStopping(true);
     try {
-      const data = await apiClient.post('/stop');
+      const httpBase = apiClient.getWsHttpBaseUrl();
+      const data = await apiClient.postAbsolute(`${httpBase}/demo/stop`);
       if (data.success) {
         dispatch(setDemoStatus(false));
       }
@@ -196,7 +198,8 @@ export default function DemoDashboard() {
 
   const createOrder = async (serviceType: 'BARQ' | 'BULLET') => {
     try {
-      const data = await apiClient.post('/order', { serviceType });
+      const httpBase = apiClient.getWsHttpBaseUrl();
+      const data = await apiClient.postAbsolute(`${httpBase}/demo/order`, { serviceType });
       console.log('Order created:', data);
     } catch (error) {
       console.error('Failed to create order:', error);
@@ -235,6 +238,12 @@ export default function DemoDashboard() {
 
   return (
     <div className="p-4 space-y-4">
+      {!isConnected && (
+        <div className="rounded-md border border-yellow-200 bg-yellow-50 text-yellow-800 p-3">
+          Demo backend is unavailable. Ensure the WebSocket server is deployed and
+          set <code className="px-1 py-0.5 bg-yellow-100 rounded">NEXT_PUBLIC_WS_URL</code> to its wss URL.
+        </div>
+      )}
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>

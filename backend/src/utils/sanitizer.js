@@ -461,7 +461,7 @@ class RequestSanitizer {
     }
 
     // Filter out null or undefined items
-    return array.filter((item) => item != null);
+    return array.filter((item) => item !== null && item !== undefined);
   }
 
   /**

@@ -31,10 +31,12 @@ const workingHoursSchema = Joi.object({
 
 // Schema for a pickup point
 const pickupPointSchema = Joi.object({
+  id: Joi.string().optional(),
   lat: Joi.number().required().min(-90).max(90),
   lng: Joi.number().required().min(-180).max(180),
   type: Joi.string().valid('outlet', 'warehouse', 'hub', 'depot', 'store').default('outlet'),
-  name: Joi.string().max(100).required(),
+  name: Joi.string().max(100).optional(),
+  address: Joi.string().optional(),
   working_hours: workingHoursSchema,
 });
 
@@ -44,7 +46,8 @@ const deliveryPointSchema = Joi.object({
   lng: Joi.number().required().min(-180).max(180),
   type: Joi.string().valid('delivery', 'pickup').default('delivery'),
   order_id: Joi.string().required().max(50),
-  customer_name: Joi.string().max(100).required(),
+  customer_name: Joi.string().max(100).optional(),
+  address: Joi.string().optional(),
   load_kg: Joi.number().min(0).max(10000).default(0),
   time_window: timeWindowSchema,
   priority: Joi.string().valid('HIGH', 'MEDIUM', 'LOW').default('MEDIUM'),
@@ -52,12 +55,15 @@ const deliveryPointSchema = Joi.object({
 
 // Schema for a vehicle in the fleet
 const vehicleSchema = Joi.object({
+  id: Joi.string().optional(),
   fleet_id: Joi.string().required().max(50),
   vehicle_type: Joi.string().valid('TRUCK', 'CAR', 'VAN', 'MOTORCYCLE').default('TRUCK'),
+  type: Joi.string().optional(),
+  capacity: Joi.number().optional(),
   capacity_kg: Joi.number().min(0).max(50000).required(),
   current_latitude: Joi.number().required().min(-90).max(90),
   current_longitude: Joi.number().required().min(-180).max(180),
-  outlet_id: Joi.number().integer().min(1).required(),
+  outlet_id: Joi.number().integer().min(1).optional(),
   status: Joi.string()
     .valid('AVAILABLE', 'UNAVAILABLE', 'DELIVERING', 'RETURNING')
     .default('AVAILABLE'),
@@ -120,8 +126,15 @@ const contextSchema = Joi.object({
 const optimizationRequestSchema = Joi.object({
   pickupPoints: Joi.array().items(pickupPointSchema).min(1).required(),
   deliveryPoints: Joi.array().items(deliveryPointSchema).min(1).required(),
-  fleet: Joi.array().items(vehicleSchema).min(1).required(),
-  businessRules: businessRulesSchema.required(),
+  fleet: Joi.alternatives()
+    .try(
+      Joi.array().items(vehicleSchema).min(1),
+      Joi.object({
+        vehicles: Joi.array().items(vehicleSchema).min(1),
+      })
+    )
+    .required(),
+  businessRules: businessRulesSchema.optional(),
   preferences: preferencesSchema,
   context: contextSchema,
   prompt: Joi.string().max(500).optional(),

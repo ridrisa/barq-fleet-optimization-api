@@ -56,8 +56,8 @@ router.post('/dispatch/start', async (req, res) => {
       config: {
         checkInterval: '10 seconds',
         offerTimeout: `${autoDispatchEngine.offerTimeout} seconds`,
-        maxOffersPerOrder: autoDispatchEngine.maxOffersPerOrder
-      }
+        maxOffersPerOrder: autoDispatchEngine.maxOffersPerOrder,
+      },
     });
   } catch (error) {
     console.error('Error starting auto-dispatch engine:', error);
@@ -84,7 +84,7 @@ router.post('/dispatch/stop', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Auto-dispatch engine stopped successfully'
+      message: 'Auto-dispatch engine stopped successfully',
     });
   } catch (error) {
     console.error('Error stopping auto-dispatch engine:', error);
@@ -108,8 +108,8 @@ router.get('/dispatch/status', async (req, res) => {
       config: {
         checkInterval: '10 seconds',
         offerTimeout: autoDispatchEngine.offerTimeout,
-        maxOffersPerOrder: autoDispatchEngine.maxOffersPerOrder
-      }
+        maxOffersPerOrder: autoDispatchEngine.maxOffersPerOrder,
+      },
     });
   } catch (error) {
     console.error('Error getting auto-dispatch status:', error);
@@ -150,7 +150,7 @@ router.get('/dispatch/stats', async (req, res) => {
     res.json({
       historical: stats.rows,
       today: todayStats.rows[0],
-      period: `${days} days`
+      period: `${days} days`,
     });
   } catch (error) {
     console.error('Error getting auto-dispatch stats:', error);
@@ -184,8 +184,8 @@ router.post('/dispatch/assign/:orderId', async (req, res) => {
         id: assignedDriver.id,
         name: assignedDriver.name,
         score: assignedDriver.totalScore,
-        breakdown: assignedDriver.scores
-      }
+        breakdown: assignedDriver.scores,
+      },
     });
   } catch (error) {
     console.error('Error manually assigning order:', error);
@@ -220,8 +220,8 @@ router.post('/routes/start', async (req, res) => {
       config: {
         optimizationInterval: '5 minutes',
         improvementThreshold: `${dynamicRouteOptimizer.improvementThreshold}%`,
-        trafficCheckInterval: '1 minute'
-      }
+        trafficCheckInterval: '1 minute',
+      },
     });
   } catch (error) {
     console.error('Error starting route optimizer:', error);
@@ -248,7 +248,7 @@ router.post('/routes/stop', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Dynamic route optimizer stopped successfully'
+      message: 'Dynamic route optimizer stopped successfully',
     });
   } catch (error) {
     console.error('Error stopping route optimizer:', error);
@@ -272,8 +272,8 @@ router.get('/routes/status', async (req, res) => {
       config: {
         optimizationInterval: '5 minutes',
         improvementThreshold: dynamicRouteOptimizer.improvementThreshold,
-        trafficCheckInterval: '1 minute'
-      }
+        trafficCheckInterval: '1 minute',
+      },
     });
   } catch (error) {
     console.error('Error getting route optimizer status:', error);
@@ -324,7 +324,7 @@ router.get('/routes/stats', async (req, res) => {
       historical: stats.rows,
       today: todayStats.rows[0],
       activeIncidents: trafficIncidents.rows,
-      period: `${days} days`
+      period: `${days} days`,
     });
   } catch (error) {
     console.error('Error getting route optimization stats:', error);
@@ -346,14 +346,14 @@ router.post('/routes/optimize/:driverId', async (req, res) => {
     const { driverId } = req.params;
 
     const result = await dynamicRouteOptimizer.optimizeDriverIfBeneficial({
-      id: parseInt(driverId)
+      id: parseInt(driverId),
     });
 
     if (!result.optimized) {
       return res.json({
         success: false,
         message: 'No significant improvement found',
-        improvement: result.improvement
+        improvement: result.improvement,
       });
     }
 
@@ -363,9 +363,9 @@ router.post('/routes/optimize/:driverId', async (req, res) => {
       improvement: {
         distanceSaved: result.improvement.distanceSaved,
         timeSaved: result.improvement.timeSaved,
-        percentageSaved: result.improvement.percentageSaved
+        percentageSaved: result.improvement.percentageSaved,
       },
-      newRoute: result.route
+      newRoute: result.route,
     });
   } catch (error) {
     console.error('Error manually optimizing route:', error);
@@ -386,11 +386,14 @@ router.post('/routes/traffic-incident', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const result = await postgresService.query(`
+    const result = await postgresService.query(
+      `
       INSERT INTO traffic_incidents (latitude, longitude, severity, description, affected_radius_meters, active)
       VALUES ($1, $2, $3, $4, $5, true)
       RETURNING *
-    `, [location.lat, location.lng, severity, description || null, affectedRadius || 500]);
+    `,
+      [location.lat, location.lng, severity, description || null, affectedRadius || 500]
+    );
 
     const incident = result.rows[0];
 
@@ -402,7 +405,7 @@ router.post('/routes/traffic-incident', async (req, res) => {
     res.json({
       success: true,
       message: 'Traffic incident reported and drivers rerouted',
-      incident: incident
+      incident: incident,
     });
   } catch (error) {
     console.error('Error reporting traffic incident:', error);
@@ -438,12 +441,14 @@ router.post('/batching/start', async (req, res) => {
         batchingInterval: '10 minutes',
         minOrdersInBatch: smartBatchingEngine.minOrdersInBatch,
         maxOrdersInBatch: smartBatchingEngine.maxOrdersInBatch,
-        maxDistanceKm: smartBatchingEngine.maxDistance / 1000
-      }
+        maxDistanceKm: smartBatchingEngine.maxDistance / 1000,
+      },
     });
   } catch (error) {
     console.error('Error starting smart batching engine:', error);
-    res.status(500).json({ error: 'Failed to start smart batching engine', details: error.message });
+    res
+      .status(500)
+      .json({ error: 'Failed to start smart batching engine', details: error.message });
   }
 });
 
@@ -466,7 +471,7 @@ router.post('/batching/stop', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Smart batching engine stopped successfully'
+      message: 'Smart batching engine stopped successfully',
     });
   } catch (error) {
     console.error('Error stopping smart batching engine:', error);
@@ -491,8 +496,8 @@ router.get('/batching/status', async (req, res) => {
         batchingInterval: '10 minutes',
         minOrdersInBatch: smartBatchingEngine.minOrdersInBatch,
         maxOrdersInBatch: smartBatchingEngine.maxOrdersInBatch,
-        maxDistanceKm: smartBatchingEngine.maxDistance / 1000
-      }
+        maxDistanceKm: smartBatchingEngine.maxDistance / 1000,
+      },
     });
   } catch (error) {
     console.error('Error getting smart batching status:', error);
@@ -540,7 +545,7 @@ router.get('/batching/stats', async (req, res) => {
       historical: stats.rows,
       today: todayStats.rows[0],
       activeBatches: activeBatches.rows,
-      period: `${days} days`
+      period: `${days} days`,
     });
   } catch (error) {
     console.error('Error getting smart batching stats:', error);
@@ -565,7 +570,7 @@ router.post('/batching/process', async (req, res) => {
       success: true,
       message: 'Batch processing completed',
       batchesCreated: result.batchesCreated || 0,
-      ordersAssigned: result.ordersAssigned || 0
+      ordersAssigned: result.ordersAssigned || 0,
     });
   } catch (error) {
     console.error('Error processing batches:', error);
@@ -582,7 +587,8 @@ router.get('/batching/batch/:batchId', async (req, res) => {
   try {
     const { batchId } = req.params;
 
-    const batch = await postgresService.query(`
+    const batch = await postgresService.query(
+      `
       SELECT
         ob.*,
         d.name AS driver_name,
@@ -602,7 +608,9 @@ router.get('/batching/batch/:batchId', async (req, res) => {
       LEFT JOIN orders o ON o.batch_id = ob.id
       WHERE ob.id = $1
       GROUP BY ob.id, d.name, d.phone
-    `, [batchId]);
+    `,
+      [batchId]
+    );
 
     if (batch.rows.length === 0) {
       return res.status(404).json({ error: 'Batch not found' });
@@ -641,8 +649,8 @@ router.post('/escalation/start', async (req, res) => {
       message: 'Autonomous escalation engine started successfully',
       config: {
         checkInterval: '1 minute',
-        thresholds: autonomousEscalationEngine.thresholds
-      }
+        thresholds: autonomousEscalationEngine.thresholds,
+      },
     });
   } catch (error) {
     console.error('Error starting escalation engine:', error);
@@ -669,7 +677,7 @@ router.post('/escalation/stop', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Autonomous escalation engine stopped successfully'
+      message: 'Autonomous escalation engine stopped successfully',
     });
   } catch (error) {
     console.error('Error stopping escalation engine:', error);
@@ -692,8 +700,8 @@ router.get('/escalation/status', async (req, res) => {
       isRunning: autonomousEscalationEngine.isRunning,
       config: {
         checkInterval: '1 minute',
-        thresholds: autonomousEscalationEngine.thresholds
-      }
+        thresholds: autonomousEscalationEngine.thresholds,
+      },
     });
   } catch (error) {
     console.error('Error getting escalation engine status:', error);
@@ -731,7 +739,7 @@ router.get('/escalation/stats', async (req, res) => {
     res.json({
       historical: stats.rows,
       today: todayStats.rows[0],
-      period: `${days} days`
+      period: `${days} days`,
     });
   } catch (error) {
     console.error('Error getting escalation stats:', error);
@@ -801,8 +809,8 @@ router.get('/escalation/logs', async (req, res) => {
         total: parseInt(countResult.rows[0].count),
         limit: parseInt(limit),
         offset: parseInt(offset),
-        hasMore: (parseInt(offset) + parseInt(limit)) < parseInt(countResult.rows[0].count)
-      }
+        hasMore: parseInt(offset) + parseInt(limit) < parseInt(countResult.rows[0].count),
+      },
     });
   } catch (error) {
     console.error('Error getting escalation logs:', error);
@@ -820,7 +828,8 @@ router.get('/escalation/alerts', async (req, res) => {
     const { resolved = 'false' } = req.query;
     const isResolved = resolved === 'true';
 
-    const alerts = await postgresService.query(`
+    const alerts = await postgresService.query(
+      `
       SELECT
         id, order_id, alert_type, severity, message,
         resolved, resolved_at, created_at, metadata
@@ -835,11 +844,13 @@ router.get('/escalation/alerts', async (req, res) => {
         END,
         created_at ASC
       LIMIT 100
-    `, [isResolved]);
+    `,
+      [isResolved]
+    );
 
     res.json({
       alerts: alerts.rows,
-      count: alerts.rows.length
+      count: alerts.rows.length,
     });
   } catch (error) {
     console.error('Error getting dispatch alerts:', error);
@@ -857,7 +868,8 @@ router.post('/escalation/alerts/:alertId/resolve', async (req, res) => {
     const { alertId } = req.params;
     const { resolution, notes } = req.body;
 
-    const result = await postgresService.query(`
+    const result = await postgresService.query(
+      `
       UPDATE dispatch_alerts
       SET
         status = 'RESOLVED',
@@ -874,7 +886,9 @@ router.post('/escalation/alerts/:alertId/resolve', async (req, res) => {
         )
       WHERE id = $3
       RETURNING *
-    `, [resolution, notes || '', alertId]);
+    `,
+      [resolution, notes || '', alertId]
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Alert not found' });
@@ -883,7 +897,7 @@ router.post('/escalation/alerts/:alertId/resolve', async (req, res) => {
     res.json({
       success: true,
       message: 'Alert resolved successfully',
-      alert: result.rows[0]
+      alert: result.rows[0],
     });
   } catch (error) {
     console.error('Error resolving alert:', error);
@@ -913,10 +927,10 @@ router.get('/escalation/at-risk-orders', async (req, res) => {
       atRiskOrders: atRiskOrders.rows,
       count: atRiskOrders.rows.length,
       breakdown: {
-        critical: atRiskOrders.rows.filter(o => o.risk_level === 'CRITICAL').length,
-        high: atRiskOrders.rows.filter(o => o.risk_level === 'HIGH').length,
-        medium: atRiskOrders.rows.filter(o => o.risk_level === 'MEDIUM').length
-      }
+        critical: atRiskOrders.rows.filter((o) => o.risk_level === 'CRITICAL').length,
+        high: atRiskOrders.rows.filter((o) => o.risk_level === 'HIGH').length,
+        medium: atRiskOrders.rows.filter((o) => o.risk_level === 'MEDIUM').length,
+      },
     });
   } catch (error) {
     console.error('Error getting at-risk orders:', error);
@@ -972,7 +986,7 @@ router.post('/start-all', async (req, res) => {
     res.json({
       success: true,
       message: 'All automation engines started',
-      engines: results
+      engines: results,
     });
   } catch (error) {
     console.error('Error starting all automation engines:', error);
@@ -1024,7 +1038,7 @@ router.post('/stop-all', async (req, res) => {
     res.json({
       success: true,
       message: 'All automation engines stopped',
-      engines: results
+      engines: results,
     });
   } catch (error) {
     console.error('Error stopping all automation engines:', error);
@@ -1042,20 +1056,20 @@ router.get('/status-all', async (req, res) => {
     res.json({
       autoDispatch: {
         isRunning: autoDispatchEngine ? autoDispatchEngine.isRunning : false,
-        initialized: !!autoDispatchEngine
+        initialized: !!autoDispatchEngine,
       },
       routeOptimizer: {
         isRunning: dynamicRouteOptimizer ? dynamicRouteOptimizer.isRunning : false,
-        initialized: !!dynamicRouteOptimizer
+        initialized: !!dynamicRouteOptimizer,
       },
       smartBatching: {
         isRunning: smartBatchingEngine ? smartBatchingEngine.isRunning : false,
-        initialized: !!smartBatchingEngine
+        initialized: !!smartBatchingEngine,
       },
       escalation: {
         isRunning: autonomousEscalationEngine ? autonomousEscalationEngine.isRunning : false,
-        initialized: !!autonomousEscalationEngine
-      }
+        initialized: !!autonomousEscalationEngine,
+      },
     });
   } catch (error) {
     console.error('Error getting automation status:', error);
@@ -1101,7 +1115,7 @@ router.get('/dashboard', async (req, res) => {
           COUNT(*) FILTER (WHERE escalation_type = 'SLA_RISK') AS sla_risk
         FROM escalation_logs
         WHERE DATE(created_at) = CURRENT_DATE
-      `)
+      `),
     ]);
 
     // Get active alerts count
@@ -1125,27 +1139,27 @@ router.get('/dashboard', async (req, res) => {
         autoDispatch: autoDispatchEngine ? autoDispatchEngine.isRunning : false,
         routeOptimizer: dynamicRouteOptimizer ? dynamicRouteOptimizer.isRunning : false,
         smartBatching: smartBatchingEngine ? smartBatchingEngine.isRunning : false,
-        escalation: autonomousEscalationEngine ? autonomousEscalationEngine.isRunning : false
+        escalation: autonomousEscalationEngine ? autonomousEscalationEngine.isRunning : false,
       },
       summary: {
         totalAssignments: parseInt(dispatchStats.rows[0].total_assignments) || 0,
         totalOptimizations: parseInt(routeStats.rows[0].total_optimizations) || 0,
         totalBatches: parseInt(batchingStats.rows[0].total_batches) || 0,
         totalEscalations: parseInt(escalationStats.rows[0].total_escalations) || 0,
-        activeAlerts: parseInt(alertsCount.rows[0].count) || 0
+        activeAlerts: parseInt(alertsCount.rows[0].count) || 0,
       },
       today: {
         dispatch: dispatchStats.rows[0],
         routes: routeStats.rows[0],
         batching: batchingStats.rows[0],
-        escalation: escalationStats.rows[0]
+        escalation: escalationStats.rows[0],
       },
       alerts: {
         pending: parseInt(alertsCount.rows[0].count),
         atRiskOrders: parseInt(atRiskCount.rows[0].total),
-        criticalRiskOrders: parseInt(atRiskCount.rows[0].critical)
+        criticalRiskOrders: parseInt(atRiskCount.rows[0].critical),
       },
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   } catch (error) {
     console.error('Error getting automation dashboard:', error);

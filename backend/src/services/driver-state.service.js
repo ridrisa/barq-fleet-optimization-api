@@ -162,7 +162,7 @@ class DriverStateService extends EventEmitter {
       } catch (error) {
         logger.warn('[DriverStateService] Failed to calculate time window feasibility', {
           driverId: driver.id,
-          error: error.message
+          error: error.message,
         });
         // No penalty if calculation fails, treat as neutral
       }
@@ -252,7 +252,7 @@ class DriverStateService extends EventEmitter {
       return new Date(Date.now() + travelTimeMinutes * 60 * 1000);
     } catch (error) {
       logger.warn('[DriverStateService] Failed to calculate dynamic pickup ETA, using fallback', {
-        error: error.message
+        error: error.message,
       });
 
       // Fallback to simple estimation

@@ -5,7 +5,7 @@
 
 const express = require('express');
 const { asyncHandler } = require('../../utils/error.handler');
-const { RequestSanitizer, ValidationError } = require('../../utils/sanitizer');
+const { RequestSanitizer } = require('../../utils/sanitizer');
 const { optimizationRequestSchema } = require('../../models/request.model');
 const { logisticsService } = require('../../services/logistics.service');
 const { generateId } = require('../../utils/helper');
@@ -42,26 +42,61 @@ const sanitizer = new RequestSanitizer();
 router.post(
   '/',
   asyncHandler(async (req, res) => {
-    // Get the start time for metrics
-    const startTime = Date.now();
+    try {
+      // Get the start time for metrics
+      const startTime = Date.now();
 
-    // Validate the request using Joi
-    const { error, value } = optimizationRequestSchema.validate(req.body);
-    if (error) {
-      throw new ValidationError(`Invalid request: ${error.message}`);
+      // Validate the request using Joi
+      const { error, value } = optimizationRequestSchema.validate(req.body);
+      if (error) {
+        console.error('Validation error:', error.details);
+        return res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          details: error.details.map((detail) => ({
+            field: detail.path.join('.'),
+            message: detail.message,
+            type: detail.type,
+          })),
+        });
+      }
+
+      // Sanitize the request
+      const sanitizedRequest = sanitizer.sanitize(value);
+
+      // Generate a request ID
+      const requestId = req.headers['x-request-id'] || `req-${generateId()}`;
+
+      // Process the optimization request
+      const result = await logisticsService.processOptimizationRequest(requestId, sanitizedRequest);
+
+      // Return the result
+      res.json(result);
+    } catch (error) {
+      console.error(`Optimization error: ${error.message}`);
+
+      // Provide specific error messages
+      let statusCode = 500;
+      let errorMessage = 'Internal server error';
+
+      if (error.message.includes('ValidationError')) {
+        statusCode = 400;
+        errorMessage = 'Invalid request data';
+      } else if (error.message.includes('CVRP')) {
+        statusCode = 503;
+        errorMessage = 'Optimization service temporarily unavailable';
+      } else if (error.message.includes('GROQ') || error.message.includes('API')) {
+        statusCode = 503;
+        errorMessage = 'External service temporarily unavailable';
+      }
+
+      res.status(statusCode).json({
+        success: false,
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        requestId: req.headers['x-request-id'] || `req-${generateId()}`,
+      });
     }
-
-    // Sanitize the request
-    const sanitizedRequest = sanitizer.sanitize(value);
-
-    // Generate a request ID
-    const requestId = req.headers['x-request-id'] || `req-${generateId()}`;
-
-    // Process the optimization request
-    const result = await logisticsService.processOptimizationRequest(requestId, sanitizedRequest);
-
-    // Return the result
-    res.json(result);
   })
 );
 
@@ -88,19 +123,38 @@ router.post(
 router.get(
   '/status/:requestId',
   asyncHandler(async (req, res) => {
-    const { requestId } = req.params;
+    try {
+      const { requestId } = req.params;
 
-    // Get the status
-    const status = await logisticsService.getOptimizationStatus(requestId);
+      // Validate requestId
+      if (!requestId || typeof requestId !== 'string' || requestId.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid request ID',
+          details: 'Request ID must be a non-empty string',
+        });
+      }
 
-    if (!status) {
-      return res.status(404).json({
+      // Get the status
+      const status = await logisticsService.getOptimizationStatus(requestId);
+
+      if (!status) {
+        return res.status(404).json({
+          success: false,
+          error: `Optimization request with ID ${requestId} not found`,
+        });
+      }
+
+      res.json(status);
+    } catch (error) {
+      console.error(`Status check error for ${req.params.requestId}: ${error.message}`);
+      res.status(500).json({
         success: false,
-        error: `Optimization request with ID ${requestId} not found`,
+        error: 'Failed to check optimization status',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        requestId: req.params.requestId,
       });
     }
-
-    res.json(status);
   })
 );
 
@@ -131,20 +185,46 @@ router.get(
 router.get(
   '/history',
   asyncHandler(async (req, res) => {
-    // Get pagination parameters
-    const limit = req.query.limit ? parseInt(req.query.limit) : 10;
-    const page = req.query.page ? parseInt(req.query.page) : 1;
+    try {
+      // Get and validate pagination parameters
+      const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+      const page = req.query.page ? parseInt(req.query.page) : 1;
 
-    // Get the optimization history
-    const historyResult = await logisticsService.getOptimizationHistory(limit, page);
+      // Validate pagination parameters
+      if (isNaN(limit) || limit < 1 || limit > 100) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid limit parameter',
+          details: 'Limit must be a number between 1 and 100',
+        });
+      }
 
-    res.json({
-      success: true,
-      data: historyResult.items,
-      meta: {
-        pagination: historyResult.pagination,
-      },
-    });
+      if (isNaN(page) || page < 1) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid page parameter',
+          details: 'Page must be a number greater than 0',
+        });
+      }
+
+      // Get the optimization history
+      const historyResult = await logisticsService.getOptimizationHistory(limit, page);
+
+      res.json({
+        success: true,
+        data: historyResult.items,
+        meta: {
+          pagination: historyResult.pagination,
+        },
+      });
+    } catch (error) {
+      console.error(`History retrieval error: ${error.message}`);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve optimization history',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      });
+    }
   })
 );
 

@@ -4,7 +4,7 @@
  */
 
 const { logger } = require('./logger');
-const { alertService, ALERT_LEVELS } = require('../services/alert.service');
+const { alertService } = require('../services/alert.service');
 
 // Circuit breaker states
 const STATES = {

@@ -243,9 +243,10 @@ class AgentTriggerService {
     return {
       totalTriggers: this.stats.totalTriggers,
       triggersBlocked: this.stats.triggersBlocked,
-      successRate: this.stats.totalTriggers > 0
-        ? (this.stats.totalTriggers / (this.stats.totalTriggers + this.stats.triggersBlocked))
-        : 0,
+      successRate:
+        this.stats.totalTriggers > 0
+          ? this.stats.totalTriggers / (this.stats.totalTriggers + this.stats.triggersBlocked)
+          : 0,
       triggersByAgent: Object.fromEntries(this.stats.triggersByAgent),
       triggersByReason: Object.fromEntries(this.stats.triggersByReason),
       recentTriggers: this.triggerHistory.slice(-10),
@@ -254,7 +255,10 @@ class AgentTriggerService {
         globalCooldownMs: this.globalCooldownMs,
         perAgentCooldownMs: this.perAgentCooldownMs,
         globalCooldownActive: Date.now() - this.lastGlobalTrigger < this.globalCooldownMs,
-        timeUntilGlobalReady: Math.max(0, this.globalCooldownMs - (Date.now() - this.lastGlobalTrigger)),
+        timeUntilGlobalReady: Math.max(
+          0,
+          this.globalCooldownMs - (Date.now() - this.lastGlobalTrigger)
+        ),
       },
     };
   }
@@ -276,7 +280,7 @@ class AgentTriggerService {
     return {
       agentName,
       totalTriggers: count,
-      recentTriggers: history.map(timestamp => ({
+      recentTriggers: history.map((timestamp) => ({
         timestamp,
         timeAgo: Date.now() - timestamp,
       })),

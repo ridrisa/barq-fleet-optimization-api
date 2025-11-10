@@ -56,11 +56,14 @@ const generateErrorId = () => {
 };
 
 // Main error handler middleware for Express
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res, _next) => {
   // Default to 500 internal server error if status is not defined
   const statusCode = err.statusCode || 500;
   const errorCode = err.errorCode || 'INTERNAL_SERVER_ERROR';
   const errorId = generateErrorId();
+
+  // Remove unused parameter from function signature
+  // eslint-disable-next-line no-unused-vars
 
   // Log error details for server-side debugging
   console.error(`[ERROR ${errorId}]`, {

@@ -44,6 +44,24 @@ class ApiClient {
   }
 
   /**
+   * Get HTTP(S) base URL derived from the WebSocket URL.
+   * Useful because the demo control endpoints are exposed over HTTP
+   * on the same host/port as the WebSocket server.
+   */
+  getWsHttpBaseUrl(): string {
+    try {
+      const ws = new URL(this.wsUrl);
+      const protocol = ws.protocol === 'wss:' ? 'https:' : 'http:';
+      return `${protocol}//${ws.host}`;
+    } catch {
+      // Fallback: attempt simple replacements
+      if (this.wsUrl.startsWith('wss://')) return this.wsUrl.replace('wss://', 'https://');
+      if (this.wsUrl.startsWith('ws://')) return this.wsUrl.replace('ws://', 'http://');
+      return this.baseUrl;
+    }
+  }
+
+  /**
    * Get the API version
    */
   getVersion(): string {
@@ -208,6 +226,28 @@ class ApiClient {
       ...options,
       method: 'DELETE',
     });
+  }
+
+  /**
+   * Absolute POST request to a fully-qualified URL, bypassing versioning.
+   * Still applies default headers and auth if available.
+   */
+  async postAbsolute<T = any>(absoluteUrl: string, data?: any, options?: RequestInit): Promise<T> {
+    const config: RequestInit = {
+      ...options,
+      method: 'POST',
+      headers: this.buildHeaders(options?.headers as Record<string, string>),
+      body: data ? JSON.stringify(data) : undefined,
+    };
+
+    const response = await fetch(absoluteUrl, config);
+    this.checkDeprecationWarnings(response);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = (errorData as any).error || (errorData as any).message || response.statusText;
+      throw new Error(`API Error (${response.status}): ${errorMessage}`);
+    }
+    return (await response.json()) as T;
   }
 }
 

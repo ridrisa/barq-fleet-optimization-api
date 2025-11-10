@@ -111,7 +111,9 @@ class GDPRService {
       if (softDelete) {
         // Soft delete: Mark for deletion after grace period
         await this._softDeleteUser(userId, reason);
-        deletionSummary.gracePeriodEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        deletionSummary.gracePeriodEnds = new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString();
         deletionSummary.canRecover = true;
       } else {
         // Hard delete: Permanent removal
@@ -603,10 +605,9 @@ class GDPRService {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - this.retentionPeriods.logs);
 
-    const result = await postgres.query(
-      `DELETE FROM agent_activities WHERE created_at < $1`,
-      [cutoffDate]
-    );
+    const result = await postgres.query(`DELETE FROM agent_activities WHERE created_at < $1`, [
+      cutoffDate,
+    ]);
 
     return result.rowCount;
   }
@@ -615,10 +616,7 @@ class GDPRService {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - this.retentionPeriods.analyticsData);
 
-    const result = await postgres.query(
-      `DELETE FROM system_metrics WHERE date < $1`,
-      [cutoffDate]
-    );
+    const result = await postgres.query(`DELETE FROM system_metrics WHERE date < $1`, [cutoffDate]);
 
     return result.rowCount;
   }

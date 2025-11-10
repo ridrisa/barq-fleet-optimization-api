@@ -78,16 +78,12 @@ router.get(
     const status = autonomousInitializer
       ? autonomousInitializer.getStatus()
       : { initialized: false };
-    const stats = autonomousInitializer
-      ? autonomousInitializer.getCycleStats()
-      : {};
+    const stats = autonomousInitializer ? autonomousInitializer.getCycleStats() : {};
 
     const dashboardData = {
       autonomousStatus: status,
       statistics: stats,
-      recentActivity: autonomousInitializer
-        ? autonomousInitializer.getCycleResults(10)
-        : [],
+      recentActivity: autonomousInitializer ? autonomousInitializer.getCycleResults(10) : [],
     };
 
     res.json({

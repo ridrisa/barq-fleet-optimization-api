@@ -175,7 +175,8 @@ const OptimizationController = {
           }
 
           // Factor 2: Distance optimization (vs simple straight-line distance)
-          const totalDistance = result.data.summary?.totalDistance || result.data.summary?.total_distance || 0;
+          const totalDistance =
+            result.data.summary?.totalDistance || result.data.summary?.total_distance || 0;
           if (totalDistance > 0) {
             // Estimate theoretical minimum distance (simplified)
             const theoreticalMin = totalDistance * 0.7; // Assume optimal is 70% of actual
@@ -194,7 +195,8 @@ const OptimizationController = {
           }
 
           // Factor 4: Time efficiency (if duration data available)
-          const totalDuration = result.data.summary?.totalTime || result.data.summary?.total_duration || 0;
+          const totalDuration =
+            result.data.summary?.totalTime || result.data.summary?.total_duration || 0;
           if (totalDuration > 0) {
             // Assume efficient if under 8 hours total
             const targetDuration = 8 * 60; // 8 hours in minutes
@@ -206,11 +208,11 @@ const OptimizationController = {
           // Factor 5: Priority handling (higher priority points serviced first)
           if (result.data.routes && result.data.routes.length > 0) {
             let priorityScore = 0;
-            result.data.routes.forEach(route => {
+            result.data.routes.forEach((route) => {
               if (route.stops && route.stops.length > 1) {
                 let correctOrder = true;
                 for (let i = 1; i < route.stops.length; i++) {
-                  const prevPriority = route.stops[i-1].priority || 5;
+                  const prevPriority = route.stops[i - 1].priority || 5;
                   const currPriority = route.stops[i].priority || 5;
                   if (prevPriority < currPriority) {
                     correctOrder = false;
@@ -236,7 +238,7 @@ const OptimizationController = {
           }
 
           const violations = [];
-          let currentTime = new Date();
+          const currentTime = new Date();
           currentTime.setHours(8, 0, 0, 0); // Start at 8:00 AM
 
           // Check each route for time window violations
@@ -249,15 +251,13 @@ const OptimizationController = {
               let timeWindow = null;
 
               // Check if it's a pickup point
-              const pickupPoint = req.body.pickupPoints.find(p =>
-                p.name === stop.name ||
-                (p.lat === stop.lat && p.lng === stop.lng)
+              const pickupPoint = req.body.pickupPoints.find(
+                (p) => p.name === stop.name || (p.lat === stop.lat && p.lng === stop.lng)
               );
 
               // Check if it's a delivery point
-              const deliveryPoint = req.body.deliveryPoints.find(d =>
-                d.name === stop.name ||
-                (d.lat === stop.lat && d.lng === stop.lng)
+              const deliveryPoint = req.body.deliveryPoints.find(
+                (d) => d.name === stop.name || (d.lat === stop.lat && d.lng === stop.lng)
               );
 
               originalPoint = pickupPoint || deliveryPoint;
@@ -299,7 +299,7 @@ const OptimizationController = {
                         stopIndex: stopIndex + 1,
                         expectedWindow: `${windowStartStr}-${windowEndStr}`,
                         estimatedArrival: arrivalTimeStr,
-                        violation: arrivalTime < windowData.start ? 'early' : 'late'
+                        violation: arrivalTime < windowData.start ? 'early' : 'late',
                       });
                     }
                   }
@@ -307,14 +307,14 @@ const OptimizationController = {
               }
 
               // Add service time
-              routeTime += (stop.serviceTime || 5); // Default 5 minutes service time
+              routeTime += stop.serviceTime || 5; // Default 5 minutes service time
             });
           });
 
           return {
             valid: violations.length === 0,
             violations: violations,
-            totalViolations: violations.length
+            totalViolations: violations.length,
           };
         };
 
@@ -327,14 +327,15 @@ const OptimizationController = {
           efficiency: efficiencyScore,
           processingTime: processingTime,
           routesGenerated: (result.data.routes || []).length,
-          totalDistance: result.data.summary?.totalDistance || result.data.summary?.total_distance || 0,
+          totalDistance:
+            result.data.summary?.totalDistance || result.data.summary?.total_distance || 0,
           totalTime: result.data.summary?.totalTime || result.data.summary?.total_duration || 0,
           vehiclesUsed: (result.data.routes || []).length,
           pointsServiced: (result.data.routes || []).reduce((sum, route) => {
             return sum + (route.stops ? route.stops.length : 0);
           }, 0),
           timeWindowCompliance: timeWindowValidation.valid,
-          timeWindowViolations: timeWindowValidation.totalViolations
+          timeWindowViolations: timeWindowValidation.totalViolations,
         };
 
         // Create a cleaned-up response structure (v3.1.1)

@@ -15,9 +15,9 @@ const logger = require('../utils/logger');
 
 // Service type SLA targets (in minutes)
 const SLA_TARGETS = {
-  BARQ: 60,      // 1 hour
-  BULLET: 240,   // 4 hours
-  EXPRESS: 30,   // 30 minutes
+  BARQ: 60, // 1 hour
+  BULLET: 240, // 4 hours
+  EXPRESS: 30, // 30 minutes
 };
 
 class SLACalculatorService {
@@ -32,22 +32,20 @@ class SLACalculatorService {
     const creationTime = moment(createdAt).tz('Asia/Riyadh');
 
     // Calculate closing time (11 PM on creation date)
-    const closingTime = creationTime.clone()
-      .hours(23)
-      .minutes(0)
-      .seconds(0)
-      .milliseconds(0);
+    const closingTime = creationTime.clone().hours(23).minutes(0).seconds(0).milliseconds(0);
 
     // Seconds left until closing time
     const secondsLeftToClose = closingTime.diff(creationTime, 'seconds');
 
     // If created within 4 hours of closing (after 7 PM)
-    if (secondsLeftToClose <= 14400) { // 14400 seconds = 4 hours
+    if (secondsLeftToClose <= 14400) {
+      // 14400 seconds = 4 hours
       // Calculate grace period
       const grace = Math.max(0, 14400 - secondsLeftToClose);
 
       // Next day deadline starts at 9 AM
-      let nextDayDeadline = creationTime.clone()
+      const nextDayDeadline = creationTime
+        .clone()
         .add(1, 'day')
         .hours(9)
         .minutes(0)
@@ -55,7 +53,8 @@ class SLACalculatorService {
         .milliseconds(0);
 
       // Friday rule: 4 PM instead of 9 AM
-      if (nextDayDeadline.day() === 5) { // Friday
+      if (nextDayDeadline.day() === 5) {
+        // Friday
         nextDayDeadline.hours(16);
       }
 
@@ -161,14 +160,14 @@ class SLACalculatorService {
    * @returns {Array} Orders at risk with SLA information
    */
   static getOrdersAtRisk(orders) {
-    const ordersWithSLA = orders.map(order => ({
+    const ordersWithSLA = orders.map((order) => ({
       ...order,
       sla: this.calculateStatus(order),
     }));
 
     // Filter for at-risk and breached orders
     const atRiskOrders = ordersWithSLA.filter(
-      order => order.sla.is_at_risk || order.sla.is_breached
+      (order) => order.sla.is_at_risk || order.sla.is_breached
     );
 
     // Sort by urgency (critical first, then by remaining time)
@@ -191,7 +190,7 @@ class SLACalculatorService {
    */
   static calculateComplianceMetrics(orders) {
     const completedOrders = orders.filter(
-      order => order.status === 'delivered' && order.delivered_at
+      (order) => order.status === 'delivered' && order.delivered_at
     );
 
     if (completedOrders.length === 0) {
@@ -211,7 +210,7 @@ class SLACalculatorService {
     let totalBreachTime = 0;
     let breachCount = 0;
 
-    completedOrders.forEach(order => {
+    completedOrders.forEach((order) => {
       const sla = this.calculateStatus(order);
 
       if (sla.was_on_time) {
@@ -247,7 +246,7 @@ class SLACalculatorService {
   static getSLASummaryByServiceType(orders) {
     const summary = {};
 
-    orders.forEach(order => {
+    orders.forEach((order) => {
       const serviceType = order.service_type || 'BARQ';
 
       if (!summary[serviceType]) {
@@ -262,7 +261,7 @@ class SLACalculatorService {
     });
 
     // Calculate metrics for each service type
-    Object.keys(summary).forEach(serviceType => {
+    Object.keys(summary).forEach((serviceType) => {
       const metrics = this.calculateComplianceMetrics(summary[serviceType].orders);
       summary[serviceType] = {
         ...summary[serviceType],

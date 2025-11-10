@@ -100,7 +100,7 @@ const corsOptions = {
 
     // If CORS_ORIGIN is set in env, use it (comma-separated list)
     if (process.env.CORS_ORIGIN) {
-      const allowedOrigins = process.env.CORS_ORIGIN.split(',').map(o => o.trim());
+      const allowedOrigins = process.env.CORS_ORIGIN.split(',').map((o) => o.trim());
       if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -119,18 +119,13 @@ const corsOptions = {
     'Accept',
     'Origin',
     'Access-Control-Request-Method',
-    'Access-Control-Request-Headers'
+    'Access-Control-Request-Headers',
   ],
-  exposedHeaders: [
-    'X-Request-ID',
-    'X-Total-Count',
-    'X-Page-Number',
-    'X-Page-Size'
-  ],
+  exposedHeaders: ['X-Request-ID', 'X-Total-Count', 'X-Page-Number', 'X-Page-Size'],
   credentials: true,
   maxAge: 86400, // 24 hours - browser caches preflight response
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
 };
 
 app.use(cors(corsOptions));
@@ -231,6 +226,10 @@ app.use('/api/v1/automation', automationRoutes);
 
 // Health route (not versioned - system endpoint)
 app.use('/health', healthRoutes);
+
+// Demo routes - Integrated into main server
+const demoRoutes = require('./demo/demo-routes');
+app.use('/api/demo', demoRoutes);
 
 // 404 handler - must be before error handler
 app.use('*', notFoundHandler);
@@ -348,39 +347,39 @@ const server = app.listen(PORT, async () => {
           AgentInitializer.getAgents()
         );
 
-      if (autonomousResult.success) {
-        logger.info('Autonomous operations initialized successfully', {
-          autonomousMode: autonomousResult.autonomousMode,
-          cycleInterval: autonomousResult.cycleInterval,
-          workerThread: autonomousResult.workerThread,
-          mode: autonomousResult.workerThread
-            ? 'WORKER_THREAD (non-blocking)'
-            : 'MAIN_THREAD (may impact performance)',
-        });
+        if (autonomousResult.success) {
+          logger.info('Autonomous operations initialized successfully', {
+            autonomousMode: autonomousResult.autonomousMode,
+            cycleInterval: autonomousResult.cycleInterval,
+            workerThread: autonomousResult.workerThread,
+            mode: autonomousResult.workerThread
+              ? 'WORKER_THREAD (non-blocking)'
+              : 'MAIN_THREAD (may impact performance)',
+          });
 
-        // Initialize routes with services
-        autonomousRoutes.init(
-          autonomousInitializer.getOrchestrator(),
-          autonomousInitializer.getActionAuth(),
-          autonomousInitializer
-        );
+          // Initialize routes with services
+          autonomousRoutes.init(
+            autonomousInitializer.getOrchestrator(),
+            autonomousInitializer.getActionAuth(),
+            autonomousInitializer
+          );
 
-        logger.info('Autonomous routes initialized');
-        logger.info('Status endpoint: GET /api/v1/autonomous/status');
-      } else {
-        logger.warn('Autonomous operations initialization failed', {
-          error: autonomousResult.error,
+          logger.info('Autonomous routes initialized');
+          logger.info('Status endpoint: GET /api/v1/autonomous/status');
+        } else {
+          logger.warn('Autonomous operations initialization failed', {
+            error: autonomousResult.error,
+          });
+          logger.info('All agent APIs still available via /api/v1/agents/*');
+        }
+      } catch (autoError) {
+        logger.error('Failed to initialize autonomous operations', {
+          error: autoError.message,
+          stack: autoError.stack,
         });
+        logger.warn('Server will continue without autonomous functionality');
         logger.info('All agent APIs still available via /api/v1/agents/*');
       }
-    } catch (autoError) {
-      logger.error('Failed to initialize autonomous operations', {
-        error: autoError.message,
-        stack: autoError.stack,
-      });
-      logger.warn('Server will continue without autonomous functionality');
-      logger.info('All agent APIs still available via /api/v1/agents/*');
-    }
 
       // Initialize PostgreSQL service (required for automation engines)
       logger.info('Initializing PostgreSQL service...');

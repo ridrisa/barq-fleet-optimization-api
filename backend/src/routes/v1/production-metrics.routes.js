@@ -240,10 +240,7 @@ router.get('/order-distribution', async (req, res) => {
 router.get('/comprehensive', async (req, res) => {
   try {
     const { startDate, endDate } = getDateRange(req);
-    const dashboard = await ProductionMetricsService.getComprehensiveDashboard(
-      startDate,
-      endDate
-    );
+    const dashboard = await ProductionMetricsService.getComprehensiveDashboard(startDate, endDate);
 
     res.json({
       success: true,
@@ -279,10 +276,10 @@ router.get('/sla/at-risk', async (req, res) => {
 
     const summary = {
       total_at_risk: atRiskOrders.length,
-      critical: atRiskOrders.filter(o => o.sla.urgency === 'critical').length,
-      high: atRiskOrders.filter(o => o.sla.urgency === 'high').length,
-      medium: atRiskOrders.filter(o => o.sla.urgency === 'medium').length,
-      breached: atRiskOrders.filter(o => o.sla.is_breached).length,
+      critical: atRiskOrders.filter((o) => o.sla.urgency === 'critical').length,
+      high: atRiskOrders.filter((o) => o.sla.urgency === 'high').length,
+      medium: atRiskOrders.filter((o) => o.sla.urgency === 'medium').length,
+      breached: atRiskOrders.filter((o) => o.sla.is_breached).length,
     };
 
     res.json({

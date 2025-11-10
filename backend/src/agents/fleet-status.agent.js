@@ -59,25 +59,25 @@ class FleetStatusAgent {
       const drivers = await this.getAllDrivers();
       fleetSnapshot.drivers.total = drivers.length;
 
-    // Analyze each driver
-    for (const driver of drivers) {
-      const state = await this.analyzeDriverState(driver);
-      this.driverStates.set(driver.id, state);
+      // Analyze each driver
+      for (const driver of drivers) {
+        const state = await this.analyzeDriverState(driver);
+        this.driverStates.set(driver.id, state);
 
-      // Categorize driver by status
-      await this.categorizeDriver(driver, state, fleetSnapshot);
+        // Categorize driver by status
+        await this.categorizeDriver(driver, state, fleetSnapshot);
 
-      // Update service capability counts
-      this.updateServiceCapability(state, fleetSnapshot);
-    }
+        // Update service capability counts
+        this.updateServiceCapability(state, fleetSnapshot);
+      }
 
-    // Calculate fleet capacity metrics
-    fleetSnapshot.capacity = await this.calculateFleetCapacity(fleetSnapshot);
+      // Calculate fleet capacity metrics
+      fleetSnapshot.capacity = await this.calculateFleetCapacity(fleetSnapshot);
 
-    // Generate geographical heat map
-    fleetSnapshot.geographical = await this.generateGeographicalDistribution(
-      fleetSnapshot.drivers.available
-    );
+      // Generate geographical heat map
+      fleetSnapshot.geographical = await this.generateGeographicalDistribution(
+        fleetSnapshot.drivers.available
+      );
 
       // Predict near-future availability (next 30 minutes)
       fleetSnapshot.predictions = await this.predictFleetAvailability(fleetSnapshot);
@@ -88,7 +88,7 @@ class FleetStatusAgent {
     } catch (error) {
       logger.error('[FleetStatus] Error executing fleet status analysis', {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
 
       // Return empty snapshot to prevent crash

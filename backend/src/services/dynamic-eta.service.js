@@ -64,20 +64,23 @@ class DynamicETAService {
    */
   getTimeOfDayFactor(hour = new Date().getHours()) {
     // Morning rush hour
-    if (hour >= this.timeOfDayFactors.morningRush.start &&
-        hour < this.timeOfDayFactors.morningRush.end) {
+    if (
+      hour >= this.timeOfDayFactors.morningRush.start &&
+      hour < this.timeOfDayFactors.morningRush.end
+    ) {
       return this.timeOfDayFactors.morningRush.factor;
     }
 
     // Evening rush hour
-    if (hour >= this.timeOfDayFactors.eveningRush.start &&
-        hour < this.timeOfDayFactors.eveningRush.end) {
+    if (
+      hour >= this.timeOfDayFactors.eveningRush.start &&
+      hour < this.timeOfDayFactors.eveningRush.end
+    ) {
       return this.timeOfDayFactors.eveningRush.factor;
     }
 
     // Midday
-    if (hour >= this.timeOfDayFactors.midday.start &&
-        hour < this.timeOfDayFactors.midday.end) {
+    if (hour >= this.timeOfDayFactors.midday.start && hour < this.timeOfDayFactors.midday.end) {
       return this.timeOfDayFactors.midday.factor;
     }
 
@@ -162,16 +165,16 @@ class DynamicETAService {
 
       // Apply multipliers
       const timeOfDayFactor = this.getTimeOfDayFactor(departureTime.getHours());
-      const trafficFactor = this.trafficMultipliers[trafficCondition] ||
-                            this.trafficMultipliers.normal;
-      const weatherFactor = this.weatherMultipliers[weatherCondition] ||
-                            this.weatherMultipliers.normal;
+      const trafficFactor =
+        this.trafficMultipliers[trafficCondition] || this.trafficMultipliers.normal;
+      const weatherFactor =
+        this.weatherMultipliers[weatherCondition] || this.weatherMultipliers.normal;
       const driverSpeedIndex = this.getDriverSpeedIndex(driverHistory);
       const complexityFactor = this.getRouteComplexityFactor(numStops, totalRouteDistance);
 
       // Combined speed multiplier
-      const speedMultiplier = timeOfDayFactor * trafficFactor * weatherFactor *
-                              driverSpeedIndex * complexityFactor;
+      const speedMultiplier =
+        timeOfDayFactor * trafficFactor * weatherFactor * driverSpeedIndex * complexityFactor;
 
       // Adjusted travel time
       const adjustedTravelHours = baseTravelHours / speedMultiplier;
@@ -283,8 +286,9 @@ class DynamicETAService {
         totalStopMinutes += stopMinutes;
 
         // Calculate arrival at this stop
-        currentTime = new Date(currentTime.getTime() +
-                              (segmentETA.travelMinutes + stopMinutes) * 60 * 1000);
+        currentTime = new Date(
+          currentTime.getTime() + (segmentETA.travelMinutes + stopMinutes) * 60 * 1000
+        );
 
         stopETAs.push({
           stopIndex: index,
@@ -314,7 +318,7 @@ class DynamicETAService {
     } catch (error) {
       logger.error('[DynamicETA] Error calculating delivery route ETA', {
         error: error.message,
-        params
+        params,
       });
       throw error;
     }
@@ -361,14 +365,18 @@ class DynamicETAService {
         },
         slackMinutes,
         waitMinutes,
-        status: isFeasible ?
-          (slackMinutes > 0 ? 'ON_TIME' : 'TIGHT') :
-          (arrivalTime < earliestTime ? 'TOO_EARLY' : 'TOO_LATE'),
+        status: isFeasible
+          ? slackMinutes > 0
+            ? 'ON_TIME'
+            : 'TIGHT'
+          : arrivalTime < earliestTime
+            ? 'TOO_EARLY'
+            : 'TOO_LATE',
       };
     } catch (error) {
       logger.error('[DynamicETA] Error checking time window feasibility', {
         error: error.message,
-        params
+        params,
       });
 
       // Default to feasible if parsing fails
@@ -420,15 +428,15 @@ class DynamicETAService {
         remainingMinutes: remainingETA.totalMinutes,
         elapsedMinutes,
         deviationMinutes,
-        status: Math.abs(deviationMinutes) <= 5 ? 'ON_TRACK' :
-                deviationMinutes > 0 ? 'DELAYED' : 'AHEAD',
+        status:
+          Math.abs(deviationMinutes) <= 5 ? 'ON_TRACK' : deviationMinutes > 0 ? 'DELAYED' : 'AHEAD',
         newArrivalTime: remainingETA.arrivalTime,
         actualSpeedKmh: Math.round(actualSpeedKmh * 10) / 10,
       };
     } catch (error) {
       logger.error('[DynamicETA] Error updating ETA with progress', {
         error: error.message,
-        params
+        params,
       });
       throw error;
     }
