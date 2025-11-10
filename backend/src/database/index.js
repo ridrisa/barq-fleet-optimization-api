@@ -19,9 +19,11 @@ class DatabaseManager {
    * Load database configuration
    */
   loadConfig() {
-    return {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
+    const dbHost = process.env.DB_HOST || 'localhost';
+    const isUnixSocket = dbHost.startsWith('/cloudsql/');
+
+    const config = {
+      host: dbHost,
       database: process.env.DB_NAME || 'barq_logistics',
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
@@ -31,6 +33,13 @@ class DatabaseManager {
       statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT || '30000'), // 30 seconds
       query_timeout: parseInt(process.env.DB_QUERY_TIMEOUT || '30000'), // 30 seconds
     };
+
+    // Only add port for TCP connections, not Unix sockets
+    if (!isUnixSocket) {
+      config.port = parseInt(process.env.DB_PORT || '5432');
+    }
+
+    return config;
   }
 
   /**

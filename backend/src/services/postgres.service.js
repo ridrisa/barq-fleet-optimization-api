@@ -36,9 +36,11 @@ class PostgresService {
       return;
     }
 
+    const dbHost = process.env.DB_HOST || process.env.POSTGRES_HOST || 'localhost';
+    const isUnixSocket = dbHost.startsWith('/cloudsql/');
+
     const config = {
-      host: process.env.DB_HOST || process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || process.env.POSTGRES_PORT || '5432'),
+      host: dbHost,
       database: process.env.DB_NAME || process.env.POSTGRES_DB || 'barq_logistics',
       user: process.env.DB_USER || process.env.POSTGRES_USER || 'postgres',
       password: process.env.DB_PASSWORD || process.env.POSTGRES_PASSWORD || 'postgres',
@@ -46,8 +48,13 @@ class PostgresService {
       min: parseInt(process.env.POSTGRES_POOL_MIN || '2'), // Minimum pool size
       idleTimeoutMillis: parseInt(process.env.POSTGRES_IDLE_TIMEOUT || '30000'),
       connectionTimeoutMillis: parseInt(process.env.POSTGRES_CONNECTION_TIMEOUT || '10000'),
-      ssl: process.env.POSTGRES_SSL === 'true' ? { rejectUnauthorized: false } : false,
     };
+
+    // Only add port and SSL for TCP connections, not Unix sockets
+    if (!isUnixSocket) {
+      config.port = parseInt(process.env.DB_PORT || process.env.POSTGRES_PORT || '5432');
+      config.ssl = process.env.POSTGRES_SSL === 'true' ? { rejectUnauthorized: false } : false;
+    }
 
     this.pool = new Pool(config);
 
