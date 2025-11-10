@@ -13,8 +13,8 @@ const {
   authorize,
   ROLES,
 } = require('../../middleware/auth.middleware');
-// Database not needed for basic health check
-// const db = require('../../database');
+// Database connection
+const db = require('../../database');
 const { logger } = require('../../utils/logger');
 const { healthService } = require('../../services/health.service');
 const { circuitBreakerManager } = require('../../utils/circuit-breaker');
