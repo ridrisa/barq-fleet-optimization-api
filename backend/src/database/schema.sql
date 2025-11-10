@@ -530,11 +530,11 @@ INSERT INTO zones (name, zone_type, boundary, center_latitude, center_longitude,
 ON CONFLICT DO NOTHING;
 
 -- Create indexes for performance
-CREATE INDEX IF NOT EXISTS CONCURRENTLY IF NOT EXISTS idx_orders_status_created
+CREATE INDEX IF NOT EXISTS idx_orders_status_created
   ON orders(status, created_at DESC)
   WHERE status IN ('pending', 'assigned');
 
-CREATE INDEX IF NOT EXISTS CONCURRENTLY IF NOT EXISTS idx_drivers_available
+CREATE INDEX IF NOT EXISTS idx_drivers_available
   ON drivers(status, service_types)
   WHERE status = 'available';
 
