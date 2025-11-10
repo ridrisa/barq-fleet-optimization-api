@@ -6,7 +6,11 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Service type enum
-CREATE TYPE service_type AS ENUM ('BARQ', 'BULLET');
+DO $$ BEGIN
+    CREATE TYPE service_type AS ENUM ('BARQ', 'BULLET', 'EXPRESS', 'STANDARD');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Order status enum
 CREATE TYPE order_status AS ENUM (

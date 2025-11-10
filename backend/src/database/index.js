@@ -141,12 +141,52 @@ class DatabaseManager {
       });
 
       logger.info('[Database] Schema initialized');
+
+      // Run migrations
+      await this.runMigrations();
     } catch (error) {
       if (error.code === 'ENOENT') {
         logger.warn('[Database] Schema file not found, skipping initialization');
       } else {
         logger.error('[Database] Failed to initialize schema', error);
       }
+    }
+  }
+
+  /**
+   * Run database migrations
+   */
+  async runMigrations() {
+    try {
+      const migrationsDir = path.join(__dirname, 'migrations');
+
+      // Check if migrations directory exists
+      try {
+        await fs.access(migrationsDir);
+      } catch {
+        logger.info('[Database] No migrations directory found');
+        return;
+      }
+
+      // Read all migration files
+      const files = await fs.readdir(migrationsDir);
+      const migrationFiles = files.filter((f) => f.endsWith('.sql')).sort();
+
+      logger.info(`[Database] Found ${migrationFiles.length} migration(s)`);
+
+      // Execute each migration
+      for (const file of migrationFiles) {
+        const migrationPath = path.join(migrationsDir, file);
+        const migrationSQL = await fs.readFile(migrationPath, 'utf8');
+
+        await this.executeTransaction(async (client) => {
+          await client.query(migrationSQL);
+        });
+
+        logger.info(`[Database] Migration applied: ${file}`);
+      }
+    } catch (error) {
+      logger.error('[Database] Failed to run migrations', error);
     }
   }
 
