@@ -55,7 +55,7 @@ steps:
       - '--cpu'
       - '2'
       - '--timeout'
-      - '300s'
+      - '3600s'
       - '--max-instances'
       - '10'
       - '--min-instances'
@@ -64,6 +64,7 @@ steps:
       - 'NODE_ENV=production'
       - '--set-secrets'
       - 'DB_HOST=POSTGRES_HOST:latest,DB_NAME=POSTGRES_DB:latest,DB_USER=POSTGRES_USER:latest,DB_PASSWORD=POSTGRES_PASSWORD:latest'
+      - '--use-http2'
     waitFor: ['push-backend', 'push-backend-latest']
 
   # ============================================

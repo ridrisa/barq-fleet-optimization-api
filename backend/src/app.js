@@ -49,8 +49,8 @@ if (sentryInstance) {
   app.use(Sentry.Handlers.tracingHandler());
 }
 
-// Set port
-const PORT = process.env.PORT || 3002;
+// Set port (Cloud Run uses PORT env var, default to 8080 for production, 3002 for development)
+const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8080 : 3002);
 
 // Add request ID generator middleware
 app.use((req, res, next) => {
@@ -192,6 +192,11 @@ app.get('/health', (req, res) => {
     version: process.env.npm_package_version || '1.0.0',
     environment: process.env.NODE_ENV || 'development',
     uptime: process.uptime(),
+    websocket: {
+      enabled: wss ? true : false,
+      endpoint: '/ws',
+      clients: wss ? wss.clients.size : 0,
+    },
   };
 
   logger.debug('Health check response', {
@@ -245,6 +250,24 @@ app.use(errorHandler);
 // Graceful shutdown function
 const gracefulShutdown = async (signal) => {
   logger.info(`${signal} received. Starting graceful shutdown...`);
+
+  // Shutdown WebSocket server
+  try {
+    if (wss) {
+      wss.clients.forEach((client) => {
+        client.close();
+      });
+      wss.close(() => {
+        logger.info('WebSocket server closed');
+      });
+    }
+    if (demoWebSocketServer) {
+      await demoWebSocketServer.stopDemo();
+      logger.info('Demo WebSocket server shutdown complete');
+    }
+  } catch (error) {
+    logger.error('Error shutting down WebSocket server', { error: error.message });
+  }
 
   // Shutdown automation engines
   try {
@@ -322,12 +345,56 @@ process.on('unhandledRejection', (reason, promise) => {
   // setTimeout(() => process.exit(1), 1000);
 });
 
+// Initialize WebSocket server on the same HTTP server (Cloud Run compatible)
+let wss = null;
+let demoWebSocketServer = null;
+
+const initializeWebSocket = (httpServer) => {
+  try {
+    const WebSocket = require('ws');
+    const DemoWebSocketServer = require('./demo/websocket-server');
+
+    // Create WebSocket server that shares the HTTP server
+    wss = new WebSocket.Server({
+      server: httpServer,
+      path: '/ws' // WebSocket endpoint at /ws
+    });
+
+    // Initialize demo WebSocket functionality
+    demoWebSocketServer = new DemoWebSocketServer(PORT);
+    // Share the HTTP server and WebSocket server
+    demoWebSocketServer.server = httpServer;
+    demoWebSocketServer.wss = wss;
+
+    // Set up WebSocket connection handler
+    wss.on('connection', (ws, req) => {
+      demoWebSocketServer.handleNewConnection(ws, req);
+    });
+
+    logger.info(`WebSocket server initialized on port ${PORT} at /ws`);
+    logger.info(`WebSocket server is Cloud Run compatible (shared port)`);
+
+    return true;
+  } catch (error) {
+    logger.error('Failed to initialize WebSocket server', { error: error.message });
+    return false;
+  }
+};
+
 // Start the server
 const server = app.listen(PORT, async () => {
   logger.info(`Server running on port ${PORT}`);
   logger.info(`API Documentation available at http://localhost:${PORT}/api-docs`);
   logger.info(`Health check available at http://localhost:${PORT}/health`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+
+  // Initialize WebSocket server (Cloud Run compatible - same port)
+  const wsInitialized = initializeWebSocket(server);
+  if (wsInitialized) {
+    logger.info('WebSocket server ready for real-time updates');
+  } else {
+    logger.warn('WebSocket server initialization failed - continuing without WebSocket support');
+  }
 
   // Initialize agent system
   if (process.env.DISABLE_AUTONOMOUS_AGENTS === 'true') {

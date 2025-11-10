@@ -77,19 +77,15 @@ USER nodejs
 
 # Environment variables
 ENV NODE_ENV=production \
-    PORT=3002 \
-    FRONTEND_PORT=3000 \
-    WS_PORT=8081
+    PORT=8080 \
+    FRONTEND_PORT=3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
-# Expose ports
-EXPOSE 3000 3002 8081
+# Expose ports (Cloud Run uses PORT env var, defaults to 8080)
+EXPOSE 8080
 
-# Start script
-COPY --chown=nodejs:nodejs docker-entrypoint.sh /app/
-RUN chmod +x /app/docker-entrypoint.sh
-
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+# Start backend server (WebSocket is integrated on same port)
+CMD ["node", "backend/src/app.js"]
