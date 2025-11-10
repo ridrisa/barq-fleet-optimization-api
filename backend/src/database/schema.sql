@@ -403,12 +403,15 @@ END;
 $$ language 'plpgsql';
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_drivers_updated_at ON drivers;
 CREATE TRIGGER update_drivers_updated_at BEFORE UPDATE ON drivers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_customers_updated_at ON customers;
 CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_zones_updated_at ON zones;
 CREATE TRIGGER update_zones_updated_at BEFORE UPDATE ON zones
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -447,6 +450,7 @@ END;
 $$ language 'plpgsql';
 
 -- Trigger for SLA checking
+DROP TRIGGER IF EXISTS check_order_sla ON orders;
 CREATE TRIGGER check_order_sla BEFORE UPDATE ON orders
   FOR EACH ROW
   WHEN (OLD.status IS DISTINCT FROM NEW.status)
