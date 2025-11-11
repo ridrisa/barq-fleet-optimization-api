@@ -296,46 +296,46 @@ class AnalyticsAPIClient {
 
   // Legacy methods that map to available endpoints
   async getSLABreachRisk(hubId?: number): Promise<SLABreachRisk> {
-    // Use compliance endpoint as fallback
-    return this.getSLACompliance(30);
+    // Not available - use getSLACompliance() instead
+    throw new Error('SLA Breach Risk endpoint not available. Use getSLACompliance() instead.');
   }
 
   async getRouteEfficiency(days: number = 30, hubId?: number): Promise<RouteEfficiency> {
-    // Use fleet performance endpoint
-    return this.getFleetPerformance();
+    // Not available - use getFleetPerformance() instead
+    throw new Error('Route Efficiency endpoint not available. Use getFleetPerformance() instead.');
   }
 
   async getRouteBottlenecks(days: number = 30): Promise<RouteBottlenecks> {
-    // Use dashboard summary endpoint
-    return this.getDashboardSummary();
+    // Not available - use getDashboardSummary() instead
+    throw new Error('Route Bottlenecks endpoint not available. Use getDashboardSummary() instead.');
   }
 
   async getRouteABC(minDeliveries: number = 10): Promise<RouteABC> {
-    // Not available - return empty data
+    // Not available
     throw new Error('ABC analysis not implemented yet');
   }
 
   async getDriverPerformance(period: string = 'monthly'): Promise<DriverPerformanceList> {
-    // Use fleet performance endpoint
-    return this.getFleetPerformance();
+    // Not available - use getFleetPerformance() instead
+    throw new Error('Driver Performance endpoint not available. Use getFleetPerformance() instead.');
   }
 
   async getSingleDriverPerformance(
     driverId: number,
     period: string = 'weekly'
   ): Promise<SingleDriverPerformance> {
-    // Use fleet performance endpoint
-    return this.getFleetPerformance();
+    // Not available - use getFleetPerformance() instead
+    throw new Error('Single Driver Performance endpoint not available. Use getFleetPerformance() instead.');
   }
 
   async getVehiclePerformance(period: string = 'monthly'): Promise<VehiclePerformance> {
-    // Use fleet performance endpoint
-    return this.getFleetPerformance();
+    // Not available - use getFleetPerformance() instead
+    throw new Error('Vehicle Performance endpoint not available. Use getFleetPerformance() instead.');
   }
 
   async getDriverCohorts(period: string = 'monthly'): Promise<DriverCohorts> {
-    // Use fleet performance endpoint
-    return this.getFleetPerformance();
+    // Not available - use getFleetPerformance() instead
+    throw new Error('Driver Cohorts endpoint not available. Use getFleetPerformance() instead.');
   }
 
   async getHourlyForecast(horizon: number = 7): Promise<HourlyForecast> {
