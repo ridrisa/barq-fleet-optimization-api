@@ -202,6 +202,28 @@ class PlanningAgent {
               (typeof v.lat === 'number' && typeof v.lng === 'number'))
         )
         .map((v) => this.normalizeVehicle(v));
+    } else if (data.fleet && typeof data.fleet.count === 'number' && data.fleet.count > 0) {
+      // Format 4: Simple fleet format with count, vehicleType, capacity
+      console.log(`Creating ${data.fleet.count} vehicles from simple fleet format`);
+
+      // Get the first pickup location as the default vehicle start location
+      const defaultLocation = pickupPoints.length > 0 && pickupPoints[0].location
+        ? pickupPoints[0].location
+        : { latitude: 24.7136, longitude: 46.6753 }; // Default to Riyadh
+
+      // Create the specified number of vehicles
+      vehicles = [];
+      for (let i = 0; i < data.fleet.count; i++) {
+        vehicles.push({
+          id: `vehicle-${i + 1}`,
+          name: `${data.fleet.vehicleType || 'truck'} ${i + 1}`,
+          type: data.fleet.vehicleType || 'truck',
+          startLocation: defaultLocation,
+          capacity: data.fleet.capacity || 3000,
+          endLocation: null,
+        });
+      }
+      console.log(`Created ${vehicles.length} vehicles from simple fleet format`);
     }
 
     // Create a default vehicle if none is found
@@ -272,6 +294,23 @@ class PlanningAgent {
     );
 
     console.log(`Created ${routes.length} initial routes`);
+
+    // Debug logging to understand what's being returned
+    if (routes.length === 0) {
+      console.warn('WARNING: No routes created by planning agent!');
+      console.log('Debug info:', {
+        pickupPointsCount: pickupPoints.length,
+        deliveryPointsCount: deliveryPoints.length,
+        vehiclesCount: vehicles.length,
+        vehicleIds: vehicles.map(v => v.id),
+      });
+    } else {
+      console.log('Routes created successfully:', {
+        routeCount: routes.length,
+        totalDeliveries: routes.reduce((sum, r) => sum + (r.deliveries ? r.deliveries.length : 0), 0),
+        vehiclesUsed: routes.map(r => r.vehicle?.id || 'unknown'),
+      });
+    }
 
     return {
       routes,

@@ -651,10 +651,10 @@ class LogisticsService {
         `Creating fallback plan with ${pickupPoints.length} pickups, ${deliveryPoints.length} deliveries, and ${vehicles.length} vehicles`
       );
 
-      // Basic approach: assign each vehicle to a pickup point, then assign nearby deliveries
-      const vehiclesToUse = Math.min(vehicles.length, pickupPoints.length);
+      // Basic approach: for single pickup, use all vehicles; for multiple pickups, match pickup count
+      const vehiclesToUse = pickupPoints.length === 1 ? vehicles.length : Math.min(vehicles.length, pickupPoints.length);
 
-      // For each pickup point, create a route with the corresponding vehicle
+      // For each vehicle, create a route
       for (let i = 0; i < vehiclesToUse; i++) {
         const pickup = pickupPoints[i % pickupPoints.length];
         const vehicle = vehicles[i % vehicles.length];
@@ -673,8 +673,8 @@ class LogisticsService {
             }
           }
 
-          // Fallback: distribute evenly across pickups
-          return index % pickupPoints.length === i % pickupPoints.length;
+          // Fallback: distribute evenly across vehicles
+          return index % vehiclesToUse === i;
         });
 
         // Skip if no deliveries assigned
