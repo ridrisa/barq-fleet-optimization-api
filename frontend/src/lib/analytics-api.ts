@@ -369,7 +369,7 @@ class AnalyticsAPIClient {
       if (lowerQuery.includes('sla') || lowerQuery.includes('service level')) {
         if (lowerQuery.includes('realtime') || lowerQuery.includes('current') || lowerQuery.includes('status')) {
           const data = await this.getRealtimeSLAStatus();
-          const totalAtRisk = data.at_risk_deliveries?.length || 0;
+          const totalAtRisk = data.at_risk_orders?.length || 0;
           return {
             response: `Current SLA status: ${totalAtRisk} orders at risk. Check the data below for detailed breakdown by service type.`,
             data,

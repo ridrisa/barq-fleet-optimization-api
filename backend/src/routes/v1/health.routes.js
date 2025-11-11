@@ -67,7 +67,7 @@ router.get(
       logger.error('Database health check failed', error);
     }
 
-    // Check agents
+    // Check agents (optional - don't block readiness)
     try {
       const AgentInitializer = require('../../services/agent-initializer');
       const agentStatus = AgentInitializer.getStatus();
@@ -77,7 +77,7 @@ router.get(
       checks.agents = false;
     }
 
-    // Check WebSocket server (now on same port as HTTP server)
+    // Check WebSocket server (optional - don't block readiness)
     try {
       // WebSocket is on the same server, check if it's initialized
       const AgentInitializer = require('../../services/agent-initializer');
@@ -88,7 +88,8 @@ router.get(
       checks.websocket = false;
     }
 
-    const allHealthy = Object.values(checks).every((check) => check === true);
+    // Only require database for readiness - agents and websocket are optional
+    const allHealthy = checks.database;
     const status = allHealthy ? 200 : 503;
 
     res.status(status).json({

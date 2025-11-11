@@ -13,15 +13,30 @@ dist/
 .next/
 out/
 
-# Environment variables
+# Environment variables - SECURITY CRITICAL
+# Block ALL .env files by default
 .env
 .env.local
+.env.*.local
 .env.development.local
 .env.test.local
 .env.production.local
 .env.migration
 .env.aws-rds
 *.env
+
+# Exception: Allow example/template files only
+!.env.example
+!.env.*.example
+!**/.env.example
+
+# Security: Block environment reports that may contain secrets
+env_defaults_report.md
+env_report.md
+SECURITY_AUDIT_REPORT.md
+
+# Security: Block backup directories
+.env-backup-*/
 
 # IDE
 .vscode/
@@ -69,8 +84,6 @@ test-results*.txt
 *.csv
 *.json.gz
 
-# Local environment reports (contain secrets)
-env_defaults_report.md
-env_report.md
+# Temporary/test files
 a.py
 aa.py
