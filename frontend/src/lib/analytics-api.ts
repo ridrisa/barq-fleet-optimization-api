@@ -301,41 +301,42 @@ class AnalyticsAPIClient {
   }
 
   async getRouteEfficiency(days: number = 30, hubId?: number): Promise<RouteEfficiency> {
-    // Not available - use getFleetPerformance() instead
-    throw new Error('Route Efficiency endpoint not available. Use getFleetPerformance() instead.');
+    const params = new URLSearchParams({ days: days.toString() });
+    if (hubId) params.append('hub_id', hubId.toString());
+    return this.request(`/api/v1/analytics/routes/efficiency?${params.toString()}`);
   }
 
   async getRouteBottlenecks(days: number = 30): Promise<RouteBottlenecks> {
-    // Not available - use getDashboardSummary() instead
-    throw new Error('Route Bottlenecks endpoint not available. Use getDashboardSummary() instead.');
+    // Not yet implemented on backend
+    throw new Error('Route Bottlenecks endpoint not implemented yet.');
   }
 
   async getRouteABC(minDeliveries: number = 10): Promise<RouteABC> {
-    // Not available
+    // Not yet implemented on backend
     throw new Error('ABC analysis not implemented yet');
   }
 
   async getDriverPerformance(period: string = 'monthly'): Promise<DriverPerformanceList> {
-    // Not available - use getFleetPerformance() instead
-    throw new Error('Driver Performance endpoint not available. Use getFleetPerformance() instead.');
+    const params = new URLSearchParams({ period });
+    return this.request(`/api/v1/analytics/fleet/drivers?${params.toString()}`);
   }
 
   async getSingleDriverPerformance(
     driverId: number,
     period: string = 'weekly'
   ): Promise<SingleDriverPerformance> {
-    // Not available - use getFleetPerformance() instead
-    throw new Error('Single Driver Performance endpoint not available. Use getFleetPerformance() instead.');
+    const params = new URLSearchParams({ period });
+    return this.request(`/api/v1/analytics/fleet/drivers/${driverId}?${params.toString()}`);
   }
 
   async getVehiclePerformance(period: string = 'monthly'): Promise<VehiclePerformance> {
-    // Not available - use getFleetPerformance() instead
-    throw new Error('Vehicle Performance endpoint not available. Use getFleetPerformance() instead.');
+    const params = new URLSearchParams({ period });
+    return this.request(`/api/v1/analytics/fleet/vehicles?${params.toString()}`);
   }
 
   async getDriverCohorts(period: string = 'monthly'): Promise<DriverCohorts> {
-    // Not available - use getFleetPerformance() instead
-    throw new Error('Driver Cohorts endpoint not available. Use getFleetPerformance() instead.');
+    // Not yet implemented on backend
+    throw new Error('Driver Cohorts endpoint not implemented yet.');
   }
 
   async getHourlyForecast(horizon: number = 7): Promise<HourlyForecast> {

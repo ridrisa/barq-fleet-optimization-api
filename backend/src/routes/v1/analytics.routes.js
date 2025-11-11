@@ -519,4 +519,392 @@ router.get('/dashboard/summary', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/v1/analytics/fleet/drivers
+ * Get driver performance metrics
+ */
+router.get('/fleet/drivers', async (req, res) => {
+  try {
+    const { period = 'monthly' } = req.query;
+
+    logger.info(`Fetching driver performance metrics (${period})`);
+
+    // Calculate period boundaries
+    let startDate;
+    switch (period) {
+      case 'weekly':
+        startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'monthly':
+        startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const query = `
+      WITH driver_stats AS (
+        SELECT
+          d.id,
+          d.name,
+          COUNT(o.id) as total_deliveries,
+          COUNT(CASE WHEN o.status = 'delivered' THEN 1 END) as successful_deliveries,
+          COUNT(CASE WHEN o.status = 'delivered' AND NOT o.sla_breached THEN 1 END) as on_time_deliveries,
+          AVG(CASE
+            WHEN o.status = 'delivered' AND o.delivered_at IS NOT NULL
+            THEN EXTRACT(EPOCH FROM (o.delivered_at - o.created_at)) / 60
+          END) as avg_delivery_time_minutes
+        FROM drivers d
+        LEFT JOIN orders o ON o.driver_id = d.id
+          AND o.created_at >= $1
+        WHERE d.status = 'active'
+        GROUP BY d.id, d.name
+      )
+      SELECT
+        id,
+        name,
+        total_deliveries as deliveries,
+        ROUND((successful_deliveries::numeric / NULLIF(total_deliveries, 0) * 100)::numeric, 2) as success_rate,
+        ROUND((on_time_deliveries::numeric / NULLIF(successful_deliveries, 0) * 100)::numeric, 2) as on_time_rate,
+        ROUND((successful_deliveries::numeric / NULLIF(total_deliveries, 0) * 100)::numeric, 2) as productivity,
+        ROUND((
+          (successful_deliveries::numeric / NULLIF(total_deliveries, 0) * 50) +
+          (on_time_deliveries::numeric / NULLIF(successful_deliveries, 0) * 50)
+        )::numeric, 2) as dpi
+      FROM driver_stats
+      WHERE total_deliveries > 0
+      ORDER BY dpi DESC NULLS LAST
+      LIMIT 50;
+    `;
+
+    const result = await pool.query(query, [startDate]);
+
+    // Calculate system averages
+    const drivers = result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      dpi: parseFloat(row.dpi) || 0,
+      success_rate: parseFloat(row.success_rate) || 0,
+      on_time_rate: parseFloat(row.on_time_rate) || 0,
+      productivity: parseFloat(row.productivity) || 0,
+      deliveries: parseInt(row.deliveries) || 0,
+    }));
+
+    const averages = {
+      dpi: drivers.length > 0
+        ? drivers.reduce((sum, d) => sum + d.dpi, 0) / drivers.length
+        : 0,
+      success_rate: drivers.length > 0
+        ? drivers.reduce((sum, d) => sum + d.success_rate, 0) / drivers.length
+        : 0,
+      on_time_rate: drivers.length > 0
+        ? drivers.reduce((sum, d) => sum + d.on_time_rate, 0) / drivers.length
+        : 0,
+      productivity: drivers.length > 0
+        ? drivers.reduce((sum, d) => sum + d.productivity, 0) / drivers.length
+        : 0,
+    };
+
+    res.json({
+      period,
+      drivers,
+      averages: {
+        dpi: Math.round(averages.dpi * 100) / 100,
+        success_rate: Math.round(averages.success_rate * 100) / 100,
+        on_time_rate: Math.round(averages.on_time_rate * 100) / 100,
+        productivity: Math.round(averages.productivity * 100) / 100,
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching driver performance:', error);
+    res.status(500).json({
+      error: 'Failed to fetch driver performance',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/fleet/drivers/:id
+ * Get single driver performance with trends
+ */
+router.get('/fleet/drivers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { period = 'weekly' } = req.query;
+
+    logger.info(`Fetching driver ${id} performance (${period})`);
+
+    // Calculate period boundaries
+    let startDate;
+    switch (period) {
+      case 'weekly':
+        startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'monthly':
+        startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    }
+
+    const query = `
+      WITH driver_stats AS (
+        SELECT
+          d.id,
+          d.name,
+          COUNT(o.id) as total_deliveries,
+          COUNT(CASE WHEN o.status = 'delivered' THEN 1 END) as successful_deliveries,
+          COUNT(CASE WHEN o.status = 'delivered' AND NOT o.sla_breached THEN 1 END) as on_time_deliveries,
+          AVG(CASE
+            WHEN o.status = 'delivered' AND o.delivered_at IS NOT NULL
+            THEN EXTRACT(EPOCH FROM (o.delivered_at - o.created_at)) / 60
+          END) as avg_delivery_time_minutes
+        FROM drivers d
+        LEFT JOIN orders o ON o.driver_id = d.id
+          AND o.created_at >= $2
+        WHERE d.id = $1
+        GROUP BY d.id, d.name
+      )
+      SELECT
+        id,
+        name,
+        total_deliveries,
+        ROUND((successful_deliveries::numeric / NULLIF(total_deliveries, 0) * 100)::numeric, 2) as success_rate,
+        ROUND((on_time_deliveries::numeric / NULLIF(successful_deliveries, 0) * 100)::numeric, 2) as on_time_rate,
+        ROUND((successful_deliveries::numeric / NULLIF(total_deliveries, 0) * 100)::numeric, 2) as productivity,
+        ROUND((
+          (successful_deliveries::numeric / NULLIF(total_deliveries, 0) * 50) +
+          (on_time_deliveries::numeric / NULLIF(successful_deliveries, 0) * 50)
+        )::numeric, 2) as dpi,
+        COALESCE(avg_delivery_time_minutes, 0) as avg_delivery_time
+      FROM driver_stats;
+    `;
+
+    const result = await pool.query(query, [id, startDate]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Driver not found',
+      });
+    }
+
+    const driver = result.rows[0];
+
+    // Get weekly trend
+    const trendQuery = `
+      SELECT
+        DATE_TRUNC('week', o.created_at) as week,
+        ROUND((
+          (COUNT(CASE WHEN o.status = 'delivered' THEN 1 END)::numeric / NULLIF(COUNT(o.id), 0) * 50) +
+          (COUNT(CASE WHEN o.status = 'delivered' AND NOT o.sla_breached THEN 1 END)::numeric / NULLIF(COUNT(CASE WHEN o.status = 'delivered' THEN 1 END), 0) * 50)
+        )::numeric, 2) as dpi
+      FROM orders o
+      WHERE o.driver_id = $1
+        AND o.created_at >= $2
+      GROUP BY DATE_TRUNC('week', o.created_at)
+      ORDER BY week;
+    `;
+
+    const trendResult = await pool.query(trendQuery, [id, startDate]);
+
+    res.json({
+      driver_id: parseInt(id),
+      period,
+      metrics: {
+        id: driver.id,
+        name: driver.name,
+        dpi: parseFloat(driver.dpi) || 0,
+        success_rate: parseFloat(driver.success_rate) || 0,
+        on_time_rate: parseFloat(driver.on_time_rate) || 0,
+        productivity: parseFloat(driver.productivity) || 0,
+        total_deliveries: parseInt(driver.total_deliveries) || 0,
+        avg_delivery_time: parseFloat(driver.avg_delivery_time) || 0,
+      },
+      trend: trendResult.rows.map((row, index) => ({
+        week: index + 1,
+        dpi: parseFloat(row.dpi) || 0,
+      })),
+    });
+  } catch (error) {
+    logger.error(`Error fetching driver ${req.params.id} performance:`, error);
+    res.status(500).json({
+      error: 'Failed to fetch driver performance',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/fleet/vehicles
+ * Get vehicle performance metrics
+ */
+router.get('/fleet/vehicles', async (req, res) => {
+  try {
+    const { period = 'monthly' } = req.query;
+
+    logger.info(`Fetching vehicle performance metrics (${period})`);
+
+    // Calculate period boundaries
+    let startDate;
+    switch (period) {
+      case 'weekly':
+        startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'monthly':
+        startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const query = `
+      WITH vehicle_stats AS (
+        SELECT
+          v.id,
+          v.license_plate as plate,
+          COUNT(DISTINCT o.id) as total_trips,
+          COUNT(DISTINCT CASE WHEN o.status = 'delivered' THEN o.id END) as successful_trips,
+          COUNT(DISTINCT DATE(o.created_at)) as days_active
+        FROM vehicles v
+        LEFT JOIN drivers d ON d.vehicle_id = v.id
+        LEFT JOIN orders o ON o.driver_id = d.id
+          AND o.created_at >= $1
+        WHERE v.status = 'active'
+        GROUP BY v.id, v.license_plate
+      )
+      SELECT
+        id,
+        plate,
+        total_trips as trips,
+        ROUND((successful_trips::numeric / NULLIF(total_trips, 0) * 100)::numeric, 2) as success_rate,
+        ROUND((days_active::numeric / 30 * 100)::numeric, 2) as utilization,
+        ROUND((successful_trips::numeric / NULLIF(total_trips, 0) * 100)::numeric, 2) as efficiency,
+        ROUND((
+          (successful_trips::numeric / NULLIF(total_trips, 0) * 40) +
+          (days_active::numeric / 30 * 30) +
+          (successful_trips::numeric / NULLIF(total_trips, 0) * 30)
+        )::numeric, 2) as vpi
+      FROM vehicle_stats
+      WHERE total_trips > 0
+      ORDER BY vpi DESC NULLS LAST
+      LIMIT 50;
+    `;
+
+    const result = await pool.query(query, [startDate]);
+
+    // Calculate system averages
+    const vehicles = result.rows.map(row => ({
+      id: row.id,
+      plate: row.plate,
+      vpi: parseFloat(row.vpi) || 0,
+      success_rate: parseFloat(row.success_rate) || 0,
+      utilization: parseFloat(row.utilization) || 0,
+      efficiency: parseFloat(row.efficiency) || 0,
+      trips: parseInt(row.trips) || 0,
+    }));
+
+    const averages = {
+      vpi: vehicles.length > 0
+        ? vehicles.reduce((sum, v) => sum + v.vpi, 0) / vehicles.length
+        : 0,
+      success_rate: vehicles.length > 0
+        ? vehicles.reduce((sum, v) => sum + v.success_rate, 0) / vehicles.length
+        : 0,
+      utilization: vehicles.length > 0
+        ? vehicles.reduce((sum, v) => sum + v.utilization, 0) / vehicles.length
+        : 0,
+      efficiency: vehicles.length > 0
+        ? vehicles.reduce((sum, v) => sum + v.efficiency, 0) / vehicles.length
+        : 0,
+    };
+
+    res.json({
+      period,
+      vehicles,
+      averages: {
+        vpi: Math.round(averages.vpi * 100) / 100,
+        success_rate: Math.round(averages.success_rate * 100) / 100,
+        utilization: Math.round(averages.utilization * 100) / 100,
+        efficiency: Math.round(averages.efficiency * 100) / 100,
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching vehicle performance:', error);
+    res.status(500).json({
+      error: 'Failed to fetch vehicle performance',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/routes/efficiency
+ * Get route efficiency metrics
+ */
+router.get('/routes/efficiency', async (req, res) => {
+  try {
+    const { days = 30, hub_id } = req.query;
+    const period_days = parseInt(days);
+
+    logger.info(`Fetching route efficiency metrics (${period_days} days, hub: ${hub_id || 'all'})`);
+
+    const startDate = new Date(Date.now() - period_days * 24 * 60 * 60 * 1000);
+
+    const query = `
+      WITH route_stats AS (
+        SELECT
+          'Main Hub' as hub,
+          COUNT(o.id) as total_deliveries,
+          AVG(CASE
+            WHEN o.status = 'delivered' AND o.delivered_at IS NOT NULL
+            THEN EXTRACT(EPOCH FROM (o.delivered_at - o.created_at)) / 3600
+          END) as avg_delivery_hours,
+          ROUND((COUNT(CASE WHEN o.status = 'delivered' AND NOT o.sla_breached THEN 1 END)::numeric / NULLIF(COUNT(CASE WHEN o.status = 'delivered' THEN 1 END), 0) * 100)::numeric, 2) as on_time_rate,
+          ROUND((
+            (COUNT(CASE WHEN o.status = 'delivered' THEN 1 END)::numeric / NULLIF(COUNT(o.id), 0) * 40) +
+            (COUNT(CASE WHEN o.status = 'delivered' AND NOT o.sla_breached THEN 1 END)::numeric / NULLIF(COUNT(CASE WHEN o.status = 'delivered' THEN 1 END), 0) * 40) +
+            (CASE WHEN AVG(CASE WHEN o.status = 'delivered' AND o.delivered_at IS NOT NULL THEN EXTRACT(EPOCH FROM (o.delivered_at - o.created_at)) / 3600 END) < 2 THEN 20 ELSE 10 END)
+          )::numeric, 2) as efficiency_score
+        FROM orders o
+        WHERE o.created_at >= $1
+      )
+      SELECT * FROM route_stats WHERE total_deliveries > 0;
+    `;
+
+    const result = await pool.query(query, [startDate]);
+
+    const stats = result.rows[0] || {
+      total_deliveries: 0,
+      avg_efficiency_score: 0,
+      avg_on_time_rate: 0,
+      avg_delivery_hours: 0,
+    };
+
+    res.json({
+      period_days,
+      hub_id: hub_id ? parseInt(hub_id) : null,
+      overall_metrics: {
+        total_deliveries: parseInt(stats.total_deliveries) || 0,
+        avg_efficiency_score: parseFloat(stats.efficiency_score) || 0,
+        avg_on_time_rate: parseFloat(stats.on_time_rate) || 0,
+        avg_delivery_hours: parseFloat(stats.avg_delivery_hours) || 0,
+      },
+      top_performers: [
+        {
+          hub: stats.hub || 'Main Hub',
+          score: parseFloat(stats.efficiency_score) || 0,
+        },
+      ],
+      bottom_performers: [],
+    });
+  } catch (error) {
+    logger.error('Error fetching route efficiency:', error);
+    res.status(500).json({
+      error: 'Failed to fetch route efficiency',
+      message: error.message,
+    });
+  }
+});
+
 module.exports = router;
