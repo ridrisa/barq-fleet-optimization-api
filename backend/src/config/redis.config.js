@@ -19,7 +19,13 @@ class RedisClient {
    */
   async initialize() {
     try {
-      const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+      const redisUrl = process.env.REDIS_URL;
+
+      // If no Redis URL provided, use in-memory fallback immediately
+      if (!redisUrl) {
+        logger.info('[Redis] No REDIS_URL provided, using in-memory fallback');
+        return this.useFallback();
+      }
 
       this.client = redis.createClient({
         url: redisUrl,
