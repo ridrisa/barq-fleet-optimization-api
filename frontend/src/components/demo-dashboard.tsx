@@ -172,7 +172,7 @@ export default function DemoDashboard() {
     setIsStarting(true);
     try {
       const httpBase = apiClient.getWsHttpBaseUrl();
-      const data = await apiClient.postAbsolute(`${httpBase}/demo/start`, config);
+      const data = await apiClient.postAbsolute(`${httpBase}/api/demo/start`, config);
       if (data.success) {
         dispatch(setDemoStatus(true));
       }
@@ -186,7 +186,7 @@ export default function DemoDashboard() {
     setIsStopping(true);
     try {
       const httpBase = apiClient.getWsHttpBaseUrl();
-      const data = await apiClient.postAbsolute(`${httpBase}/demo/stop`);
+      const data = await apiClient.postAbsolute(`${httpBase}/api/demo/stop`);
       if (data.success) {
         dispatch(setDemoStatus(false));
       }
@@ -199,7 +199,7 @@ export default function DemoDashboard() {
   const createOrder = async (serviceType: 'BARQ' | 'BULLET') => {
     try {
       const httpBase = apiClient.getWsHttpBaseUrl();
-      const data = await apiClient.postAbsolute(`${httpBase}/demo/order`, { serviceType });
+      const data = await apiClient.postAbsolute(`${httpBase}/api/demo/order`, { serviceType });
       console.log('Order created:', data);
     } catch (error) {
       console.error('Failed to create order:', error);
