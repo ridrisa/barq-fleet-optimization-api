@@ -173,7 +173,7 @@ class FormatResponseAgent {
         id: vehicleId || 'unknown-vehicle',
         name: route.vehicleName || route.vehicle?.name || `Vehicle ${vehicleId}`,
         type: 'TRUCK',
-        capacity: 1000,
+        capacity: route.vehicle?.capacity || request.fleet?.capacity || 3000, // Use route/request capacity or default to 3000
       };
 
       // Try to find vehicle in fleet
@@ -190,7 +190,7 @@ class FormatResponseAgent {
             id: vehicleId,
             name: matchingVehicle.name || `${matchingVehicle.vehicle_type || 'TRUCK'} ${vehicleId}`,
             type: matchingVehicle.vehicle_type || 'TRUCK',
-            capacity: matchingVehicle.capacity_kg || 1000,
+            capacity: matchingVehicle.capacity_kg || matchingVehicle.capacity || request.fleet?.capacity || 3000,
           };
         } else {
           console.log(`No matching vehicle found in fleet for ID: ${vehicleId}`);
@@ -200,7 +200,7 @@ class FormatResponseAgent {
               id: route.vehicle.id || vehicleId || 'unknown-vehicle',
               name: route.vehicle.name || `TRUCK ${vehicleId}`,
               type: route.vehicle.type || 'TRUCK',
-              capacity: route.vehicle.capacity || 1000,
+              capacity: route.vehicle.capacity || request.fleet?.capacity || 3000,
             };
             console.log(`Using vehicle info from route: ${JSON.stringify(vehicleInfo)}`);
           }
@@ -219,7 +219,7 @@ class FormatResponseAgent {
             id: vehicleId,
             name: matchingVehicle.name || `${matchingVehicle.vehicle_type || 'TRUCK'} ${vehicleId}`,
             type: matchingVehicle.vehicle_type || 'TRUCK',
-            capacity: matchingVehicle.capacity_kg || 1000,
+            capacity: matchingVehicle.capacity_kg || matchingVehicle.capacity || request.fleet?.capacity || 3000,
           };
         }
       }

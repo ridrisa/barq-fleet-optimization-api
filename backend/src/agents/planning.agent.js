@@ -541,6 +541,46 @@ class PlanningAgent {
     // Initialize a set to track which vehicles have been assigned to routes
     const assignedVehicles = new Set();
 
+    // MULTI-VEHICLE DISTRIBUTION FIX: Distribute deliveries among vehicles at the same pickup
+    // First, determine how many vehicles are assigned to each pickup
+    const vehiclesPerPickup = new Map();
+    for (const [vehicleId, pickupId] of vehicleToPickupAssignments) {
+      if (!vehiclesPerPickup.has(pickupId)) {
+        vehiclesPerPickup.set(pickupId, []);
+      }
+      vehiclesPerPickup.get(pickupId).push(vehicleId);
+    }
+
+    // Create a map to track delivery distribution
+    const deliveriesPerVehicle = new Map();
+
+    // Distribute deliveries for each pickup among its assigned vehicles
+    for (const [pickupId, vehicleIds] of vehiclesPerPickup) {
+      const pickupDeliveries = deliveriesByPickup[pickupId] || [];
+      const vehicleCount = vehicleIds.length;
+
+      if (vehicleCount > 1 && pickupDeliveries.length > 0) {
+        console.log(`Distributing ${pickupDeliveries.length} deliveries among ${vehicleCount} vehicles at pickup ${pickupId}`);
+
+        // Sort deliveries by priority (higher priority first)
+        const sortedDeliveries = [...pickupDeliveries].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+        // Distribute deliveries round-robin among vehicles
+        vehicleIds.forEach((vehicleId, index) => {
+          const vehicleDeliveries = [];
+          // Assign deliveries to this vehicle using round-robin distribution
+          for (let i = index; i < sortedDeliveries.length; i += vehicleCount) {
+            vehicleDeliveries.push(sortedDeliveries[i]);
+          }
+          deliveriesPerVehicle.set(vehicleId, vehicleDeliveries);
+          console.log(`Vehicle ${vehicleId} assigned ${vehicleDeliveries.length} deliveries`);
+        });
+      } else if (vehicleCount === 1) {
+        // Single vehicle gets all deliveries
+        deliveriesPerVehicle.set(vehicleIds[0], pickupDeliveries);
+      }
+    }
+
     // Create a route for each vehicle with its assigned pickup and deliveries
     for (const vehicle of activeVehicles) {
       const vehicleId = vehicle.id || vehicle.fleet_id;
@@ -563,8 +603,8 @@ class PlanningAgent {
         continue;
       }
 
-      // Get the deliveries for this pickup
-      const deliveries = deliveriesByPickup[assignedPickupId] || [];
+      // Get the deliveries for this vehicle (now properly distributed!)
+      const deliveries = deliveriesPerVehicle.get(vehicleId) || [];
 
       if (deliveries.length === 0) {
         console.warn(`No deliveries assigned to pickup ${assignedPickupId}, creating empty route`);
