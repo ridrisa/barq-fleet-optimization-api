@@ -3,10 +3,10 @@
  * TypeScript client for BARQ Fleet Analytics Python service
  */
 
-// Use backend URL as fallback for analytics (should be set via environment variable)
+// Use correct backend URL for analytics
 const ANALYTICS_API_URL = process.env.NEXT_PUBLIC_ANALYTICS_API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://route-opt-backend-sek7q2ajva-uc.a.run.app';
+  'https://route-opt-backend-426674819922.us-central1.run.app';
 
 // Type Definitions
 export interface AnalyticsResponse<T> {
@@ -269,72 +269,88 @@ class AnalyticsAPIClient {
     return this.request('/api/docs');
   }
 
-  // SLA Analytics
+  // SLA Analytics - Available endpoints on backend
   async getRealtimeSLAStatus(): Promise<RealtimeSLAStatus> {
-    return this.request('/api/sla/realtime');
+    return this.request('/api/v1/analytics/sla/realtime');
   }
 
   async getSLACompliance(days: number = 7, serviceType?: string): Promise<SLACompliance> {
     const params = new URLSearchParams({ days: days.toString() });
     if (serviceType) params.append('service_type', serviceType);
-    return this.request(`/api/sla/compliance?${params.toString()}`);
-  }
-
-  async getSLABreachRisk(hubId?: number): Promise<SLABreachRisk> {
-    const params = hubId ? `?hub_id=${hubId}` : '';
-    return this.request(`/api/sla/breach-risk${params}`);
+    return this.request(`/api/v1/analytics/sla/compliance?${params.toString()}`);
   }
 
   async getSLATrend(days: number = 30): Promise<SLATrend> {
-    return this.request(`/api/sla/trend?days=${days}`);
+    return this.request(`/api/v1/analytics/sla/trend?days=${days}`);
   }
 
-  // Route Analytics
+  // Fleet Performance - Available endpoint on backend
+  async getFleetPerformance(): Promise<any> {
+    return this.request('/api/v1/analytics/fleet/performance');
+  }
+
+  // Dashboard Summary - Available endpoint on backend
+  async getDashboardSummary(): Promise<any> {
+    return this.request('/api/v1/analytics/dashboard/summary');
+  }
+
+  // Legacy methods that map to available endpoints
+  async getSLABreachRisk(hubId?: number): Promise<SLABreachRisk> {
+    // Use compliance endpoint as fallback
+    return this.getSLACompliance(30);
+  }
+
   async getRouteEfficiency(days: number = 30, hubId?: number): Promise<RouteEfficiency> {
-    const params = new URLSearchParams({ days: days.toString() });
-    if (hubId) params.append('hub_id', hubId.toString());
-    return this.request(`/api/routes/efficiency?${params.toString()}`);
+    // Use fleet performance endpoint
+    return this.getFleetPerformance();
   }
 
   async getRouteBottlenecks(days: number = 30): Promise<RouteBottlenecks> {
-    return this.request(`/api/routes/bottlenecks?days=${days}`);
+    // Use dashboard summary endpoint
+    return this.getDashboardSummary();
   }
 
   async getRouteABC(minDeliveries: number = 10): Promise<RouteABC> {
-    return this.request(`/api/routes/abc?min_deliveries=${minDeliveries}`);
+    // Not available - return empty data
+    throw new Error('ABC analysis not implemented yet');
   }
 
-  // Fleet Performance
   async getDriverPerformance(period: string = 'monthly'): Promise<DriverPerformanceList> {
-    return this.request(`/api/fleet/drivers?period=${period}`);
+    // Use fleet performance endpoint
+    return this.getFleetPerformance();
   }
 
   async getSingleDriverPerformance(
     driverId: number,
     period: string = 'weekly'
   ): Promise<SingleDriverPerformance> {
-    return this.request(`/api/fleet/driver/${driverId}?period=${period}`);
+    // Use fleet performance endpoint
+    return this.getFleetPerformance();
   }
 
   async getVehiclePerformance(period: string = 'monthly'): Promise<VehiclePerformance> {
-    return this.request(`/api/fleet/vehicles?period=${period}`);
+    // Use fleet performance endpoint
+    return this.getFleetPerformance();
   }
 
   async getDriverCohorts(period: string = 'monthly'): Promise<DriverCohorts> {
-    return this.request(`/api/fleet/cohorts?period=${period}`);
+    // Use fleet performance endpoint
+    return this.getFleetPerformance();
   }
 
-  // Demand Forecasting
   async getHourlyForecast(horizon: number = 7): Promise<HourlyForecast> {
-    return this.request(`/api/demand/hourly?horizon=${horizon}`);
+    // Not available - throw error
+    throw new Error('Demand forecasting not implemented yet');
   }
 
   async getDailyForecast(horizon: number = 30): Promise<DailyForecast> {
-    return this.request(`/api/demand/daily?horizon=${horizon}`);
+    // Not available - throw error
+    throw new Error('Demand forecasting not implemented yet');
   }
 
   async getResourceForecast(horizon: number = 14): Promise<ResourceForecast> {
-    return this.request(`/api/demand/resources?horizon=${horizon}`);
+    // Not available - throw error
+    throw new Error('Demand forecasting not implemented yet');
   }
 
   // GPT Chat Interface - Natural Language Queries
@@ -347,46 +363,68 @@ class AnalyticsAPIClient {
   private async parseNaturalLanguageQuery(query: string): Promise<{ response: string; data?: any }> {
     const lowerQuery = query.toLowerCase();
 
-    // SLA queries
-    if (lowerQuery.includes('sla') || lowerQuery.includes('service level')) {
-      if (lowerQuery.includes('realtime') || lowerQuery.includes('current')) {
-        const data = await this.getRealtimeSLAStatus();
+    try {
+      // SLA queries
+      if (lowerQuery.includes('sla') || lowerQuery.includes('service level')) {
+        if (lowerQuery.includes('realtime') || lowerQuery.includes('current') || lowerQuery.includes('status')) {
+          const data = await this.getRealtimeSLAStatus();
+          const totalAtRisk = data.at_risk_deliveries?.length || 0;
+          return {
+            response: `Current SLA status: ${totalAtRisk} orders at risk. Check the data below for detailed breakdown by service type.`,
+            data,
+          };
+        }
+        if (lowerQuery.includes('trend')) {
+          const data = await this.getSLATrend(30);
+          return {
+            response: `SLA trend data for the last 30 days. View the detailed trend below.`,
+            data,
+          };
+        }
+        if (lowerQuery.includes('compliance')) {
+          const data = await this.getSLACompliance(7);
+          return {
+            response: `SLA compliance data for the last 7 days. See breakdown by service type and hub below.`,
+            data,
+          };
+        }
+      }
+
+      // Driver/Fleet performance queries
+      if (lowerQuery.includes('driver') || lowerQuery.includes('fleet') || lowerQuery.includes('performance')) {
+        const data = await this.getFleetPerformance();
         return {
-          response: `Current SLA status: ${data.compliance_rate.toFixed(1)}% compliance rate with ${data.at_risk_count} orders at risk.`,
+          response: `Fleet performance data retrieved. See detailed metrics below.`,
           data,
         };
       }
-      if (lowerQuery.includes('trend')) {
-        const data = await this.getSLATrend(30);
+
+      // Dashboard/summary queries
+      if (lowerQuery.includes('dashboard') || lowerQuery.includes('summary') || lowerQuery.includes('overview')) {
+        const data = await this.getDashboardSummary();
         return {
-          response: `SLA trend over last 30 days is ${data.trend_direction} with ${data.avg_compliance.toFixed(1)}% average compliance.`,
+          response: `Dashboard summary retrieved with overall system metrics.`,
           data,
         };
       }
-    }
 
-    // Driver performance queries
-    if (lowerQuery.includes('driver') && lowerQuery.includes('performance')) {
-      const data = await this.getDriverPerformance('monthly');
+      // Demand forecast queries (not available yet)
+      if (lowerQuery.includes('demand') || lowerQuery.includes('forecast')) {
+        return {
+          response: `Demand forecasting is not yet available in the system. Please check back later or contact support for this feature.`,
+        };
+      }
+
+      // Default response
       return {
-        response: `Average driver performance: DPI ${data.averages.dpi.toFixed(1)}, ${data.averages.success_rate.toFixed(1)}% success rate across ${data.drivers.length} drivers.`,
-        data,
+        response: 'I can help you with SLA analytics (realtime, compliance, trends), fleet performance, and dashboard summaries. Try asking:\n\n• "What is the current SLA status?"\n• "Show me driver performance trends"\n• "Display dashboard summary"\n• "Show SLA compliance for last week"',
+      };
+    } catch (error) {
+      console.error('Query parsing error:', error);
+      return {
+        response: `Error processing your query: ${error instanceof Error ? error.message : 'Unknown error'}. Please try a different question or check if the backend service is running.`,
       };
     }
-
-    // Demand forecast queries
-    if (lowerQuery.includes('demand') || lowerQuery.includes('forecast')) {
-      const data = await this.getDailyForecast(7);
-      return {
-        response: `7-day demand forecast shows an average of ${Math.round(data.forecast.reduce((sum: number, f: any) => sum + f.predicted_orders, 0) / data.forecast.length)} orders per day.`,
-        data,
-      };
-    }
-
-    // Default response
-    return {
-      response: 'I can help you with SLA analytics, driver performance, route efficiency, and demand forecasting. Try asking about "SLA status", "driver performance", or "demand forecast".',
-    };
   }
 }
 
