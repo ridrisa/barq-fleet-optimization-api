@@ -31,6 +31,12 @@ export const useWebSocket = ({
 
   const connect = useCallback(() => {
     try {
+      // Don't create a new connection if one already exists
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        console.log('WebSocket already connected');
+        return;
+      }
+
       ws.current = new WebSocket(url);
 
       ws.current.onopen = () => {
@@ -38,20 +44,25 @@ export const useWebSocket = ({
         setIsConnected(true);
         reconnectCount.current = 0;
 
-        // Subscribe to all events
-        ws.current?.send(
-          JSON.stringify({
-            type: 'subscribe',
-            events: ['all'],
-          })
-        );
+        // Add a small delay before sending initial messages
+        setTimeout(() => {
+          if (ws.current?.readyState === WebSocket.OPEN) {
+            // Subscribe to all events
+            ws.current.send(
+              JSON.stringify({
+                type: 'subscribe',
+                events: ['all'],
+              })
+            );
 
-        // Request current state
-        ws.current?.send(
-          JSON.stringify({
-            type: 'getState',
-          })
-        );
+            // Request current state
+            ws.current.send(
+              JSON.stringify({
+                type: 'getState',
+              })
+            );
+          }
+        }, 100);
 
         onOpen?.();
       };
@@ -107,9 +118,14 @@ export const useWebSocket = ({
     connect();
 
     return () => {
-      disconnect();
+      // Clean up on unmount - don't include disconnect in deps
+      if (ws.current) {
+        ws.current.close();
+        ws.current = null;
+      }
     };
-  }, [connect, disconnect]);
+    // Only reconnect when URL changes, not on every render
+  }, [url]);
 
   return {
     isConnected,

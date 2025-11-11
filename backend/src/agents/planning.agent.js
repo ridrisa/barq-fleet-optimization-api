@@ -421,13 +421,22 @@ class PlanningAgent {
       );
       numVehiclesToUse = minVehicles;
     } else if (distributionStrategy === 'auto') {
-      // For auto strategy, use as many vehicles as we have pickup points
-      // but not more than the available vehicles
-      const minVehicles = Math.min(normalizedPickups.length, vehicles.length);
-      console.log(
-        `Using ${minVehicles} vehicles out of ${vehicles.length} available (auto strategy)`
-      );
-      numVehiclesToUse = minVehicles;
+      // For auto strategy with single pickup point, use all available vehicles
+      // to distribute the load efficiently
+      if (normalizedPickups.length === 1 && deliveryPoints.length > vehicles.length) {
+        // When we have many deliveries and one pickup point, use all vehicles
+        console.log(
+          `Single pickup with ${deliveryPoints.length} deliveries - using all ${vehicles.length} vehicles for distribution`
+        );
+        numVehiclesToUse = vehicles.length;
+      } else {
+        // Otherwise, use as many vehicles as we have pickup points
+        const minVehicles = Math.min(normalizedPickups.length, vehicles.length);
+        console.log(
+          `Using ${minVehicles} vehicles out of ${vehicles.length} available (auto strategy)`
+        );
+        numVehiclesToUse = minVehicles;
+      }
     }
 
     // Use only the specified number of vehicles
