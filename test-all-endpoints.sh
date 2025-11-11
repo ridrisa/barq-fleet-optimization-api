@@ -1,97 +1,102 @@
 #!/bin/bash
 
-echo "=============================================="
-echo "COMPLETE SYSTEM STATUS - ALL ENDPOINTS"
-echo "=============================================="
+# Comprehensive Endpoint Testing Script
+# Tests all critical endpoints from the error report
+
+BASE_URL="https://route-opt-backend-426674819922.us-central1.run.app"
+TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+
+echo "=================================="
+echo "BARQ Fleet API Endpoint Test"
+echo "Timestamp: $TIMESTAMP"
+echo "=================================="
 echo ""
 
-BACKEND_URL="https://route-opt-backend-426674819922.us-central1.run.app"
-FRONTEND_URL="https://route-opt-frontend-426674819922.us-central1.run.app"
+# Color codes
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-# 1. Backend Health
-echo "1. Backend Health Check"
-echo "   URL: $BACKEND_URL/health"
-HEALTH=$(curl -s "$BACKEND_URL/health")
-echo "   Response: $HEALTH"
-echo ""
+test_endpoint() {
+    local name=$1
+    local url=$2
+    local expected_status=$3
 
-# 2. Optimization Endpoint (Core Feature)
-echo "2. Optimization Endpoint (FIXED - Core Feature)"
-echo "   URL: POST $BACKEND_URL/api/optimize"
-OPT_RESPONSE=$(curl -s -X POST "$BACKEND_URL/api/optimize" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "pickupPoints": [{"name": "Hub", "address": "Test", "lat": 24.7136, "lng": 46.6753, "priority": 5}],
-    "deliveryPoints": [{"name": "Customer", "address": "Test", "lat": 24.7240, "lng": 46.6800, "priority": 8}],
-    "fleet": {"vehicleType": "car", "count": 1, "capacity": 1000},
-    "options": {"optimizationMode": "balanced"}
-  }')
-echo "   Success: $(echo $OPT_RESPONSE | grep -o '"success":true' || echo 'false')"
-echo "   Routes: $(echo $OPT_RESPONSE | grep -o '"total_routes":[0-9]*' || echo 'N/A')"
-echo ""
+    echo -n "Testing $name... "
+    response=$(curl -s -w "\n%{http_code}" "$url")
+    status_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | sed '$d')
 
-# 3. Analytics Dashboard Summary
-echo "3. Analytics Dashboard Summary"
-echo "   URL: $BACKEND_URL/api/v1/analytics/dashboard/summary"
-ANALYTICS=$(curl -s "$BACKEND_URL/api/v1/analytics/dashboard/summary")
-echo "   Today Deliveries: $(echo $ANALYTICS | grep -o '"total_deliveries":[0-9]*' || echo 'N/A')"
-echo "   Active Drivers: $(echo $ANALYTICS | grep -o '"active_drivers":[0-9]*' || echo 'N/A')"
-echo ""
+    if [ "$status_code" -eq "$expected_status" ]; then
+        echo -e "${GREEN}✓ PASS${NC} (HTTP $status_code)"
+        return 0
+    else
+        echo -e "${RED}✗ FAIL${NC} (HTTP $status_code, expected $expected_status)"
+        echo "  Response: $(echo $body | head -c 100)..."
+        return 1
+    fi
+}
 
-# 4. Autonomous Operations Status
-echo "4. Autonomous Operations Status"
-echo "   URL: $BACKEND_URL/api/v1/autonomous/status"
-AUTO=$(curl -s "$BACKEND_URL/api/v1/autonomous/status")
-echo "   Status: $(echo $AUTO | grep -o '"status":"[^"]*"' || echo 'N/A')"
-echo "   Initialized: $(echo $AUTO | grep -o '"initialized":[^,]*' || echo 'N/A')"
-echo ""
+# Track results
+total=0
+passed=0
+failed=0
 
-# 5. Automation Engine Status
-echo "5. Automation Engine Status (All 4 Engines)"
-echo "   URL: $BACKEND_URL/api/v1/automation/status-all"
-ENGINE=$(curl -s "$BACKEND_URL/api/v1/automation/status-all")
-echo "   Auto-Dispatch: $(echo $ENGINE | grep -o '"autoDispatch":{[^}]*}' || echo 'N/A')"
-echo "   Route Optimizer: $(echo $ENGINE | grep -o '"routeOptimizer":{[^}]*}' || echo 'N/A')"
-echo ""
+echo "=================================="
+echo "1. HEALTH CHECK ENDPOINTS"
+echo "=================================="
 
-# 6. Frontend Accessibility
-echo "6. Frontend Accessibility"
-echo "   URL: $FRONTEND_URL"
-FRONTEND_STATUS=$(curl -s -I "$FRONTEND_URL" | grep "HTTP" | awk '{print $2}')
-echo "   HTTP Status: $FRONTEND_STATUS"
-echo ""
+# Basic health
+test_endpoint "Basic Health Check" "$BASE_URL/health" 200
+((total++)); [ $? -eq 0 ] && ((passed++)) || ((failed++))
 
-# 7. API Discovery
-echo "7. API Discovery Endpoint"
-echo "   URL: $BACKEND_URL/api/v1"
-API_INFO=$(curl -s "$BACKEND_URL/api/v1")
-echo "   Available: $(echo $API_INFO | grep -o '"success":true' && echo 'YES' || echo 'NO')"
-echo ""
+# Detailed health
+test_endpoint "Detailed Health Check" "$BASE_URL/api/v1/health/detailed" 200
+((total++)); [ $? -eq 0 ] && ((passed++)) || ((failed++))
 
-echo "=============================================="
-echo "DEPLOYMENT REVISIONS"
-echo "=============================================="
-echo "Backend:  route-opt-backend-00010-s9w"
-echo "Frontend: route-opt-frontend-00009-nnj"
-echo ""
+# Readiness probe
+test_endpoint "Readiness Probe" "$BASE_URL/api/v1/health/ready" 200
+((total++)); [ $? -eq 0 ] && ((passed++)) || ((failed++))
 
-echo "=============================================="
-echo "STATUS SUMMARY"
-echo "=============================================="
-echo "✅ Backend Deployed & Healthy"
-echo "✅ Frontend Deployed & Accessible"
-echo "✅ Optimization API Working (Schema Fixed!)"
-echo "✅ Analytics Dashboard Functional"
-echo "✅ Autonomous Operations Active"
-echo "✅ All 4 Automation Engines Initialized"
+# Live probe
+test_endpoint "Liveness Probe" "$BASE_URL/api/v1/health/live" 200
+((total++)); [ $? -eq 0 ] && ((passed++)) || ((failed++))
+
 echo ""
-echo "⚠️  Known Non-Critical Warnings:"
-echo "   - Missing automation dashboard tables (optional)"
-echo "   - Analytics SLA enum needs EXPRESS value (optional)"
+echo "=================================="
+echo "2. ANALYTICS ENDPOINTS"
+echo "=================================="
+
+# SLA Realtime
+test_endpoint "SLA Realtime Analytics" "$BASE_URL/api/v1/analytics/sla/realtime" 200
+((total++)); [ $? -eq 0 ] && ((passed++)) || ((failed++))
+
 echo ""
-echo "📚 Documentation:"
-echo "   - SCHEMA_MISMATCH_FIX.md - Complete fix analysis"
-echo "   - FIXES_APPLIED.md - All fixes documented"
-echo "   - DATABASE_SCHEMA_COMPLETION.md - Optional enhancements"
+echo "=================================="
+echo "3. API INFO ENDPOINTS"
+echo "=================================="
+
+# API root
+test_endpoint "API Root" "$BASE_URL/api" 200
+((total++)); [ $? -eq 0 ] && ((passed++)) || ((failed++))
+
+# API v1 info
+test_endpoint "API v1 Info" "$BASE_URL/api/v1" 200
+((total++)); [ $? -eq 0 ] && ((passed++)) || ((failed++))
+
 echo ""
-echo "=============================================="
+echo "=================================="
+echo "TEST SUMMARY"
+echo "=================================="
+echo "Total Tests: $total"
+echo -e "Passed: ${GREEN}$passed${NC}"
+echo -e "Failed: ${RED}$failed${NC}"
+
+if [ $failed -eq 0 ]; then
+    echo -e "\n${GREEN}ALL TESTS PASSED! ✓${NC}"
+    exit 0
+else
+    echo -e "\n${RED}SOME TESTS FAILED! ✗${NC}"
+    exit 1
+fi
