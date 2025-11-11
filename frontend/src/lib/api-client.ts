@@ -3,9 +3,9 @@
  * Centralized API configuration and request handling
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://route-opt-backend-sek7q2ajva-uc.a.run.app';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://route-opt-backend-426674819922.us-central1.run.app';
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || 'v1';
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'wss://route-opt-backend-sek7q2ajva-uc.a.run.app/ws';
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'wss://route-opt-backend-426674819922.us-central1.run.app/ws';
 
 export interface ApiClientConfig {
   baseUrl?: string;
