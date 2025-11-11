@@ -66,19 +66,9 @@ steps:
       - 'DB_HOST=POSTGRES_HOST:latest,DB_NAME=POSTGRES_DB:latest,DB_USER=POSTGRES_USER:latest,DB_PASSWORD=POSTGRES_PASSWORD:latest'
       - '--use-http2'
       - '--no-cpu-throttling'
-      - '--startup-cpu-boost'
-      - '--startup-probe-type'
-      - 'http-get'
-      - '--startup-probe-path'
-      - '/health/ready'
-      - '--startup-probe-initial-delay'
-      - '10'
-      - '--startup-probe-timeout'
-      - '10'
-      - '--startup-probe-period'
-      - '10'
-      - '--startup-probe-failure-threshold'
-      - '10'
+      - '--cpu-boost'
+      - '--startup-probe'
+      - 'initialDelaySeconds=10,timeoutSeconds=10,periodSeconds=10,failureThreshold=10,httpGet.port=8080,httpGet.path=/health/ready'
     waitFor: ['push-backend', 'push-backend-latest']
 
   # ============================================
