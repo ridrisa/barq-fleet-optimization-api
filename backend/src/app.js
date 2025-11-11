@@ -251,8 +251,61 @@ app.get('/metrics', async (req, res) => {
   }
 });
 
+// =================================================================
+// IMPORTANT: Specific routes must be defined BEFORE wildcard routes
+// Order matters: /api/health and /api/version must come before app.use('/api', ...)
+// =================================================================
+
+// Health endpoint alias at /api/health (for backward compatibility)
+app.get('/api/health', (req, res) => {
+  const healthData = {
+    success: true,
+    status: 'up',
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+    ready: isApplicationReady,
+  };
+  res.status(200).json(healthData);
+});
+
+// Version endpoint - API version information
+app.get('/api/version', (req, res) => {
+  res.json({
+    success: true,
+    version: process.env.npm_package_version || '1.0.0',
+    apiVersion: 'v1',
+    environment: process.env.NODE_ENV || 'development',
+    buildDate: process.env.BUILD_DATE || new Date().toISOString(),
+    commit: process.env.GIT_COMMIT || 'unknown',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // API routes - All routes now handled through versioned router
 app.use('/api', apiRoutes);
+
+// Root endpoint - API information (must be after /api to avoid conflicts)
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    name: 'BARQ Fleet Management API',
+    description: 'Advanced fleet management and route optimization with AI',
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    endpoints: {
+      api: '/api',
+      health: '/health',
+      apiHealth: '/api/health',
+      version: '/api/version',
+      metrics: '/metrics',
+      documentation: '/api-docs',
+    },
+    status: 'operational',
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // Automation routes (Phase 4)
 app.use('/api/v1/automation', automationRoutes);
