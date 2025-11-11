@@ -59,8 +59,8 @@ const schemas = {
       .items(
         Joi.object({
           id: Joi.string().optional(),
-          name: Joi.string().required(),
-          address: Joi.string().required(),
+          name: Joi.string().optional(),
+          address: Joi.string().optional(),
           lat: patterns.coordinates.latitude.required(),
           lng: patterns.coordinates.longitude.required(),
           timeWindow: Joi.object({
@@ -80,8 +80,8 @@ const schemas = {
       .items(
         Joi.object({
           id: Joi.string().optional(),
-          name: Joi.string().required(),
-          address: Joi.string().required(),
+          name: Joi.string().optional(),
+          address: Joi.string().optional(),
           lat: patterns.coordinates.latitude.required(),
           lng: patterns.coordinates.longitude.required(),
           timeWindow: Joi.object({
@@ -110,9 +110,15 @@ const schemas = {
       vehicles: Joi.array()
         .items(
           Joi.object({
-            id: Joi.string().required(),
-            type: Joi.string().valid('car', 'motorcycle', 'bicycle', 'van', 'truck').required(),
-            capacity: Joi.number().min(1).required(),
+            id: Joi.string().optional(),
+            name: Joi.string().optional(),
+            type: Joi.string().valid('car', 'motorcycle', 'bicycle', 'van', 'truck').optional(),
+            capacity: Joi.number().min(1).optional(),
+            capacity_kg: Joi.number().min(1).optional(),
+            startLocation: Joi.object({
+              latitude: patterns.coordinates.latitude.optional(),
+              longitude: patterns.coordinates.longitude.optional(),
+            }).optional(),
           })
         )
         .optional(),
