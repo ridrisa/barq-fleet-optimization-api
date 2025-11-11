@@ -69,6 +69,8 @@ steps:
       - '--cpu-boost'
       - '--startup-probe'
       - 'initialDelaySeconds=10,timeoutSeconds=10,periodSeconds=10,failureThreshold=10,httpGet.port=8080,httpGet.path=/health/ready'
+      - '--liveness-probe'
+      - 'httpGet.port=8080,httpGet.path=/health/ready,periodSeconds=30,failureThreshold=3'
     waitFor: ['push-backend', 'push-backend-latest']
 
   # ============================================
