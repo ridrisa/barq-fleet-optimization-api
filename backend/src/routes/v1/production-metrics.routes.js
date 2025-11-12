@@ -17,9 +17,10 @@ router.use(paginationMiddleware);
 
 /**
  * Helper function to get date range from query params
+ * Default to 1 day for performance with production data volume
  */
 function getDateRange(req) {
-  const { days = 7, start_date, end_date } = req.query;
+  const { days = 1, start_date, end_date } = req.query;
 
   if (start_date && end_date) {
     return {
