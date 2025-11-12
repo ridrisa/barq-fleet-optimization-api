@@ -5,7 +5,7 @@
  */
 
 const pool = require('./postgres.service');
-const logger = require('../utils/logger');
+const { logger } = require('../utils/logger');
 const { executeMetricsQuery, TIMEOUT_CONFIG } = require('../utils/query-timeout');
 
 class ProductionMetricsService {

@@ -11,7 +11,7 @@
  */
 
 const moment = require('moment-timezone');
-const logger = require('../utils/logger');
+const { logger } = require('../utils/logger');
 
 // Service type SLA targets (in minutes)
 const SLA_TARGETS = {

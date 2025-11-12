@@ -3,7 +3,7 @@
  * Provides timeout handling for database queries
  */
 
-const logger = require('./logger');
+const { logger } = require('./logger');
 
 /**
  * Default timeout configurations

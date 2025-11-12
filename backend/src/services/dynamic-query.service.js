@@ -5,7 +5,7 @@
  */
 
 const pool = require('./postgres.service');
-const logger = require('../utils/logger');
+const { logger } = require('../utils/logger');
 
 // Import all production queries from BARQ Fleet system
 const PRODUCTION_QUERIES = {

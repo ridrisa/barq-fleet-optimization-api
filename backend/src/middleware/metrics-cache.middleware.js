@@ -26,7 +26,7 @@
  * - Logs cache hits/misses for monitoring
  */
 
-const logger = require('../utils/logger');
+const { logger } = require('../utils/logger');
 
 // In-memory cache storage
 const cache = new Map();

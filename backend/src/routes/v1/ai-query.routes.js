@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const DynamicQueryService = require('../../services/dynamic-query.service');
-const logger = require('../../utils/logger');
+const { logger } = require('../../utils/logger');
 
 /**
  * GET /api/v1/ai-query/catalog
