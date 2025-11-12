@@ -557,7 +557,7 @@ router.get('/fleet/drivers', async (req, res) => {
         FROM drivers d
         LEFT JOIN orders o ON o.driver_id = d.id
           AND o.created_at >= $1
-        WHERE d.status = 'active'
+        WHERE d.is_active = true
         GROUP BY d.id, d.name
       )
       SELECT

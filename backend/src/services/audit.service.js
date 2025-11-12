@@ -409,6 +409,28 @@ class AuditService {
     });
   }
 
+  async logAuthEvent(userId, action, result, metadata = {}) {
+    const eventTypeMap = {
+      register: result === 'success' ? AUDIT_EVENTS.LOGIN_SUCCESS : AUDIT_EVENTS.LOGIN_FAILURE,
+      login: result === 'success' ? AUDIT_EVENTS.LOGIN_SUCCESS : AUDIT_EVENTS.LOGIN_FAILURE,
+      logout: AUDIT_EVENTS.LOGOUT,
+      password_change: AUDIT_EVENTS.CONFIG_CHANGED,
+    };
+
+    const eventType = eventTypeMap[action] || AUDIT_EVENTS.LOGIN_FAILURE;
+
+    return this.log(eventType, {
+      userId,
+      action,
+      result: result === 'success' ? 'success' : 'failure',
+      reason: metadata.reason || null,
+      ipAddress: metadata.ipAddress || null,
+      userAgent: metadata.userAgent || null,
+      requestId: metadata.requestId || null,
+      sessionId: metadata.sessionId || null,
+    });
+  }
+
   async logDataAccess(userId, resource, resourceId, action, changes = null, metadata = {}) {
     const eventType =
       {

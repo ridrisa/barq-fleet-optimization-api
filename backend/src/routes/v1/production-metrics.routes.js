@@ -10,10 +10,15 @@ const SLACalculatorService = require('../../services/sla-calculator.service');
 const pool = require('../../services/postgres.service');
 const logger = require('../../utils/logger');
 const { paginationMiddleware, generatePaginationMeta } = require('../../middleware/pagination.middleware');
+const { metricsCacheMiddleware } = require('../../middleware/metrics-cache.middleware');
 const { executeMetricsQuery, TIMEOUT_CONFIG } = require('../../utils/query-timeout');
 
 // Apply pagination middleware to all routes
 router.use(paginationMiddleware);
+
+// Apply caching middleware to all production metrics endpoints (5-minute TTL)
+// This bypasses slow GROUP BY queries that were timing out even with 6-hour windows
+router.use(metricsCacheMiddleware);
 
 /**
  * Helper function to get date range from query params
