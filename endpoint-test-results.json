@@ -1,0 +1,423 @@
+{
+  "timestamp": "2025-11-12T02:06:57Z",
+  "tests": [
+    {
+      "category": "System",
+      "method": "GET",
+      "path": "/",
+      "description": "API information",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "System",
+      "method": "GET",
+      "path": "/api",
+      "description": "API root",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "System",
+      "method": "GET",
+      "path": "/api/v1",
+      "description": "API v1 info",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "System",
+      "method": "GET",
+      "path": "/api/version",
+      "description": "API version",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "System",
+      "method": "GET",
+      "path": "/api/versions",
+      "description": "All versions",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "System",
+      "method": "GET",
+      "path": "/api-docs",
+      "description": "Swagger docs",
+      "expected": 200,
+      "actual": 301,
+      "status": "FAIL",
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Redirecting</title>\n</head>\n<body>\n<pre>Redirecting to /api-docs/</pre>\n</body>\n</html>\n"
+    },
+    {
+      "category": "System",
+      "method": "GET",
+      "path": "/metrics",
+      "description": "Prometheus metrics",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Health",
+      "method": "GET",
+      "path": "/health",
+      "description": "Main health check",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Health",
+      "method": "GET",
+      "path": "/health/live",
+      "description": "Liveness probe",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Health",
+      "method": "GET",
+      "path": "/health/info",
+      "description": "Health info",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Health",
+      "method": "GET",
+      "path": "/api/health",
+      "description": "API health",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Health",
+      "method": "GET",
+      "path": "/api/v1/health",
+      "description": "V1 health",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Auth",
+      "method": "POST",
+      "path": "/api/v1/auth/register",
+      "description": "Register user",
+      "expected": 400,
+      "actual": 400,
+      "status": "PASS"
+    },
+    {
+      "category": "Auth",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "description": "Login user",
+      "expected": 400,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"success\":false,\"status\":\"error\",\"message\":\"An unexpected error occurred\",\"code\":\"INTERNAL_ERROR\",\"requestId\":\"5214cc24-9ee7-4337-a7f7-647c8f7f9879\",\"timestamp\":\"2025-11-12T02:07:50.827Z\"}\n"
+    },
+    {
+      "category": "Optimization",
+      "method": "POST",
+      "path": "/api/optimize",
+      "description": "Optimize route",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Optimization",
+      "method": "POST",
+      "path": "/api/v1/optimize",
+      "description": "V1 optimize route",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Optimization",
+      "method": "GET",
+      "path": "/api/optimize/history",
+      "description": "Optimization history",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Optimization",
+      "method": "GET",
+      "path": "/api/optimize/stats",
+      "description": "Optimization stats",
+      "expected": 200,
+      "actual": 404,
+      "status": "FAIL",
+      "response": "{\"success\":false,\"requestId\":\"stats\",\"error\":\"Optimization result with ID stats not found\"}\n"
+    },
+    {
+      "category": "AI",
+      "method": "GET",
+      "path": "/api/v1/ai-query/catalog",
+      "description": "AI query catalog",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "AI",
+      "method": "GET",
+      "path": "/api/v1/ai-query/categories",
+      "description": "AI categories",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Analytics",
+      "method": "GET",
+      "path": "/api/v1/analytics/sla/realtime",
+      "description": "SLA realtime",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to fetch real-time SLA status\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Analytics",
+      "method": "GET",
+      "path": "/api/v1/analytics/sla/compliance",
+      "description": "SLA compliance",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to fetch SLA compliance\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Analytics",
+      "method": "GET",
+      "path": "/api/v1/analytics/sla/trend",
+      "description": "SLA trend",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to fetch SLA trend\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Analytics",
+      "method": "GET",
+      "path": "/api/v1/analytics/fleet/performance",
+      "description": "Fleet performance",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to fetch fleet performance\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Analytics",
+      "method": "GET",
+      "path": "/api/v1/analytics/fleet/drivers",
+      "description": "Fleet drivers",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to fetch driver performance\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Analytics",
+      "method": "GET",
+      "path": "/api/v1/analytics/fleet/vehicles",
+      "description": "Fleet vehicles",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to fetch vehicle performance\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Analytics",
+      "method": "GET",
+      "path": "/api/v1/analytics/routes/efficiency",
+      "description": "Route efficiency",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to fetch route efficiency\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Analytics",
+      "method": "GET",
+      "path": "/api/v1/analytics/dashboard/summary",
+      "description": "Dashboard summary",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to fetch dashboard summary\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Autonomous",
+      "method": "GET",
+      "path": "/api/v1/autonomous/status",
+      "description": "Autonomous status",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/dispatch/status",
+      "description": "Dispatch status",
+      "expected": 200,
+      "actual": 503,
+      "status": "FAIL",
+      "response": "{\"error\":\"Auto-dispatch engine not initialized\"}\n"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/dispatch/stats",
+      "description": "Dispatch stats",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to get stats\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/routes/status",
+      "description": "Routes status",
+      "expected": 200,
+      "actual": 503,
+      "status": "FAIL",
+      "response": "{\"error\":\"Route optimizer not initialized\"}\n"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/routes/stats",
+      "description": "Routes stats",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to get stats\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/batching/status",
+      "description": "Batching status",
+      "expected": 200,
+      "actual": 503,
+      "status": "FAIL",
+      "response": "{\"error\":\"Smart batching engine not initialized\"}\n"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/batching/stats",
+      "description": "Batching stats",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to get stats\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/escalation/status",
+      "description": "Escalation status",
+      "expected": 200,
+      "actual": 503,
+      "status": "FAIL",
+      "response": "{\"error\":\"Escalation engine not initialized\"}\n"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/escalation/stats",
+      "description": "Escalation stats",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to get stats\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/escalation/logs",
+      "description": "Escalation logs",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to get escalation logs\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/escalation/alerts",
+      "description": "Escalation alerts",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to get alerts\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/escalation/at-risk-orders",
+      "description": "At-risk orders",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to get at-risk orders\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/status-all",
+      "description": "All automation status",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Automation",
+      "method": "GET",
+      "path": "/api/v1/automation/dashboard",
+      "description": "Automation dashboard",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to get dashboard data\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+    },
+    {
+      "category": "Frontend",
+      "method": "GET",
+      "path": "https://route-opt-frontend-sek7q2ajva-uc.a.run.app/",
+      "description": "Frontend home",
+      "expected": 200,
+      "actual": 000,
+      "status": "FAIL",
+      "response": "\n"
+    }
+  ],
+  "summary": {
+    "total": 56,
+    "passed": 19,
+    "failed": 36,
+    "skipped": 1,
+    "success_rate": 33.92
+  }
+}
