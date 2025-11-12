@@ -17,6 +17,7 @@ const healthRoutes = require('./health.routes');
 const analyticsRoutes = require('./analytics.routes');
 const productionMetricsRoutes = require('./production-metrics.routes');
 const aiQueryRoutes = require('./ai-query.routes');
+const automationRoutes = require('../automation.routes');
 
 // Log v1 API usage
 router.use((req, res, next) => {
@@ -56,6 +57,7 @@ router.get('/', (req, res) => {
       analytics: '/api/v1/analytics',
       productionMetrics: '/api/v1/production-metrics',
       aiQuery: '/api/v1/ai-query',
+      automation: '/api/v1/automation',
     },
     features: [
       'Route optimization',
@@ -80,5 +82,6 @@ router.use('/health', healthRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/production-metrics', productionMetricsRoutes);
 router.use('/ai-query', aiQueryRoutes);
+router.use('/automation', automationRoutes);
 
 module.exports = router;
