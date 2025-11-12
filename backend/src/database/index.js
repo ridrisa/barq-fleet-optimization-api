@@ -70,8 +70,16 @@ class DatabaseManager {
         logger.error('[Database] Unexpected error on idle client', err);
       });
 
-      // Initialize schema if needed
-      await this.initializeSchema();
+      // Initialize schema if needed - wrap in try-catch to prevent connection pool breakage
+      try {
+        await this.initializeSchema();
+      } catch (schemaError) {
+        logger.warn('[Database] Schema initialization failed, but connection is working', {
+          error: schemaError.message,
+          stack: schemaError.stack,
+        });
+        // Continue with just the connection pool - don't throw error
+      }
 
       return true;
     } catch (error) {
