@@ -477,6 +477,19 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
     logger.warn('WebSocket server initialization failed - continuing without WebSocket support');
   }
 
+  // Initialize PostgreSQL service (required for analytics, production metrics, and automation routes)
+  logger.info('Initializing PostgreSQL service...');
+  try {
+    await postgresService.initialize();
+    logger.info('PostgreSQL service initialized successfully');
+  } catch (dbError) {
+    logger.error('Failed to initialize PostgreSQL service', {
+      error: dbError.message,
+      stack: dbError.stack,
+    });
+    logger.warn('Analytics and automation features may not work without database connection');
+  }
+
   // Initialize agent system
   if (process.env.DISABLE_AUTONOMOUS_AGENTS === 'true') {
     logger.warn('⚠️  AUTONOMOUS AGENTS DISABLED - Running in API-only mode');
@@ -527,19 +540,6 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
         });
         logger.warn('Server will continue without autonomous functionality');
         logger.info('All agent APIs still available via /api/v1/agents/*');
-      }
-
-      // Initialize PostgreSQL service (required for automation engines)
-      logger.info('Initializing PostgreSQL service...');
-      try {
-        await postgresService.initialize();
-        logger.info('PostgreSQL service initialized successfully');
-      } catch (dbError) {
-        logger.error('Failed to initialize PostgreSQL service', {
-          error: dbError.message,
-          stack: dbError.stack,
-        });
-        logger.warn('Automation features may not work without database connection');
       }
 
       // Initialize Phase 4 Automation Engines
