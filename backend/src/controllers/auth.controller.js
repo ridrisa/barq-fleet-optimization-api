@@ -108,6 +108,14 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
+    // Validate input exists (additional validation beyond Joi)
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email and password are required',
+      });
+    }
+
     // Get user from database
     const result = await db.query(
       'SELECT id, email, name, role, password_hash, active FROM users WHERE email = $1',
@@ -146,8 +154,32 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    // Validate password hash exists
+    if (!user.password_hash) {
+      logger.error('[Auth] User has no password hash', {
+        userId: user.id,
+        email: user.email,
+      });
+      return res.status(500).json({
+        success: false,
+        error: 'Account configuration error',
+      });
+    }
+
+    // Verify password with error handling
+    let isValidPassword = false;
+    try {
+      isValidPassword = await bcrypt.compare(password, user.password_hash);
+    } catch (bcryptError) {
+      logger.error('[Auth] Password comparison failed', {
+        error: bcryptError.message,
+        userId: user.id,
+      });
+      return res.status(500).json({
+        success: false,
+        error: 'Authentication error',
+      });
+    }
 
     if (!isValidPassword) {
       await auditService.logAuthEvent(user.id, 'login', 'failed', {
@@ -172,28 +204,56 @@ exports.login = async (req, res, next) => {
     // Get permissions for role
     const permissions = ROLE_PERMISSIONS[user.role] || [];
 
-    // Generate tokens
-    const token = generateToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      permissions,
-    });
+    // Generate tokens with error handling
+    let token, refreshToken;
+    try {
+      token = generateToken({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        permissions,
+      });
 
-    const refreshToken = generateRefreshToken({
-      id: user.id,
-      email: user.email,
-    });
+      refreshToken = generateRefreshToken({
+        id: user.id,
+        email: user.email,
+      });
+    } catch (tokenError) {
+      logger.error('[Auth] Token generation failed', {
+        error: tokenError.message,
+        userId: user.id,
+      });
+      return res.status(500).json({
+        success: false,
+        error: 'Token generation error',
+      });
+    }
 
     // Update last login
-    await db.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
+    try {
+      await db.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
+    } catch (dbError) {
+      // Non-critical error, log but continue
+      logger.warn('[Auth] Failed to update last login', {
+        error: dbError.message,
+        userId: user.id,
+      });
+    }
 
     // Log audit event
-    await auditService.logAuthEvent(user.id, 'login', 'success', {
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent'),
-      requestId: req.headers['x-request-id'],
-    });
+    try {
+      await auditService.logAuthEvent(user.id, 'login', 'success', {
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+        requestId: req.headers['x-request-id'],
+      });
+    } catch (auditError) {
+      // Non-critical error, log but continue
+      logger.warn('[Auth] Failed to log audit event', {
+        error: auditError.message,
+        userId: user.id,
+      });
+    }
 
     logger.info('[Auth] User logged in successfully', {
       userId: user.id,
@@ -224,11 +284,17 @@ exports.login = async (req, res, next) => {
       },
     });
   } catch (error) {
-    logger.error('[Auth] Login failed', {
+    logger.error('[Auth] Login failed with unexpected error', {
       error: error.message,
       stack: error.stack,
+      email: req.body?.email,
     });
-    next(error);
+
+    // Return 500 only for truly unexpected errors
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error during login',
+    });
   }
 };
 

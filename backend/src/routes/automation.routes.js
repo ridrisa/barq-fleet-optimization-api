@@ -41,7 +41,11 @@ router.initializeEngines = (engines) => {
 router.post('/dispatch/start', async (req, res) => {
   try {
     if (!autoDispatchEngine) {
-      return res.status(503).json({ error: 'Auto-dispatch engine not initialized' });
+      return res.status(503).json({
+        error: 'Auto-dispatch engine not initialized',
+        message:
+          'The auto-dispatch service failed to initialize. Check server logs for details.',
+      });
     }
 
     if (autoDispatchEngine.isRunning) {
@@ -950,44 +954,101 @@ router.get('/escalation/at-risk-orders', async (req, res) => {
 router.post('/start-all', async (req, res) => {
   try {
     const results = {};
+    const errors = [];
 
     // Start auto-dispatch
-    if (autoDispatchEngine && !autoDispatchEngine.isRunning) {
-      await autoDispatchEngine.start();
-      results.autoDispatch = 'started';
-    } else {
+    if (!autoDispatchEngine) {
+      results.autoDispatch = 'unavailable';
+      errors.push('Auto-dispatch engine not initialized');
+    } else if (autoDispatchEngine.isRunning) {
       results.autoDispatch = 'already running';
+    } else {
+      try {
+        await autoDispatchEngine.start();
+        results.autoDispatch = 'started';
+      } catch (error) {
+        results.autoDispatch = 'failed to start';
+        errors.push(`Auto-dispatch: ${error.message}`);
+      }
     }
 
     // Start route optimizer
-    if (dynamicRouteOptimizer && !dynamicRouteOptimizer.isRunning) {
-      await dynamicRouteOptimizer.start();
-      results.routeOptimizer = 'started';
-    } else {
+    if (!dynamicRouteOptimizer) {
+      results.routeOptimizer = 'unavailable';
+      errors.push('Route optimizer not initialized');
+    } else if (dynamicRouteOptimizer.isRunning) {
       results.routeOptimizer = 'already running';
+    } else {
+      try {
+        await dynamicRouteOptimizer.start();
+        results.routeOptimizer = 'started';
+      } catch (error) {
+        results.routeOptimizer = 'failed to start';
+        errors.push(`Route optimizer: ${error.message}`);
+      }
     }
 
     // Start smart batching
-    if (smartBatchingEngine && !smartBatchingEngine.isRunning) {
-      await smartBatchingEngine.start();
-      results.smartBatching = 'started';
-    } else {
+    if (!smartBatchingEngine) {
+      results.smartBatching = 'unavailable';
+      errors.push('Smart batching engine not initialized');
+    } else if (smartBatchingEngine.isRunning) {
       results.smartBatching = 'already running';
+    } else {
+      try {
+        await smartBatchingEngine.start();
+        results.smartBatching = 'started';
+      } catch (error) {
+        results.smartBatching = 'failed to start';
+        errors.push(`Smart batching: ${error.message}`);
+      }
     }
 
     // Start escalation
-    if (autonomousEscalationEngine && !autonomousEscalationEngine.isRunning) {
-      await autonomousEscalationEngine.start();
-      results.escalation = 'started';
-    } else {
+    if (!autonomousEscalationEngine) {
+      results.escalation = 'unavailable';
+      errors.push('Escalation engine not initialized');
+    } else if (autonomousEscalationEngine.isRunning) {
       results.escalation = 'already running';
+    } else {
+      try {
+        await autonomousEscalationEngine.start();
+        results.escalation = 'started';
+      } catch (error) {
+        results.escalation = 'failed to start';
+        errors.push(`Escalation: ${error.message}`);
+      }
     }
 
-    res.json({
-      success: true,
-      message: 'All automation engines started',
+    // Determine response status
+    const startedCount = Object.values(results).filter((r) => r === 'started').length;
+    const unavailableCount = Object.values(results).filter((r) => r === 'unavailable').length;
+    const totalEngines = 4;
+
+    if (unavailableCount === totalEngines) {
+      return res.status(503).json({
+        success: false,
+        message: 'No automation engines are available',
+        engines: results,
+        errors: errors,
+      });
+    }
+
+    const response = {
+      success: errors.length === 0,
+      partial: errors.length > 0 && startedCount > 0,
+      message:
+        errors.length === 0
+          ? 'All available automation engines started'
+          : `${startedCount}/${totalEngines - unavailableCount} engines started successfully`,
       engines: results,
-    });
+    };
+
+    if (errors.length > 0) {
+      response.errors = errors;
+    }
+
+    res.json(response);
   } catch (error) {
     console.error('Error starting all automation engines:', error);
     res.status(500).json({ error: 'Failed to start all engines', details: error.message });
@@ -1053,23 +1114,63 @@ router.post('/stop-all', async (req, res) => {
  */
 router.get('/status-all', async (req, res) => {
   try {
-    res.json({
+    const status = {
       autoDispatch: {
-        isRunning: autoDispatchEngine ? autoDispatchEngine.isRunning : false,
         initialized: !!autoDispatchEngine,
+        available: !!autoDispatchEngine,
+        isRunning: autoDispatchEngine ? autoDispatchEngine.isRunning : false,
+        status: autoDispatchEngine
+          ? autoDispatchEngine.isRunning
+            ? 'running'
+            : 'ready'
+          : 'unavailable',
       },
       routeOptimizer: {
-        isRunning: dynamicRouteOptimizer ? dynamicRouteOptimizer.isRunning : false,
         initialized: !!dynamicRouteOptimizer,
+        available: !!dynamicRouteOptimizer,
+        isRunning: dynamicRouteOptimizer ? dynamicRouteOptimizer.isRunning : false,
+        status: dynamicRouteOptimizer
+          ? dynamicRouteOptimizer.isRunning
+            ? 'running'
+            : 'ready'
+          : 'unavailable',
       },
       smartBatching: {
-        isRunning: smartBatchingEngine ? smartBatchingEngine.isRunning : false,
         initialized: !!smartBatchingEngine,
+        available: !!smartBatchingEngine,
+        isRunning: smartBatchingEngine ? smartBatchingEngine.isRunning : false,
+        status: smartBatchingEngine
+          ? smartBatchingEngine.isRunning
+            ? 'running'
+            : 'ready'
+          : 'unavailable',
       },
       escalation: {
-        isRunning: autonomousEscalationEngine ? autonomousEscalationEngine.isRunning : false,
         initialized: !!autonomousEscalationEngine,
+        available: !!autonomousEscalationEngine,
+        isRunning: autonomousEscalationEngine ? autonomousEscalationEngine.isRunning : false,
+        status: autonomousEscalationEngine
+          ? autonomousEscalationEngine.isRunning
+            ? 'running'
+            : 'ready'
+          : 'unavailable',
       },
+    };
+
+    // Add summary
+    const totalEngines = 4;
+    const availableEngines = Object.values(status).filter((s) => s.available).length;
+    const runningEngines = Object.values(status).filter((s) => s.isRunning).length;
+
+    res.json({
+      summary: {
+        totalEngines,
+        availableEngines,
+        runningEngines,
+        allAvailable: availableEngines === totalEngines,
+        allRunning: runningEngines === totalEngines,
+      },
+      engines: status,
     });
   } catch (error) {
     console.error('Error getting automation status:', error);

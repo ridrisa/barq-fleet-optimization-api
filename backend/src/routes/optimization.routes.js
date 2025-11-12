@@ -61,6 +61,58 @@ router.post(
 
 /**
  * @swagger
+ * /api/optimize/stats:
+ *   get:
+ *     summary: Get optimization statistics
+ *     description: Retrieve aggregated statistics about optimization performance
+ *     tags: [Optimization]
+ *     responses:
+ *       200:
+ *         description: Statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 requestId:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalOptimizations:
+ *                       type: number
+ *                     completedOptimizations:
+ *                       type: number
+ *                     successRate:
+ *                       type: number
+ *                     averageProcessingTime:
+ *                       type: number
+ *                     totalRoutes:
+ *                       type: number
+ *                     totalDistance:
+ *                       type: number
+ *                     averageDistance:
+ *                       type: number
+ *                     totalDuration:
+ *                       type: number
+ *                     averageDuration:
+ *                       type: number
+ *                     databaseMode:
+ *                       type: string
+ *       500:
+ *         description: Server error
+ */
+router.get(
+  '/stats',
+  // authenticate,  // TEMPORARILY DISABLED FOR TESTING
+  // authorize(ROLES.ADMIN, ROLES.MANAGER, ROLES.DISPATCHER),  // TEMPORARILY DISABLED FOR TESTING
+  optimizationController.getOptimizationStats
+);
+
+/**
+ * @swagger
  * /api/optimize/history:
  *   get:
  *     summary: Get optimization history

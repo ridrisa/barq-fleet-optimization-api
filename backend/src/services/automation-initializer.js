@@ -26,49 +26,100 @@ class AutomationInitializer {
    * @returns {Object} Initialization result
    */
   async initialize(agentManager = null, agents = null) {
-    try {
-      logger.info('Starting Phase 4 automation engines initialization...');
+    logger.info('Starting Phase 4 automation engines initialization...');
 
-      // Import automation services (they export singleton instances)
+    const results = {
+      autoDispatch: null,
+      routeOptimizer: null,
+      smartBatching: null,
+      escalation: null,
+    };
+
+    const errors = [];
+
+    // Initialize each engine independently - failures don't stop others
+    // Auto-Dispatch Engine
+    try {
       logger.info('Initializing Auto-Dispatch Engine...');
       this.autoDispatchEngine = require('./auto-dispatch.service');
+      results.autoDispatch = 'initialized';
+      logger.info('✓ Auto-Dispatch Engine initialized');
+    } catch (error) {
+      const errorMsg = `Failed to initialize Auto-Dispatch Engine: ${error.message}`;
+      logger.error(errorMsg, { stack: error.stack });
+      results.autoDispatch = 'failed';
+      errors.push(errorMsg);
+    }
 
+    // Dynamic Route Optimizer
+    try {
       logger.info('Initializing Dynamic Route Optimizer...');
       this.dynamicRouteOptimizer = require('./dynamic-route-optimizer.service');
+      results.routeOptimizer = 'initialized';
+      logger.info('✓ Dynamic Route Optimizer initialized');
+    } catch (error) {
+      const errorMsg = `Failed to initialize Dynamic Route Optimizer: ${error.message}`;
+      logger.error(errorMsg, { stack: error.stack });
+      results.routeOptimizer = 'failed';
+      errors.push(errorMsg);
+    }
 
+    // Smart Batching Engine
+    try {
       logger.info('Initializing Smart Batching Engine...');
       this.smartBatchingEngine = require('./smart-batching.service');
+      results.smartBatching = 'initialized';
+      logger.info('✓ Smart Batching Engine initialized');
+    } catch (error) {
+      const errorMsg = `Failed to initialize Smart Batching Engine: ${error.message}`;
+      logger.error(errorMsg, { stack: error.stack });
+      results.smartBatching = 'failed';
+      errors.push(errorMsg);
+    }
 
+    // Autonomous Escalation Engine
+    try {
       logger.info('Initializing Autonomous Escalation Engine...');
       this.autonomousEscalationEngine = require('./autonomous-escalation.service');
+      results.escalation = 'initialized';
+      logger.info('✓ Autonomous Escalation Engine initialized');
+    } catch (error) {
+      const errorMsg = `Failed to initialize Autonomous Escalation Engine: ${error.message}`;
+      logger.error(errorMsg, { stack: error.stack });
+      results.escalation = 'failed';
+      errors.push(errorMsg);
+    }
 
-      this.initialized = true;
+    // Determine overall success
+    const successCount = Object.values(results).filter((r) => r === 'initialized').length;
+    const totalCount = Object.keys(results).length;
+    this.initialized = successCount > 0; // At least one engine initialized
 
-      logger.info('Phase 4 automation engines initialized successfully');
-
+    if (successCount === totalCount) {
+      logger.info('✓ All Phase 4 automation engines initialized successfully');
       return {
         success: true,
         message: 'All automation engines initialized',
-        engines: {
-          autoDispatch: 'initialized',
-          routeOptimizer: 'initialized',
-          smartBatching: 'initialized',
-          escalation: 'initialized',
-        },
+        engines: results,
       };
-    } catch (error) {
-      logger.error('Failed to initialize automation engines', {
-        error: error.message,
-        stack: error.stack,
-      });
-
-      // Log detailed error to console for debugging
-      console.error('Detailed Automation Init Error:', error);
-
+    } else if (successCount > 0) {
+      logger.warn(
+        `⚠ Partial automation initialization: ${successCount}/${totalCount} engines initialized`
+      );
+      return {
+        success: true, // Changed to true for partial success
+        partial: true,
+        message: `${successCount}/${totalCount} automation engines initialized`,
+        engines: results,
+        errors: errors,
+      };
+    } else {
+      logger.error('✗ All automation engines failed to initialize');
       return {
         success: false,
-        error: error.message,
-        stack: error.stack,
+        message: 'All automation engines failed to initialize',
+        engines: results,
+        errors: errors,
       };
     }
   }

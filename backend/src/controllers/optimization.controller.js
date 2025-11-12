@@ -635,6 +635,76 @@ const OptimizationController = {
       });
     }
   }),
+
+  /**
+   * Get optimization statistics
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  getOptimizationStats: logFunctionExecution(async (req, res) => {
+    try {
+      const requestId = req.headers['x-request-id'] || uuidv4();
+      logger.info(`Getting optimization statistics`, {
+        requestId,
+        method: 'getOptimizationStats',
+        ip: req.ip,
+      });
+
+      // Get system statistics from the database service
+      const stats = await databaseService.getSystemStats();
+
+      // Calculate additional statistics
+      const successRate = stats.totalRequests > 0
+        ? ((stats.completedOptimizations / stats.totalRequests) * 100).toFixed(2)
+        : 0;
+
+      const avgDistance = stats.totalRoutes > 0
+        ? (stats.totalDistance / stats.totalRoutes).toFixed(2)
+        : 0;
+
+      const avgDuration = stats.totalRoutes > 0
+        ? (stats.totalDuration / stats.totalRoutes).toFixed(2)
+        : 0;
+
+      // Format the response
+      const response = {
+        success: true,
+        requestId,
+        data: {
+          totalOptimizations: stats.totalRequests || 0,
+          completedOptimizations: stats.completedOptimizations || 0,
+          successRate: parseFloat(successRate),
+          averageProcessingTime: stats.avgTimeTaken ? parseFloat(stats.avgTimeTaken.toFixed(2)) : 0,
+          totalRoutes: stats.totalRoutes || 0,
+          totalDistance: stats.totalDistance || 0,
+          averageDistance: parseFloat(avgDistance),
+          totalDuration: stats.totalDuration || 0,
+          averageDuration: parseFloat(avgDuration),
+          databaseMode: databaseService.getMode(),
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      logger.info(`Retrieved optimization statistics`, {
+        requestId,
+        totalOptimizations: response.data.totalOptimizations,
+        successRate: response.data.successRate,
+      });
+
+      return res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error getting optimization statistics: ${error.message}`, {
+        error: error.stack,
+        requestId: req.headers['x-request-id'],
+      });
+
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error: error.message,
+        requestId: req.headers['x-request-id'],
+      });
+    }
+  }),
 };
 
 module.exports = OptimizationController;

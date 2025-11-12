@@ -9,6 +9,11 @@ const ProductionMetricsService = require('../../services/production-metrics.serv
 const SLACalculatorService = require('../../services/sla-calculator.service');
 const pool = require('../../services/postgres.service');
 const logger = require('../../utils/logger');
+const { paginationMiddleware, generatePaginationMeta } = require('../../middleware/pagination.middleware');
+const { executeMetricsQuery, TIMEOUT_CONFIG } = require('../../utils/query-timeout');
+
+// Apply pagination middleware to all routes
+router.use(paginationMiddleware);
 
 /**
  * Helper function to get date range from query params
@@ -105,17 +110,27 @@ router.get('/delivery-time', async (req, res) => {
 /**
  * GET /api/v1/production-metrics/courier-performance
  * Get courier performance rankings
+ * Query params: limit, offset, page, days, start_date, end_date
  */
 router.get('/courier-performance', async (req, res) => {
   try {
     const { startDate, endDate } = getDateRange(req);
-    const rankings = await ProductionMetricsService.getCourierPerformance(startDate, endDate);
+    const { limit, offset } = req.pagination;
+
+    const result = await ProductionMetricsService.getCourierPerformance(
+      startDate,
+      endDate,
+      limit,
+      offset
+    );
+
+    const meta = generatePaginationMeta(result.total, limit, offset, req.pagination.page);
 
     res.json({
       success: true,
       period: { start: startDate, end: endDate },
-      couriers: rankings,
-      total_couriers: rankings.length,
+      couriers: result.data,
+      ...meta,
     });
   } catch (error) {
     logger.error('Error getting courier performance:', error);
@@ -209,19 +224,27 @@ router.get('/fleet-utilization', async (req, res) => {
 /**
  * GET /api/v1/production-metrics/order-distribution
  * Get order status distribution
+ * Query params: limit, offset, page, days, start_date, end_date
  */
 router.get('/order-distribution', async (req, res) => {
   try {
     const { startDate, endDate } = getDateRange(req);
-    const distribution = await ProductionMetricsService.getOrderStatusDistribution(
+    const { limit, offset } = req.pagination;
+
+    const result = await ProductionMetricsService.getOrderStatusDistribution(
       startDate,
-      endDate
+      endDate,
+      limit,
+      offset
     );
+
+    const meta = generatePaginationMeta(result.total, limit, offset, req.pagination.page);
 
     res.json({
       success: true,
       period: { start: startDate, end: endDate },
-      distribution,
+      distribution: result.data,
+      ...meta,
     });
   } catch (error) {
     logger.error('Error getting order distribution:', error);
@@ -259,20 +282,41 @@ router.get('/comprehensive', async (req, res) => {
 /**
  * GET /api/v1/production-metrics/sla/at-risk
  * Get orders at risk of SLA breach
+ * Query params: limit, offset, page
  */
 router.get('/sla/at-risk', async (req, res) => {
   try {
-    // Get active orders from last 24 hours
+    const { limit, offset } = req.pagination;
+
+    // Get active orders from last 24 hours with pagination
     const query = `
       SELECT *
       FROM orders
       WHERE status IN ('pending', 'assigned', 'picked_up', 'in_transit')
         AND created_at >= NOW() - INTERVAL '24 hours'
       ORDER BY created_at ASC
+      LIMIT $1 OFFSET $2
     `;
 
-    const result = await pool.query(query);
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM orders
+      WHERE status IN ('pending', 'assigned', 'picked_up', 'in_transit')
+        AND created_at >= NOW() - INTERVAL '24 hours'
+    `;
+
+    const [result, countResult] = await Promise.all([
+      executeMetricsQuery(pool, query, [limit, offset], {
+        timeout: TIMEOUT_CONFIG.METRICS,
+      }),
+      executeMetricsQuery(pool, countQuery, [], {
+        timeout: TIMEOUT_CONFIG.SIMPLE,
+      }),
+    ]);
+
     const atRiskOrders = SLACalculatorService.getOrdersAtRisk(result.rows);
+    const total = parseInt(countResult.rows[0].total) || 0;
 
     const summary = {
       total_at_risk: atRiskOrders.length,
@@ -282,11 +326,14 @@ router.get('/sla/at-risk', async (req, res) => {
       breached: atRiskOrders.filter((o) => o.sla.is_breached).length,
     };
 
+    const meta = generatePaginationMeta(total, limit, offset, req.pagination.page);
+
     res.json({
       success: true,
       timestamp: new Date().toISOString(),
       summary,
       orders: atRiskOrders,
+      ...meta,
     });
   } catch (error) {
     logger.error('Error getting at-risk orders:', error);
@@ -301,29 +348,54 @@ router.get('/sla/at-risk', async (req, res) => {
 /**
  * GET /api/v1/production-metrics/sla/compliance
  * Get SLA compliance metrics
+ * Query params: limit, offset, page, days, start_date, end_date
  */
 router.get('/sla/compliance', async (req, res) => {
   try {
     const { startDate, endDate } = getDateRange(req);
+    const { limit, offset } = req.pagination;
 
-    // Get completed orders
+    // Get completed orders with pagination
     const query = `
       SELECT *
       FROM orders
       WHERE status = 'delivered'
         AND delivered_at IS NOT NULL
         AND created_at BETWEEN $1 AND $2
+      ORDER BY created_at DESC
+      LIMIT $3 OFFSET $4
     `;
 
-    const result = await pool.query(query, [startDate, endDate]);
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM orders
+      WHERE status = 'delivered'
+        AND delivered_at IS NOT NULL
+        AND created_at BETWEEN $1 AND $2
+    `;
+
+    const [result, countResult] = await Promise.all([
+      executeMetricsQuery(pool, query, [startDate, endDate, limit, offset], {
+        timeout: TIMEOUT_CONFIG.METRICS,
+      }),
+      executeMetricsQuery(pool, countQuery, [startDate, endDate], {
+        timeout: TIMEOUT_CONFIG.SIMPLE,
+      }),
+    ]);
+
     const complianceMetrics = SLACalculatorService.calculateComplianceMetrics(result.rows);
     const summaryByServiceType = SLACalculatorService.getSLASummaryByServiceType(result.rows);
+    const total = parseInt(countResult.rows[0].total) || 0;
+
+    const meta = generatePaginationMeta(total, limit, offset, req.pagination.page);
 
     res.json({
       success: true,
       period: { start: startDate, end: endDate },
       overall: complianceMetrics,
       by_service_type: summaryByServiceType,
+      ...meta,
     });
   } catch (error) {
     logger.error('Error getting SLA compliance:', error);

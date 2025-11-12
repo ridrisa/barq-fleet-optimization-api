@@ -61,7 +61,7 @@ steps:
       - '--min-instances'
       - '1'
       - '--set-env-vars'
-      - 'NODE_ENV=production,DISABLE_AUTONOMOUS_AGENTS=true'
+      - 'NODE_ENV=production,DISABLE_AUTONOMOUS_AGENTS=true,AUTO_START_AUTOMATION=false'
       - '--set-secrets'
       - 'DB_HOST=POSTGRES_HOST:latest,DB_NAME=POSTGRES_DB:latest,DB_USER=POSTGRES_USER:latest,DB_PASSWORD=POSTGRES_PASSWORD:latest'
       - '--no-cpu-throttling'

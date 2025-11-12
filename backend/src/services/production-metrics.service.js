@@ -6,6 +6,7 @@
 
 const pool = require('./postgres.service');
 const logger = require('../utils/logger');
+const { executeMetricsQuery, TIMEOUT_CONFIG } = require('../utils/query-timeout');
 
 class ProductionMetricsService {
   /**
@@ -29,7 +30,9 @@ class ProductionMetricsService {
     `;
 
     try {
-      const result = await pool.query(query, [startDate, endDate]);
+      const result = await executeMetricsQuery(pool, query, [startDate, endDate], {
+        timeout: TIMEOUT_CONFIG.METRICS,
+      });
       return {
         on_time_rate: parseFloat(result.rows[0].on_time_rate) || 0,
         on_time_count: parseInt(result.rows[0].on_time_count) || 0,
@@ -62,7 +65,9 @@ class ProductionMetricsService {
     `;
 
     try {
-      const result = await pool.query(query, [startDate, endDate]);
+      const result = await executeMetricsQuery(pool, query, [startDate, endDate], {
+        timeout: TIMEOUT_CONFIG.METRICS,
+      });
       return {
         completion_rate: parseFloat(result.rows[0].completion_rate) || 0,
         delivered_count: parseInt(result.rows[0].delivered_count) || 0,
@@ -98,7 +103,9 @@ class ProductionMetricsService {
     `;
 
     try {
-      const result = await pool.query(query, [startDate, endDate]);
+      const result = await executeMetricsQuery(pool, query, [startDate, endDate], {
+        timeout: TIMEOUT_CONFIG.METRICS,
+      });
       return {
         avg_delivery_time_minutes: parseFloat(result.rows[0].avg_delivery_time_minutes) || 0,
         min_time: parseFloat(result.rows[0].min_time) || 0,
@@ -115,7 +122,7 @@ class ProductionMetricsService {
    * Get courier performance metrics
    * Rankings and efficiency scores
    */
-  static async getCourierPerformance(startDate, endDate) {
+  static async getCourierPerformance(startDate, endDate, limit = 100, offset = 0) {
     const query = `
       SELECT
         driver_id,
@@ -135,19 +142,38 @@ class ProductionMetricsService {
         AND driver_id IS NOT NULL
       GROUP BY driver_id
       ORDER BY completed DESC, on_time_rate DESC
-      LIMIT 20
+      LIMIT $3 OFFSET $4
+    `;
+
+    // Get total count for pagination metadata
+    const countQuery = `
+      SELECT COUNT(DISTINCT driver_id) as total
+      FROM orders
+      WHERE created_at BETWEEN $1 AND $2
+        AND driver_id IS NOT NULL
     `;
 
     try {
-      const result = await pool.query(query, [startDate, endDate]);
-      return result.rows.map((row) => ({
-        driver_id: parseInt(row.driver_id),
-        total_deliveries: parseInt(row.total_deliveries),
-        completed: parseInt(row.completed),
-        on_time: parseInt(row.on_time),
-        on_time_rate: parseFloat(row.on_time_rate) || 0,
-        avg_delivery_time_minutes: parseFloat(row.avg_delivery_time_minutes) || 0,
-      }));
+      const [result, countResult] = await Promise.all([
+        executeMetricsQuery(pool, query, [startDate, endDate, limit, offset], {
+          timeout: TIMEOUT_CONFIG.METRICS,
+        }),
+        executeMetricsQuery(pool, countQuery, [startDate, endDate], {
+          timeout: TIMEOUT_CONFIG.SIMPLE,
+        }),
+      ]);
+
+      return {
+        data: result.rows.map((row) => ({
+          driver_id: parseInt(row.driver_id),
+          total_deliveries: parseInt(row.total_deliveries),
+          completed: parseInt(row.completed),
+          on_time: parseInt(row.on_time),
+          on_time_rate: parseFloat(row.on_time_rate) || 0,
+          avg_delivery_time_minutes: parseFloat(row.avg_delivery_time_minutes) || 0,
+        })),
+        total: parseInt(countResult.rows[0].total) || 0,
+      };
     } catch (error) {
       logger.error('Error getting courier performance:', error);
       throw error;
@@ -173,7 +199,9 @@ class ProductionMetricsService {
     `;
 
     try {
-      const result = await pool.query(query, [startDate, endDate]);
+      const result = await executeMetricsQuery(pool, query, [startDate, endDate], {
+        timeout: TIMEOUT_CONFIG.METRICS,
+      });
       return {
         cancellation_rate: parseFloat(result.rows[0].cancellation_rate) || 0,
         cancelled_count: parseInt(result.rows[0].cancelled_count) || 0,
@@ -204,7 +232,9 @@ class ProductionMetricsService {
     `;
 
     try {
-      const result = await pool.query(query, [startDate, endDate]);
+      const result = await executeMetricsQuery(pool, query, [startDate, endDate], {
+        timeout: TIMEOUT_CONFIG.METRICS,
+      });
       return {
         return_rate: parseFloat(result.rows[0].return_rate) || 0,
         returned_count: parseInt(result.rows[0].returned_count) || 0,
@@ -229,7 +259,9 @@ class ProductionMetricsService {
     `;
 
     try {
-      const result = await pool.query(query, [startDate, endDate]);
+      const result = await executeMetricsQuery(pool, query, [startDate, endDate], {
+        timeout: TIMEOUT_CONFIG.SIMPLE,
+      });
       return {
         active_couriers: parseInt(result.rows[0].active_couriers) || 0,
       };
@@ -259,7 +291,9 @@ class ProductionMetricsService {
     `;
 
     try {
-      const result = await pool.query(query, [startDate, endDate]);
+      const result = await executeMetricsQuery(pool, query, [startDate, endDate], {
+        timeout: TIMEOUT_CONFIG.METRICS,
+      });
       return {
         deliveries_per_courier: parseFloat(result.rows[0].deliveries_per_courier) || 0,
         total_completed: parseInt(result.rows[0].total_completed) || 0,
@@ -274,7 +308,7 @@ class ProductionMetricsService {
   /**
    * Get order status distribution
    */
-  static async getOrderStatusDistribution(startDate, endDate) {
+  static async getOrderStatusDistribution(startDate, endDate, limit = 100, offset = 0) {
     const query = `
       SELECT
         status as name,
@@ -283,14 +317,33 @@ class ProductionMetricsService {
       WHERE created_at BETWEEN $1 AND $2
       GROUP BY status
       ORDER BY value DESC
+      LIMIT $3 OFFSET $4
+    `;
+
+    // Get total count of distinct statuses
+    const countQuery = `
+      SELECT COUNT(DISTINCT status) as total
+      FROM orders
+      WHERE created_at BETWEEN $1 AND $2
     `;
 
     try {
-      const result = await pool.query(query, [startDate, endDate]);
-      return result.rows.map((row) => ({
-        name: row.name,
-        value: parseInt(row.value),
-      }));
+      const [result, countResult] = await Promise.all([
+        executeMetricsQuery(pool, query, [startDate, endDate, limit, offset], {
+          timeout: TIMEOUT_CONFIG.SIMPLE,
+        }),
+        executeMetricsQuery(pool, countQuery, [startDate, endDate], {
+          timeout: TIMEOUT_CONFIG.SIMPLE,
+        }),
+      ]);
+
+      return {
+        data: result.rows.map((row) => ({
+          name: row.name,
+          value: parseInt(row.value),
+        })),
+        total: parseInt(countResult.rows[0].total) || 0,
+      };
     } catch (error) {
       logger.error('Error getting order status distribution:', error);
       throw error;

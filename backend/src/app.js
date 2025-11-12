@@ -550,15 +550,23 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
           AgentInitializer.getAgents()
         );
 
+        // ALWAYS initialize routes with engines (even if null) to prevent 503 errors
+        automationRoutes.initializeEngines(automationInitializer.getEngines());
+        logger.info('Automation routes initialized with available engines');
+
         if (automationResult.success) {
-          logger.info('Phase 4 automation engines initialized successfully', {
-            engines: automationResult.engines,
-          });
+          if (automationResult.partial) {
+            logger.warn('Phase 4 automation engines partially initialized', {
+              engines: automationResult.engines,
+              errors: automationResult.errors,
+            });
+            logger.info('Some automation APIs may not be available');
+          } else {
+            logger.info('Phase 4 automation engines initialized successfully', {
+              engines: automationResult.engines,
+            });
+          }
 
-          // Initialize automation routes with engines
-          automationRoutes.initializeEngines(automationInitializer.getEngines());
-
-          logger.info('Automation routes initialized');
           logger.info('Automation endpoints:');
           logger.info('  POST /api/v1/automation/start-all - Start all engines');
           logger.info('  POST /api/v1/automation/stop-all - Stop all engines');
@@ -575,17 +583,20 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
             logger.info('   Use POST /api/v1/automation/start-all to start engines');
           }
         } else {
-          logger.warn('Phase 4 automation engines initialization failed', {
-            error: automationResult.error,
+          logger.error('Phase 4 automation engines initialization failed', {
+            engines: automationResult.engines,
+            errors: automationResult.errors,
           });
-          logger.info('Automation APIs still available for manual control');
+          logger.warn('Automation APIs will return service unavailable errors');
         }
       } catch (automationError) {
         logger.error('Failed to initialize Phase 4 automation engines', {
           error: automationError.message,
           stack: automationError.stack,
         });
-        logger.warn('Server will continue without automation functionality');
+        // Still initialize routes with whatever engines are available
+        automationRoutes.initializeEngines(automationInitializer.getEngines());
+        logger.warn('Server will continue with limited automation functionality');
         logger.info('Agent APIs still available via /api/v1/agents/*');
       }
     } catch (error) {

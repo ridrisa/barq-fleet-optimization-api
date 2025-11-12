@@ -1,0 +1,411 @@
+# OpenAPI 3.0 Specification for Paginated Production Metrics Endpoints
+# Add this to your main OpenAPI spec file
+
+openapi: 3.0.3
+info:
+  title: Production Metrics API with Pagination
+  version: 2.0.0
+  description: Production metrics endpoints with pagination support and timeout protection
+
+components:
+  schemas:
+    PaginationMetadata:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of items available
+          example: 500
+        limit:
+          type: integer
+          description: Number of items per page
+          example: 100
+        offset:
+          type: integer
+          description: Number of items skipped
+          example: 0
+        page:
+          type: integer
+          description: Current page number (1-based)
+          example: 1
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 5
+        hasNextPage:
+          type: boolean
+          description: Whether there is a next page
+          example: true
+        hasPreviousPage:
+          type: boolean
+          description: Whether there is a previous page
+          example: false
+        nextOffset:
+          type: integer
+          nullable: true
+          description: Offset for next page (null if no next page)
+          example: 100
+        previousOffset:
+          type: integer
+          nullable: true
+          description: Offset for previous page (null if no previous page)
+          example: null
+
+    PeriodInfo:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+          description: Start date of the period
+        end:
+          type: string
+          format: date-time
+          description: End date of the period
+
+    CourierPerformance:
+      type: object
+      properties:
+        driver_id:
+          type: integer
+          description: Unique courier identifier
+          example: 123
+        total_deliveries:
+          type: integer
+          description: Total number of assigned deliveries
+          example: 150
+        completed:
+          type: integer
+          description: Number of completed deliveries
+          example: 145
+        on_time:
+          type: integer
+          description: Number of on-time deliveries
+          example: 140
+        on_time_rate:
+          type: number
+          format: float
+          description: Percentage of on-time deliveries
+          example: 96.55
+        avg_delivery_time_minutes:
+          type: number
+          format: float
+          description: Average delivery time in minutes
+          example: 35.5
+
+    OrderDistribution:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Order status name
+          example: delivered
+        value:
+          type: integer
+          description: Count of orders with this status
+          example: 1500
+
+    SLAAtRiskOrder:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        customer_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        sla:
+          type: object
+          properties:
+            deadline:
+              type: string
+              format: date-time
+            time_remaining_minutes:
+              type: number
+            urgency:
+              type: string
+              enum: [critical, high, medium, low]
+            is_breached:
+              type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error message
+          example: Query execution timed out after 8000ms
+        message:
+          type: string
+          description: Detailed error description
+
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      description: Number of items to return per page
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 100
+
+    OffsetParam:
+      name: offset
+      in: query
+      description: Number of items to skip
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+    PageParam:
+      name: page
+      in: query
+      description: Page number (1-based, alternative to offset)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    DaysParam:
+      name: days
+      in: query
+      description: Number of days to look back from now
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 7
+
+    StartDateParam:
+      name: start_date
+      in: query
+      description: Start date for date range (ISO 8601 format)
+      required: false
+      schema:
+        type: string
+        format: date-time
+
+    EndDateParam:
+      name: end_date
+      in: query
+      description: End date for date range (ISO 8601 format)
+      required: false
+      schema:
+        type: string
+        format: date-time
+
+paths:
+  /api/v1/production-metrics/courier-performance:
+    get:
+      summary: Get courier performance rankings
+      description: Returns paginated list of couriers with performance metrics
+      tags:
+        - Production Metrics
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/DaysParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  period:
+                    $ref: '#/components/schemas/PeriodInfo'
+                  couriers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CourierPerformance'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMetadata'
+        '500':
+          description: Server error (timeout or query failure)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/production-metrics/order-distribution:
+    get:
+      summary: Get order status distribution
+      description: Returns paginated distribution of orders by status
+      tags:
+        - Production Metrics
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/DaysParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  period:
+                    $ref: '#/components/schemas/PeriodInfo'
+                  distribution:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderDistribution'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMetadata'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/production-metrics/sla/at-risk:
+    get:
+      summary: Get orders at risk of SLA breach
+      description: Returns paginated list of active orders at risk (last 24 hours)
+      tags:
+        - Production Metrics
+        - SLA
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/PageParam'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: When the data was generated
+                  summary:
+                    type: object
+                    properties:
+                      total_at_risk:
+                        type: integer
+                        description: Total orders at risk
+                        example: 45
+                      critical:
+                        type: integer
+                        description: Orders with critical urgency
+                        example: 5
+                      high:
+                        type: integer
+                        description: Orders with high urgency
+                        example: 15
+                      medium:
+                        type: integer
+                        description: Orders with medium urgency
+                        example: 20
+                      breached:
+                        type: integer
+                        description: Orders that already breached SLA
+                        example: 5
+                  orders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SLAAtRiskOrder'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMetadata'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/production-metrics/sla/compliance:
+    get:
+      summary: Get SLA compliance metrics
+      description: Returns paginated SLA compliance data for delivered orders
+      tags:
+        - Production Metrics
+        - SLA
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/DaysParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  period:
+                    $ref: '#/components/schemas/PeriodInfo'
+                  overall:
+                    type: object
+                    properties:
+                      total_orders:
+                        type: integer
+                        example: 5000
+                      on_time:
+                        type: integer
+                        example: 4750
+                      late:
+                        type: integer
+                        example: 250
+                      compliance_rate:
+                        type: number
+                        format: float
+                        example: 95.0
+                  by_service_type:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        service_type:
+                          type: string
+                          example: express
+                        total:
+                          type: integer
+                        on_time:
+                          type: integer
+                        compliance_rate:
+                          type: number
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMetadata'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
