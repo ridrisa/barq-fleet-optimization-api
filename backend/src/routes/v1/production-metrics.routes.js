@@ -17,10 +17,11 @@ router.use(paginationMiddleware);
 
 /**
  * Helper function to get date range from query params
- * Default to 1 day for performance with production data volume
+ * Default to 6 hours (0.25 days) for performance with production data volume
+ * GROUP BY queries must scan ALL matching rows before LIMIT applies
  */
 function getDateRange(req) {
-  const { days = 1, start_date, end_date } = req.query;
+  const { days = 0.25, start_date, end_date } = req.query;
 
   if (start_date && end_date) {
     return {

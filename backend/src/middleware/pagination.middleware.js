@@ -10,7 +10,7 @@
  */
 function getPaginationParams(req) {
   const limit = Math.min(
-    Math.max(parseInt(req.query.limit) || 10, 1),
+    Math.max(parseInt(req.query.limit) || 5, 1),
     1000 // Maximum limit to prevent abuse
   );
 
