@@ -1,0 +1,53 @@
+Checking each endpoint individually...
+
+=== CORE ===
+✅ 200 - API v1
+✅ 200 - Health
+
+=== AUTH ===
+✅ 400 - Login
+✅ 400 - Register
+✅ 400 - Refresh
+
+=== OPTIMIZATION ===
+✅ 400 - Basic optimize
+✅ 400 - V1 optimize
+❌ 404 - Multi-vehicle
+❌ 404 - Time windows
+❌ 404 - Stats
+
+=== AGENTS ===
+❌ 404 - Status
+❌ 404 - Trigger
+
+=== ADMIN ===
+✅ 401 - Users
+✅ 401 - Settings
+
+=== AUTONOMOUS ===
+✅ 200 - Status
+❌ 404 - Enable
+
+=== HEALTH ===
+✅ 200 - V1 health
+✅ 503 - Detailed
+
+=== ANALYTICS ===
+❌ 404 - Overview
+✅ 200 - SLA realtime
+❌ 404 - SLA daily
+❌ 404 - Fleet utilization
+✅ 200 - Fleet drivers
+✅ 500 - Fleet vehicles
+
+=== PRODUCTION METRICS ===
+✅ 429 - On-time delivery
+✅ 429 - Completion rate
+✅ 429 - Courier perf
+✅ 429 - Real-time stats
+✅ 429 - Daily summary
+✅ 429 - Customer sat
+✅ 429 - Revenue
+
+=== AI QUERY ===
+✅ 429 - AI query
