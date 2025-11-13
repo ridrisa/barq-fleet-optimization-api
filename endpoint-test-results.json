@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-11-12T02:06:57Z",
+  "timestamp": "2025-11-12T13:08:30Z",
   "tests": [
     {
       "category": "System",
@@ -127,7 +127,7 @@
       "expected": 400,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"success\":false,\"status\":\"error\",\"message\":\"An unexpected error occurred\",\"code\":\"INTERNAL_ERROR\",\"requestId\":\"5214cc24-9ee7-4337-a7f7-647c8f7f9879\",\"timestamp\":\"2025-11-12T02:07:50.827Z\"}\n"
+      "response": "{\"success\":false,\"error\":\"Internal server error during login\"}\n"
     },
     {
       "category": "Optimization",
@@ -190,9 +190,8 @@
       "path": "/api/v1/analytics/sla/realtime",
       "description": "SLA realtime",
       "expected": 200,
-      "actual": 500,
-      "status": "FAIL",
-      "response": "{\"error\":\"Failed to fetch real-time SLA status\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Analytics",
@@ -200,9 +199,8 @@
       "path": "/api/v1/analytics/sla/compliance",
       "description": "SLA compliance",
       "expected": 200,
-      "actual": 500,
-      "status": "FAIL",
-      "response": "{\"error\":\"Failed to fetch SLA compliance\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Analytics",
@@ -210,9 +208,8 @@
       "path": "/api/v1/analytics/sla/trend",
       "description": "SLA trend",
       "expected": 200,
-      "actual": 500,
-      "status": "FAIL",
-      "response": "{\"error\":\"Failed to fetch SLA trend\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Analytics",
@@ -220,9 +217,8 @@
       "path": "/api/v1/analytics/fleet/performance",
       "description": "Fleet performance",
       "expected": 200,
-      "actual": 500,
-      "status": "FAIL",
-      "response": "{\"error\":\"Failed to fetch fleet performance\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Analytics",
@@ -232,7 +228,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to fetch driver performance\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "response": "{\"error\":\"Failed to fetch driver performance\",\"message\":\"invalid input value for enum driver_status: \\\"active\\\"\"}\n"
     },
     {
       "category": "Analytics",
@@ -242,7 +238,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to fetch vehicle performance\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "response": "{\"error\":\"Failed to fetch vehicle performance\",\"message\":\"relation \\\"vehicles\\\" does not exist\"}\n"
     },
     {
       "category": "Analytics",
@@ -250,9 +246,8 @@
       "path": "/api/v1/analytics/routes/efficiency",
       "description": "Route efficiency",
       "expected": 200,
-      "actual": 500,
-      "status": "FAIL",
-      "response": "{\"error\":\"Failed to fetch route efficiency\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Analytics",
@@ -260,9 +255,8 @@
       "path": "/api/v1/analytics/dashboard/summary",
       "description": "Dashboard summary",
       "expected": 200,
-      "actual": 500,
-      "status": "FAIL",
-      "response": "{\"error\":\"Failed to fetch dashboard summary\",\"message\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Autonomous",
@@ -291,7 +285,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to get stats\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "response": "{\"error\":\"Failed to get stats\",\"details\":\"relation \\\"auto_dispatch_stats\\\" does not exist\"}\n"
     },
     {
       "category": "Automation",
@@ -311,7 +305,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to get stats\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "response": "{\"error\":\"Failed to get stats\",\"details\":\"relation \\\"route_optimization_stats\\\" does not exist\"}\n"
     },
     {
       "category": "Automation",
@@ -331,7 +325,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to get stats\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "response": "{\"error\":\"Failed to get stats\",\"details\":\"relation \\\"batch_performance_stats\\\" does not exist\"}\n"
     },
     {
       "category": "Automation",
@@ -351,7 +345,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to get stats\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "response": "{\"error\":\"Failed to get stats\",\"details\":\"relation \\\"escalation_stats\\\" does not exist\"}\n"
     },
     {
       "category": "Automation",
@@ -361,7 +355,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to get escalation logs\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "response": "{\"error\":\"Failed to get escalation logs\",\"details\":\"relation \\\"escalation_logs\\\" does not exist\"}\n"
     },
     {
       "category": "Automation",
@@ -371,7 +365,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to get alerts\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "response": "{\"error\":\"Failed to get alerts\",\"details\":\"relation \\\"dispatch_alerts\\\" does not exist\"}\n"
     },
     {
       "category": "Automation",
@@ -381,7 +375,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to get at-risk orders\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "response": "{\"error\":\"Failed to get at-risk orders\",\"details\":\"relation \\\"escalation_logs\\\" does not exist\"}\n"
     },
     {
       "category": "Automation",
@@ -400,7 +394,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to get dashboard data\",\"details\":\"Cannot read properties of null (reading 'query')\"}\n"
+      "response": "{\"error\":\"Failed to get dashboard data\",\"details\":\"column \\\"distance_saved_km\\\" does not exist\"}\n"
     },
     {
       "category": "Frontend",
@@ -415,9 +409,9 @@
   ],
   "summary": {
     "total": 56,
-    "passed": 19,
-    "failed": 36,
+    "passed": 25,
+    "failed": 30,
     "skipped": 1,
-    "success_rate": 33.92
+    "success_rate": 44.64
   }
 }
