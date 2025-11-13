@@ -1,0 +1,97 @@
+
+[0;36m================================================================[0m
+[0;36m  1. CORE API ENDPOINTS[0m
+[0;36m================================================================[0m
+  [0;32m✓[0m GET / - Root API Information (Status: 200)
+  [0;32m✓[0m GET /health - Health Check (Status: 200)
+  [0;32m✓[0m GET /api/health - API Health Check (Status: 200)
+  [0;32m✓[0m GET /api/version - API Version Information (Status: 200)
+  [0;32m✓[0m GET /api - API Information (Status: 200)
+  [0;32m✓[0m GET /api/versions - API Versions List (Status: 200)
+
+[0;36m================================================================[0m
+[0;36m  2. API V1 ENDPOINTS[0m
+[0;36m================================================================[0m
+  [0;32m✓[0m GET /api/v1 - V1 API Information (Status: 200)
+
+[0;36m================================================================[0m
+[0;36m  3. HEALTH ENDPOINTS (14 endpoints)[0m
+[0;36m================================================================[0m
+  [0;32m✓[0m GET /api/v1/health - V1 Health Check (Status: 200)
+  [0;32m✓[0m GET /api/v1/health/live - Liveness Probe (Status: 200)
+  [0;32m✓[0m GET /api/v1/health/ready - Readiness Probe (Status: 200)
+  [0;31m✗[0m GET /api/v1/health/startup - Startup Probe (Expected: 200, Got: 404)
+  [0;32m✓[0m GET /api/v1/health/detailed - Detailed Health Status (Status: 200)
+  [0;32m✓[0m GET /api/v1/health/info - System Information (Status: 200)
+  [0;31m✗[0m GET /api/v1/health/metrics - Health Metrics (Expected: 200, Got: 401)
+  [0;31m✗[0m GET /api/v1/health/agents - Agent Health Status (Expected: 200, Got: 404)
+  [0;31m✗[0m GET /api/v1/health/database - Database Health (Expected: 200, Got: 404)
+  [0;31m✗[0m POST /api/v1/health/database/test - Test Database Connection (Expected: 200, Got: 404)
+  [0;31m✗[0m GET /api/v1/health/cache - Cache Health Status (Expected: 200, Got: 404)
+  [0;31m✗[0m POST /api/v1/health/cache/flush - Flush Cache (Expected: 200, Got: 404)
+  [0;31m✗[0m GET /api/v1/health/dependencies - External Dependencies Health (Expected: 200, Got: 401)
+  [0;31m✗[0m GET /api/v1/health/logs - Recent System Logs (Expected: 200, Got: 404)
+  [0;31m✗[0m POST /api/v1/health/logs/clear - Clear System Logs (Expected: 200, Got: 404)
+
+[0;36m================================================================[0m
+[0;36m  4. AUTH ENDPOINTS (6 endpoints)[0m
+[0;36m================================================================[0m
+  [0;32m✓[0m POST /api/v1/auth/register - User Registration (Status: 400)
+  [0;31m✗[0m POST /api/v1/auth/login - User Login (Expected: 400, Got: 500)
+  [0;31m✗[0m POST /api/v1/auth/refresh - Refresh Token (Expected: 401, Got: 400)
+  [0;32m✓[0m POST /api/v1/auth/logout - User Logout (Status: 200)
+  [0;32m✓[0m GET /api/v1/auth/me - Get User Profile (Status: 401)
+  [0;31m✗[0m POST /api/v1/auth/forgot-password - Forgot Password (Expected: 400, Got: 404)
+
+[0;36m================================================================[0m
+[0;36m  5. OPTIMIZATION ENDPOINTS (5 endpoints)[0m
+[0;36m================================================================[0m
+  [0;32m✓[0m POST /api/v1/optimize - Create Route Optimization (Status: 400)
+  [0;31m✗[0m GET /api/v1/optimize/results - Get Optimization Results (Expected: 200, Got: 404)
+  [0;32m✓[0m GET /api/v1/optimize/history - Get Optimization History (Status: 200)
+  [0;31m✗[0m DELETE /api/v1/optimize/cache - Clear Optimization Cache (Expected: 200, Got: 404)
+  [0;31m✗[0m GET /api/v1/optimize/stats - Get Optimization Statistics (Expected: 200, Got: 404)
+
+[0;36m================================================================[0m
+[0;36m  6. AGENT ENDPOINTS (16 endpoints)[0m
+[0;36m================================================================[0m
+  [0;31m✗[0m GET /api/v1/agents - List All Agents (Expected: 401, Got: 404)
+  [0;32m✓[0m GET /api/v1/agents/health - Agent Health Status (Status: 401)
+  [0;32m✓[0m GET /api/v1/agents/status - Agent Status Overview (Status: 401)
+  [0;31m✗[0m GET /api/v1/agents/metrics - Agent Metrics (Expected: 401, Got: 404)
+  [0;31m✗[0m POST /api/v1/agents/task - Execute Agent Task (Expected: 401, Got: 404)
+  [0;31m✗[0m POST /api/v1/agents/collaboration - Multi-Agent Collaboration (Expected: 401, Got: 404)
+  [0;31m✗[0m GET /api/v1/agents/notifications - Get Agent Notifications (Expected: 401, Got: 404)
+  [0;31m✗[0m GET /api/v1/agents/events - Get Agent Events (Expected: 401, Got: 404)
+  [0;31m✗[0m GET /api/v1/agents/audit-logs - Get Agent Audit Logs (Expected: 401, Got: 404)
+  [0;31m✗[0m GET /api/v1/agents/performance - Get Agent Performance (Expected: 401, Got: 404)
+  [0;31m✗[0m POST /api/v1/agents/route-planning/optimize - Route Planning Optimization (Expected: 401, Got: 404)
+  [0;31m✗[0m POST /api/v1/agents/fleet-monitor/analyze - Fleet Monitoring Analysis (Expected: 401, Got: 404)
+  [0;31m✗[0m POST /api/v1/agents/cost-optimizer/analyze - Cost Optimization Analysis (Expected: 401, Got: 404)
+  [0;31m✗[0m POST /api/v1/agents/predictive-maintenance/predict - Predictive Maintenance (Expected: 401, Got: 404)
+  [0;32m✓[0m POST /api/v1/agents/initialize - Initialize Agent System (Status: 401)
+  [0;32m✓[0m POST /api/v1/agents/shutdown - Shutdown Agent System (Status: 401)
+
+[0;36m================================================================[0m
+[0;36m  7. ADMIN ENDPOINTS (8 endpoints)[0m
+[0;36m================================================================[0m
+  [0;32m✓[0m GET /api/v1/admin/config - Get System Configuration (Status: 401)
+  [0;32m✓[0m GET /api/v1/admin/metrics - Get System Metrics (Status: 401)
+  [0;32m✓[0m GET /api/v1/admin/logs - Get System Logs (Status: 401)
+  [0;32m✓[0m GET /api/v1/admin/users - List Users (Status: 401)
+  [0;32m✓[0m GET /api/v1/admin/agents/status - Get Agent Status (Admin) (Status: 200)
+  [0;32m✓[0m GET /api/v1/admin/agents/performance - Get Agent Performance (Admin) (Status: 401)
+  [0;32m✓[0m POST /api/v1/admin/agents/restart - Restart Agents (Status: 401)
+  [0;32m✓[0m GET /api/v1/admin/cache/stats - Get Cache Statistics (Status: 401)
+
+[0;36m================================================================[0m
+[0;36m  8. AUTONOMOUS ENDPOINTS (17 endpoints)[0m
+[0;36m================================================================[0m
+  [0;32m✓[0m GET /api/v1/autonomous/status - Get Autonomous Status (Status: 200)
+  [0;31m✗[0m GET /api/v1/autonomous/orchestrator - Get Orchestrator Status (Expected: 200, Got: 404)
+  [0;31m✗[0m GET /api/v1/autonomous/cycle-history - Get Cycle History (Expected: 200, Got: 404)
+  [0;31m✗[0m POST /api/v1/autonomous/start - Start Autonomous Operations (Expected: 200, Got: 404)
+  [0;31m✗[0m POST /api/v1/autonomous/stop - Stop Autonomous Operations (Expected: 200, Got: 404)
+  [0;31m✗[0m GET /api/v1/autonomous/schedule - Get Autonomous Schedule (Expected: 200, Got: 404)
+  [0;31m✗[0m GET /api/v1/autonomous/insights - Get Autonomous Insights (Expected: 200, Got: 404)
+  [0;31m✗[0m GET /api/v1/autonomous/metrics - Get Autonomous Metrics (Expected: 200, Got: 404)

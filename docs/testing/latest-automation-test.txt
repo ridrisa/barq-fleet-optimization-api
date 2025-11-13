@@ -1,0 +1,51 @@
+==================================================
+🧪 AUTOMATION ENDPOINTS TEST
+==================================================
+
+Testing 12 automation endpoints after ninth deployment
+Expected: All should return 200 or 4xx (not 404)
+
+1. Dispatch Endpoints
+---------------------
+Auto-dispatch orders...                           ❌ FAIL (404 - route not found)
+Dispatch batch...                                 ❌ FAIL (404 - route not found)
+Dispatch single order...                          ❌ FAIL (404 - route not found)
+
+2. Routing Endpoints
+--------------------
+Optimize routes...                                ❌ FAIL (404 - route not found)
+Rebalance loads...                                ❌ FAIL (404 - route not found)
+Update ETAs...                                    ❌ FAIL (404 - route not found)
+
+3. Batching Endpoints
+---------------------
+Create smart batch...                             ❌ FAIL (404 - route not found)
+Optimize batch...                                 ❌ FAIL (404 - route not found)
+
+4. Escalation Endpoints
+-----------------------
+Check escalations...                              ❌ FAIL (404 - route not found)
+Resolve escalation...                             ❌ FAIL (404 - route not found)
+
+5. Global Endpoints
+-------------------
+Global status...                                  ❌ FAIL (404 - route not found)
+Health check...                                   ❌ FAIL (404 - route not found)
+
+==================================================
+📊 RESULTS
+==================================================
+
+awk: syntax error at source line 1
+ context is
+	BEGIN >>>  printf <<<  "%.1f"
+awk: bailing out at source line 1
+awk: syntax error at source line 1
+ context is
+	BEGIN  >>>  ( <<< 
+awk: bailing out at source line 1
+Passing: 0/12 (%) Passing: 0/12 (%)
+Failing: 12/12
+
+❌ CRITICAL: No automation endpoints working - routes not mounted?
+==================================================

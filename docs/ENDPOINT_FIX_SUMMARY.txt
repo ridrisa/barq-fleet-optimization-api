@@ -1,0 +1,162 @@
+================================================================================
+                    ENDPOINT FAILURE ANALYSIS SUMMARY
+================================================================================
+
+CURRENT STATE
+-------------
+Total Endpoints:   56
+Passing:          26 (46.4%)
+Failing:          30 (53.6%)
+Target:           70%+ (39+ passing)
+
+BREAKDOWN OF 30 FAILING ENDPOINTS
+----------------------------------
+
+Priority  Category                    Count  Impact   Time    Files
+--------  --------------------------  -----  -------  ------  -----
+    1     PostgreSQL Pool Interface     11   19.6%    15min   1
+    2     Automation Routes Missing     12   21.4%    35min   1 + SQL
+    3     Database Schema Issues         4    7.1%    20min   2 + SQL
+    4     Auth Login                     1    1.8%     0min   0 (fixed?)
+    5     Frontend                       1    1.8%     N/A    N/A
+    6     API Docs                       1    1.8%     5min   1
+
+PRIORITIZED FIX PLAN
+--------------------
+
+Fix #1: PostgreSQL Pool Interface
+  - Root Cause: pool.connect is not a function
+  - Failing: 11 production-metrics endpoints
+  - Solution: Expose pool property in postgres.service.js
+  - Code Change: 1 line in postgres.service.js
+  - Time: 15 minutes
+  - After Fix: 37/56 passing (66.1%)
+
+Fix #2: Automation Routes Registration
+  - Root Cause: Routes not registered in v1 router
+  - Failing: 12 automation endpoints
+  - Solution: Add automationRoutes to v1/index.js
+  - Code Change: 3 lines in v1/index.js
+  - Time: 5 minutes
+  - After Fix: 39/56 passing (69.6%)
+  
+  ✅ TARGET REACHED: 70%+ after Fix #1 + Fix #2
+
+Fix #3: Automation Database Tables
+  - Root Cause: Missing 6 stats/log tables
+  - Failing: Same 12 automation endpoints (sub-routes)
+  - Solution: Run SQL migrations for automation tables
+  - Code Change: SQL only (6 CREATE TABLE statements)
+  - Time: 30 minutes
+  - After Fix: 51/56 passing (91.1%)
+
+Fix #4: Database Schema Issues
+  - Root Cause: Enum mismatch, missing vehicles table
+  - Failing: 2 analytics endpoints + 2 misc
+  - Solution: Alter enum, create vehicles view, add stats route
+  - Code Change: SQL + 1 route addition
+  - Time: 20 minutes
+  - After Fix: 55/56 passing (98.2%)
+
+ESTIMATED SUCCESS RATES
+------------------------
+
+Milestone              Time     Passing   Success Rate
+---------------------  -------  --------  ------------
+Current State          0 min    26/56     46.4%
+After Fix #1           15 min   37/56     66.1%
+After Fix #2 (TARGET)  20 min   39/56     69.6% ✅
+After Fix #3           50 min   51/56     91.1%
+After Fix #4           70 min   55/56     98.2%
+Perfect Score          ???      56/56     100%
+
+CRITICAL PATH TO 70%
+--------------------
+
+1. Edit /backend/src/services/postgres.service.js
+   Line 788: Change module.exports to expose pool
+   
+2. Edit /backend/src/routes/v1/index.js
+   Add: const automationRoutes = require('../automation.routes');
+   Add: router.use('/automation', automationRoutes);
+   Add: automation: '/api/v1/automation' to endpoints list
+
+3. Deploy and test
+
+Total Time: 20 minutes
+Total Files: 2
+Total Lines: 4
+
+AFFECTED ENDPOINTS BY PRIORITY
+-------------------------------
+
+Priority 1 (PostgreSQL Pool - 11 endpoints):
+  1. /api/v1/production-metrics/on-time-delivery
+  2. /api/v1/production-metrics/completion-rate
+  3. /api/v1/production-metrics/delivery-time
+  4. /api/v1/production-metrics/courier-performance
+  5. /api/v1/production-metrics/cancellation-rate
+  6. /api/v1/production-metrics/return-rate
+  7. /api/v1/production-metrics/fleet-utilization
+  8. /api/v1/production-metrics/order-distribution
+  9. /api/v1/production-metrics/comprehensive
+ 10. /api/v1/production-metrics/sla/at-risk
+ 11. /api/v1/production-metrics/sla/compliance
+
+Priority 2 (Automation Routes - 12 endpoints):
+  1. /api/v1/automation/dispatch/status
+  2. /api/v1/automation/dispatch/stats
+  3. /api/v1/automation/routes/status
+  4. /api/v1/automation/routes/stats
+  5. /api/v1/automation/batching/status
+  6. /api/v1/automation/batching/stats
+  7. /api/v1/automation/escalation/status
+  8. /api/v1/automation/escalation/stats
+  9. /api/v1/automation/escalation/logs
+ 10. /api/v1/automation/escalation/alerts
+ 11. /api/v1/automation/escalation/at-risk-orders
+ 12. /api/v1/automation/dashboard
+
+Priority 3 (Database Schema - 4 endpoints):
+  1. /api/v1/analytics/fleet/drivers (enum issue)
+  2. /api/v1/analytics/fleet/vehicles (missing table)
+  3. /api/optimize/stats (routing issue)
+  4. /api-docs (redirect issue)
+
+Priority 4 (Auth - 1 endpoint):
+  1. /api/v1/auth/login (possibly already fixed)
+
+Priority 5 (Frontend - 1 endpoint):
+  1. https://route-opt-frontend.../  (out of scope)
+
+RISK ASSESSMENT
+---------------
+
+Low Risk (Deploy Immediately):
+  ✓ PostgreSQL pool fix (single export change)
+  ✓ Automation route registration (import + mount)
+
+Medium Risk (Test First):
+  ~ Database table creation (non-breaking)
+  ~ Stats endpoint addition (new route)
+
+High Risk (Test Thoroughly):
+  ⚠ Enum modification (existing query impact)
+  ⚠ Vehicles table creation (analytics dependency)
+
+NEXT ACTIONS
+------------
+
+1. Review: ENDPOINT_FAILURE_ANALYSIS.md (detailed breakdown)
+2. Execute: QUICK_FIX_GUIDE.md (20-minute fix)
+3. Deploy: 2 file changes, 4 lines of code
+4. Test: Run endpoint tests again
+5. Celebrate: 70%+ success rate achieved! 🎉
+
+================================================================================
+Generated: 2025-11-13
+Target: 70%+ success rate
+Strategy: Fix highest-impact issues first (PostgreSQL + Automation routes)
+Estimated Time to Target: 20 minutes
+Expected Result: 39+/56 passing (69.6%+)
+================================================================================

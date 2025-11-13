@@ -1,0 +1,738 @@
+==========================================
+  COMPREHENSIVE API ENDPOINT TEST
+  Date: Thu Nov 13 02:35:11 +03 2025
+  API URL: http://localhost:3003
+==========================================
+
+
+================================================================
+  1. CORE API ENDPOINTS
+================================================================
+  ✗ GET / - Root API Information (Expected: 200, Got: 000)
+  ✗ GET /health - Health Check (Expected: 200, Got: 000)
+  ✗ GET /api/health - API Health Check (Expected: 200, Got: 000)
+  ✗ GET /api/version - API Version Information (Expected: 200, Got: 000)
+  ✗ GET /api - API Information (Expected: 200, Got: 000)
+  ✗ GET /api/versions - API Versions List (Expected: 200, Got: 000)
+
+================================================================
+  2. API V1 ENDPOINTS
+================================================================
+  ✗ GET /api/v1 - V1 API Information (Expected: 200, Got: 000)
+
+================================================================
+  3. HEALTH ENDPOINTS (14 endpoints
+================================================================
+  ✗ GET /api/v1/health - V1 Health Check (Expected: 200, Got: 000)
+  ✗ GET /api/v1/health/live - Liveness Probe (Expected: 200, Got: 000)
+  ✗ GET /api/v1/health/ready - Readiness Probe (Expected: 200, Got: 000)
+  ✗ GET /api/v1/health/startup - Startup Probe (Expected: 200, Got: 000)
+  ✗ GET /api/v1/health/detailed - Detailed Health Status (Expected: 200, Got: 000)
+  ✗ GET /api/v1/health/info - System Information (Expected: 200, Got: 000)
+  ✗ GET /api/v1/health/metrics - Health Metrics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/health/agents - Agent Health Status (Expected: 200, Got: 000)
+  ✗ GET /api/v1/health/database - Database Health (Expected: 200, Got: 000)
+  ✗ POST /api/v1/health/database/test - Test Database Connection (Expected: 200, Got: 000)
+  ✗ GET /api/v1/health/cache - Cache Health Status (Expected: 200, Got: 000)
+  ✗ POST /api/v1/health/cache/flush - Flush Cache (Expected: 200, Got: 000)
+  ✗ GET /api/v1/health/dependencies - External Dependencies Health (Expected: 200, Got: 000)
+  ✗ GET /api/v1/health/logs - Recent System Logs (Expected: 200, Got: 000)
+  ✗ POST /api/v1/health/logs/clear - Clear System Logs (Expected: 200, Got: 000)
+
+================================================================
+  4. AUTH ENDPOINTS (6 endpoints
+================================================================
+  ✗ POST /api/v1/auth/register - User Registration (Expected: 400, Got: 000)
+  ✗ POST /api/v1/auth/login - User Login (Expected: 400, Got: 000)
+  ✗ POST /api/v1/auth/refresh - Refresh Token (Expected: 401, Got: 000)
+  ✗ POST /api/v1/auth/logout - User Logout (Expected: 200, Got: 000)
+  ✗ GET /api/v1/auth/me - Get User Profile (Expected: 401, Got: 000)
+  ✗ POST /api/v1/auth/forgot-password - Forgot Password (Expected: 400, Got: 000)
+
+================================================================
+  5. OPTIMIZATION ENDPOINTS (5 endpoints
+================================================================
+  ✗ POST /api/v1/optimize - Create Route Optimization (Expected: 400, Got: 000)
+  ✗ GET /api/v1/optimize/results - Get Optimization Results (Expected: 200, Got: 000)
+  ✗ GET /api/v1/optimize/history - Get Optimization History (Expected: 200, Got: 000)
+  ✗ DELETE /api/v1/optimize/cache - Clear Optimization Cache (Expected: 200, Got: 000)
+  ✗ GET /api/v1/optimize/stats - Get Optimization Statistics (Expected: 200, Got: 000)
+
+================================================================
+  6. AGENT ENDPOINTS (16 endpoints
+================================================================
+  ✗ GET /api/v1/agents - List All Agents (Expected: 401, Got: 000)
+  ✗ GET /api/v1/agents/health - Agent Health Status (Expected: 401, Got: 000)
+  ✗ GET /api/v1/agents/status - Agent Status Overview (Expected: 401, Got: 000)
+  ✗ GET /api/v1/agents/metrics - Agent Metrics (Expected: 401, Got: 000)
+  ✗ POST /api/v1/agents/task - Execute Agent Task (Expected: 401, Got: 000)
+  ✗ POST /api/v1/agents/collaboration - Multi-Agent Collaboration (Expected: 401, Got: 000)
+  ✗ GET /api/v1/agents/notifications - Get Agent Notifications (Expected: 401, Got: 000)
+  ✗ GET /api/v1/agents/events - Get Agent Events (Expected: 401, Got: 000)
+  ✗ GET /api/v1/agents/audit-logs - Get Agent Audit Logs (Expected: 401, Got: 000)
+  ✗ GET /api/v1/agents/performance - Get Agent Performance (Expected: 401, Got: 000)
+  ✗ POST /api/v1/agents/route-planning/optimize - Route Planning Optimization (Expected: 401, Got: 000)
+  ✗ POST /api/v1/agents/fleet-monitor/analyze - Fleet Monitoring Analysis (Expected: 401, Got: 000)
+  ✗ POST /api/v1/agents/cost-optimizer/analyze - Cost Optimization Analysis (Expected: 401, Got: 000)
+  ✗ POST /api/v1/agents/predictive-maintenance/predict - Predictive Maintenance (Expected: 401, Got: 000)
+  ✗ POST /api/v1/agents/initialize - Initialize Agent System (Expected: 401, Got: 000)
+  ✗ POST /api/v1/agents/shutdown - Shutdown Agent System (Expected: 401, Got: 000)
+
+================================================================
+  7. ADMIN ENDPOINTS (8 endpoints
+================================================================
+  ✗ GET /api/v1/admin/config - Get System Configuration (Expected: 401, Got: 000)
+  ✗ GET /api/v1/admin/metrics - Get System Metrics (Expected: 401, Got: 000)
+  ✗ GET /api/v1/admin/logs - Get System Logs (Expected: 401, Got: 000)
+  ✗ GET /api/v1/admin/users - List Users (Expected: 401, Got: 000)
+  ✗ GET /api/v1/admin/agents/status - Get Agent Status (Admin) (Expected: 200, Got: 000)
+  ✗ GET /api/v1/admin/agents/performance - Get Agent Performance (Admin) (Expected: 401, Got: 000)
+  ✗ POST /api/v1/admin/agents/restart - Restart Agents (Expected: 401, Got: 000)
+  ✗ GET /api/v1/admin/cache/stats - Get Cache Statistics (Expected: 401, Got: 000)
+
+================================================================
+  8. AUTONOMOUS ENDPOINTS (17 endpoints
+================================================================
+  ✗ GET /api/v1/autonomous/status - Get Autonomous Status (Expected: 200, Got: 000)
+  ✗ GET /api/v1/autonomous/orchestrator - Get Orchestrator Status (Expected: 200, Got: 000)
+  ✗ GET /api/v1/autonomous/cycle-history - Get Cycle History (Expected: 200, Got: 000)
+  ✗ POST /api/v1/autonomous/start - Start Autonomous Operations (Expected: 200, Got: 000)
+  ✗ POST /api/v1/autonomous/stop - Stop Autonomous Operations (Expected: 200, Got: 000)
+  ✗ GET /api/v1/autonomous/schedule - Get Autonomous Schedule (Expected: 200, Got: 000)
+  ✗ GET /api/v1/autonomous/insights - Get Autonomous Insights (Expected: 200, Got: 000)
+  ✗ GET /api/v1/autonomous/metrics - Get Autonomous Metrics (Expected: 200, Got: 000)
+  ✗ POST /api/v1/autonomous/trigger - Manual Trigger Autonomous Cycle (Expected: 200, Got: 000)
+  ✗ POST /api/v1/autonomous/action/:actionId/approve - Approve Autonomous Action (Expected: 404, Got: 000)
+  ✗ POST /api/v1/autonomous/action/:actionId/reject - Reject Autonomous Action (Expected: 404, Got: 000)
+  ✗ GET /api/v1/autonomous/pending-actions - Get Pending Actions (Expected: 200, Got: 000)
+  ✗ GET /api/v1/autonomous/action-history - Get Action History (Expected: 200, Got: 000)
+  ✗ GET /api/v1/autonomous/learning - Get Learning Data (Expected: 200, Got: 000)
+  ✗ GET /api/v1/autonomous/recommendations - Get Recommendations (Expected: 200, Got: 000)
+  ✗ POST /api/v1/autonomous/escalate - Escalate Issue (Expected: 400, Got: 000)
+  ✗ POST /api/v1/autonomous/resolve - Resolve Issue (Expected: 400, Got: 000)
+  ✗ GET /api/v1/autonomous/health - Get Autonomous Health (Expected: 200, Got: 000)
+
+================================================================
+  9. ANALYTICS ENDPOINTS (9 endpoints
+================================================================
+  ✗ GET /api/v1/analytics/sla/realtime - Real-time SLA Analytics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/analytics/sla/compliance - SLA Compliance Analytics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/analytics/sla/trend - SLA Trend Analytics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/analytics/fleet/performance - Fleet Performance Analytics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/analytics/dashboard/summary - Dashboard Summary (Expected: 200, Got: 000)
+  ✗ GET /api/v1/analytics/fleet/drivers - Driver Analytics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/analytics/fleet/drivers/123 - Specific Driver Analytics (Expected: 404, Got: 000)
+  ✗ GET /api/v1/analytics/fleet/vehicles - Vehicle Analytics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/analytics/routes/efficiency - Route Efficiency Analytics (Expected: 200, Got: 000)
+
+================================================================
+  10. PRODUCTION METRICS ENDPOINTS (11 endpoints
+================================================================
+  ✗ GET /api/v1/production-metrics/on-time-delivery - On-Time Delivery Metrics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/production-metrics/completion-rate - Completion Rate Metrics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/production-metrics/delivery-time - Delivery Time Metrics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/production-metrics/courier-performance - Courier Performance Metrics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/production-metrics/cancellation-rate - Cancellation Rate Metrics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/production-metrics/return-rate - Return Rate Metrics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/production-metrics/fleet-utilization - Fleet Utilization Metrics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/production-metrics/order-distribution - Order Distribution Metrics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/production-metrics/comprehensive - Comprehensive Metrics (Expected: 200, Got: 000)
+  ✗ GET /api/v1/production-metrics/sla/at-risk - SLA At-Risk Orders (Expected: 200, Got: 000)
+  ✗ GET /api/v1/production-metrics/sla/compliance - SLA Compliance Metrics (Expected: 200, Got: 000)
+
+================================================================
+  11. AI QUERY ENDPOINTS (6 endpoints
+================================================================
+  ✗ GET /api/v1/ai-query/catalog - Get Query Catalog (Expected: 200, Got: 000)
+  ✗ GET /api/v1/ai-query/categories - Get Query Categories (Expected: 200, Got: 000)
+  ✗ POST /api/v1/ai-query/execute - Execute AI Query (Expected: 400, Got: 000)
+  ✗ POST /api/v1/ai-query/execute-batch - Execute Batch Queries (Expected: 400, Got: 000)
+  ✗ POST /api/v1/ai-query/ask - Ask AI Natural Language (Expected: 400, Got: 000)
+  ✗ GET /api/v1/ai-query/query/fleet-status - Get Specific Query (Expected: 404, Got: 000)
+
+================================================================
+  12. AUTOMATION ENDPOINTS (29 endpoints
+================================================================
+  ✗ POST /api/v1/automation/dispatch/start - Start Dispatch Automation (Expected: 200, Got: 000)
+  ✗ POST /api/v1/automation/dispatch/stop - Stop Dispatch Automation (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/dispatch/status - Get Dispatch Status (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/dispatch/stats - Get Dispatch Stats (Expected: 200, Got: 000)
+  ✗ POST /api/v1/automation/dispatch/assign/order123 - Assign Order to Courier (Expected: 404, Got: 000)
+  ✗ POST /api/v1/automation/routes/start - Start Route Automation (Expected: 200, Got: 000)
+  ✗ POST /api/v1/automation/routes/stop - Stop Route Automation (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/routes/status - Get Route Status (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/routes/stats - Get Route Stats (Expected: 200, Got: 000)
+  ✗ POST /api/v1/automation/routes/optimize/driver123 - Optimize Driver Route (Expected: 404, Got: 000)
+  ✗ POST /api/v1/automation/routes/traffic-incident - Handle Traffic Incident (Expected: 400, Got: 000)
+  ✗ POST /api/v1/automation/batching/start - Start Batching Automation (Expected: 200, Got: 000)
+  ✗ POST /api/v1/automation/batching/stop - Stop Batching Automation (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/batching/status - Get Batching Status (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/batching/stats - Get Batching Stats (Expected: 200, Got: 000)
+  ✗ POST /api/v1/automation/batching/process - Process Batch (Expected: 400, Got: 000)
+  ✗ GET /api/v1/automation/batching/batch/batch123 - Get Batch Details (Expected: 404, Got: 000)
+  ✗ POST /api/v1/automation/escalation/start - Start Escalation Automation (Expected: 200, Got: 000)
+  ✗ POST /api/v1/automation/escalation/stop - Stop Escalation Automation (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/escalation/status - Get Escalation Status (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/escalation/stats - Get Escalation Stats (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/escalation/logs - Get Escalation Logs (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/escalation/alerts - Get Escalation Alerts (Expected: 200, Got: 000)
+  ✗ POST /api/v1/automation/escalation/alerts/alert123/resolve - Resolve Alert (Expected: 404, Got: 000)
+  ✗ GET /api/v1/automation/escalation/at-risk-orders - Get At-Risk Orders (Expected: 200, Got: 000)
+  ✗ POST /api/v1/automation/start-all - Start All Automation Engines (Expected: 200, Got: 000)
+  ✗ POST /api/v1/automation/stop-all - Stop All Automation Engines (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/status-all - Get All Engine Status (Expected: 200, Got: 000)
+  ✗ GET /api/v1/automation/dashboard - Get Automation Dashboard (Expected: 200, Got: 000)
+
+
+================================================================
+  TEST SUMMARY
+================================================================
+
+Total Endpoints Tested: 130
+Passed: [0;32m✓ 0[0m
+Failed: [0;31m✗ 130[0m
+Success Rate: 0.00%
+
+CATEGORY BREAKDOWN:
+  Core API: 6 endpoints
+  Health: 14 endpoints
+  Auth: 6 endpoints
+  Optimization: 5 endpoints
+  Agents: 16 endpoints
+  Admin: 8 endpoints
+  Autonomous: 17 endpoints
+  Analytics: 9 endpoints
+  Production Metrics: 11 endpoints
+  AI Query: 6 endpoints
+  Automation: 29 endpoints
+
+
+
+================================================================
+  FAILED ENDPOINTS DETAILS
+================================================================
+
+[0;31m✗[0m GET /
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /health
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/health
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/version
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/versions
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health/live
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health/ready
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health/startup
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health/detailed
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health/info
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health/metrics
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health/agents
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health/database
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/health/database/test
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health/cache
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/health/cache/flush
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health/dependencies
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/health/logs
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/health/logs/clear
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/auth/register
+   Status: Expected: 400, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/auth/login
+   Status: Expected: 400, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/auth/refresh
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/auth/logout
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/auth/me
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/auth/forgot-password
+   Status: Expected: 400, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/optimize
+   Status: Expected: 400, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/optimize/results
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/optimize/history
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m DELETE /api/v1/optimize/cache
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/optimize/stats
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/agents
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/agents/health
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/agents/status
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/agents/metrics
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/agents/task
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/agents/collaboration
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/agents/notifications
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/agents/events
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/agents/audit-logs
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/agents/performance
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/agents/route-planning/optimize
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/agents/fleet-monitor/analyze
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/agents/cost-optimizer/analyze
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/agents/predictive-maintenance/predict
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/agents/initialize
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/agents/shutdown
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/admin/config
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/admin/metrics
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/admin/logs
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/admin/users
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/admin/agents/status
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/admin/agents/performance
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/admin/agents/restart
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/admin/cache/stats
+   Status: Expected: 401, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/autonomous/status
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/autonomous/orchestrator
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/autonomous/cycle-history
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/autonomous/start
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/autonomous/stop
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/autonomous/schedule
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/autonomous/insights
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/autonomous/metrics
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/autonomous/trigger
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/autonomous/action/:actionId/approve
+   Status: Expected: 404, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/autonomous/action/:actionId/reject
+   Status: Expected: 404, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/autonomous/pending-actions
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/autonomous/action-history
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/autonomous/learning
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/autonomous/recommendations
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/autonomous/escalate
+   Status: Expected: 400, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/autonomous/resolve
+   Status: Expected: 400, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/autonomous/health
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/analytics/sla/realtime
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/analytics/sla/compliance
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/analytics/sla/trend
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/analytics/fleet/performance
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/analytics/dashboard/summary
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/analytics/fleet/drivers
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/analytics/fleet/drivers/123
+   Status: Expected: 404, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/analytics/fleet/vehicles
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/analytics/routes/efficiency
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/production-metrics/on-time-delivery
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/production-metrics/completion-rate
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/production-metrics/delivery-time
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/production-metrics/courier-performance
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/production-metrics/cancellation-rate
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/production-metrics/return-rate
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/production-metrics/fleet-utilization
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/production-metrics/order-distribution
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/production-metrics/comprehensive
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/production-metrics/sla/at-risk
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/production-metrics/sla/compliance
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/ai-query/catalog
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/ai-query/categories
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/ai-query/execute
+   Status: Expected: 400, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/ai-query/execute-batch
+   Status: Expected: 400, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/ai-query/ask
+   Status: Expected: 400, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/ai-query/query/fleet-status
+   Status: Expected: 404, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/dispatch/start
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/dispatch/stop
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/dispatch/status
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/dispatch/stats
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/dispatch/assign/order123
+   Status: Expected: 404, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/routes/start
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/routes/stop
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/routes/status
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/routes/stats
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/routes/optimize/driver123
+   Status: Expected: 404, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/routes/traffic-incident
+   Status: Expected: 400, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/batching/start
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/batching/stop
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/batching/status
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/batching/stats
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/batching/process
+   Status: Expected: 400, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/batching/batch/batch123
+   Status: Expected: 404, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/escalation/start
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/escalation/stop
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/escalation/status
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/escalation/stats
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/escalation/logs
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/escalation/alerts
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/escalation/alerts/alert123/resolve
+   Status: Expected: 404, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/escalation/at-risk-orders
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/start-all
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m POST /api/v1/automation/stop-all
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/status-all
+   Status: Expected: 200, Got: 000
+   Error: 
+
+[0;31m✗[0m GET /api/v1/automation/dashboard
+   Status: Expected: 200, Got: 000
+   Error: 
+
+
+Full results saved to: ninth-deployment-test-results.txt
+
+[1;33mSome tests failed. Please review the details above.[0m

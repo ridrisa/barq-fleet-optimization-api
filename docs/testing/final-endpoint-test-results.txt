@@ -1,0 +1,9 @@
+================================================================
+  COMPREHENSIVE ENDPOINT TEST - FINAL
+================================================================
+
+Main API: https://route-opt-backend-426674819922.us-central1.run.app
+Analytics: https://barq-fleet-analytics-426674819922.us-central1.run.app
+
+=== CORE API ===
+1.  API v1 info...                                         ✅ 200

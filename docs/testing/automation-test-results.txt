@@ -1,0 +1,1 @@
+🎉 BUILD SUCCESSFUL\! Testing automation endpoints... echo  echo Waiting 10 seconds for deployment to stabilize... sleep 10 echo  ./test-automation-endpoints.sh

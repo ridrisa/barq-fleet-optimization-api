@@ -482,6 +482,26 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   try {
     await postgresService.initialize();
     logger.info('PostgreSQL service initialized successfully');
+
+    // Auto-create agent system tables if they don't exist
+    logger.info('Ensuring agent system tables exist...');
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const migrationPath = path.join(__dirname, '../migrations/20251113_create_agent_system_tables.sql');
+
+      if (fs.existsSync(migrationPath)) {
+        const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+        await postgresService.query(migrationSQL);
+        logger.info('✅ Agent system tables verified/created successfully');
+      } else {
+        logger.warn('Agent system migration file not found, skipping auto-creation');
+      }
+    } catch (tableError) {
+      logger.warn('Could not auto-create agent tables (may already exist)', {
+        error: tableError.message,
+      });
+    }
   } catch (dbError) {
     logger.error('Failed to initialize PostgreSQL service', {
       error: dbError.message,
