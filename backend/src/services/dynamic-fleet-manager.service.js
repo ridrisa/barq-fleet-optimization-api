@@ -6,52 +6,168 @@
  * 2. All orders delivered within 1-4 hour SLA from creation
  *
  * Features:
- * - Real-time driver target tracking
+ * - Real-time driver target tracking with PostgreSQL persistence
  * - Dynamic order assignment based on urgency
  * - SLA-aware routing (1-4 hour windows)
  * - Fair workload distribution
  * - Continuous reoptimization
+ * - Historical performance tracking
  */
 
 const enhancedCvrpOptimizer = require('./enhanced-cvrp-optimizer.service');
 const { logger } = require('../utils/logger');
+const { Pool } = require('pg');
 
 class DynamicFleetManager {
   constructor() {
-    this.driverTargets = new Map(); // driver_id -> target info
-    this.activeOrders = new Map();  // order_id -> order details
-    this.driverProgress = new Map(); // driver_id -> current progress
+    // Database connection pool
+    this.pool = new Pool({
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 5432,
+      database: process.env.DB_NAME || 'barq_logistics',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD,
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+    });
 
     // SLA configuration
     this.minSLA = 60;  // 1 hour minimum
     this.maxSLA = 240; // 4 hours maximum
 
-    logger.info('Dynamic Fleet Manager initialized');
+    // Initialize database tables
+    this.initializeDatabase().catch(err => {
+      logger.error('Failed to initialize database', { error: err.message });
+    });
+
+    logger.info('Dynamic Fleet Manager initialized with database persistence');
   }
 
   /**
-   * Set daily targets for drivers
+   * Initialize database tables if they don't exist
+   */
+  async initializeDatabase() {
+    try {
+      const client = await this.pool.connect();
+
+      try {
+        // Check if tables exist
+        const tableCheck = await client.query(`
+          SELECT table_name FROM information_schema.tables
+          WHERE table_schema = 'public'
+          AND table_name IN ('driver_targets', 'driver_performance_history')
+        `);
+
+        if (tableCheck.rows.length < 2) {
+          logger.info('Database tables not found, running migration...');
+
+          // Read and execute migration
+          const fs = require('fs');
+          const path = require('path');
+          const migrationPath = path.join(__dirname, '../database/migrations/003_fleet_manager_persistence.sql');
+
+          if (fs.existsSync(migrationPath)) {
+            const sql = fs.readFileSync(migrationPath, 'utf8');
+            await client.query(sql);
+            logger.info('Migration completed successfully');
+          } else {
+            logger.warn('Migration file not found, tables may not exist');
+          }
+        } else {
+          logger.info('Database tables verified');
+        }
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      logger.error('Database initialization failed', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Set daily targets for drivers (persisted to database)
    *
    * @param {Array} drivers - Array of {driver_id, target_deliveries, target_revenue}
    */
-  setDriverTargets(drivers) {
-    drivers.forEach(driver => {
-      this.driverTargets.set(driver.driver_id, {
-        driver_id: driver.driver_id,
-        target_deliveries: driver.target_deliveries || 20,
-        target_revenue: driver.target_revenue || 5000,
-        current_deliveries: 0,
-        current_revenue: 0,
-        assigned_orders: [],
-        status: 'available', // available, busy, break, offline
-      });
-    });
+  async setDriverTargets(drivers) {
+    try {
+      for (const driver of drivers) {
+        await this.pool.query(`
+          INSERT INTO driver_targets (driver_id, target_deliveries, target_revenue, status)
+          VALUES ($1, $2, $3, 'available')
+          ON CONFLICT (driver_id)
+          DO UPDATE SET
+            target_deliveries = $2,
+            target_revenue = $3,
+            status = 'available',
+            current_deliveries = 0,
+            current_revenue = 0,
+            updated_at = CURRENT_TIMESTAMP
+        `, [
+          driver.driver_id,
+          driver.target_deliveries || 20,
+          driver.target_revenue || 5000
+        ]);
+      }
 
-    logger.info(`Targets set for ${drivers.length} drivers`);
-    return {
-      success: true,
-      drivers_configured: drivers.length,
-    };
+      logger.info(`Targets set for ${drivers.length} drivers`);
+      return {
+        success: true,
+        drivers_configured: drivers.length,
+      };
+    } catch (error) {
+      logger.error('Failed to set driver targets', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Get driver target by ID
+   */
+  async getDriverTarget(driverId) {
+    try {
+      const result = await this.pool.query(
+        'SELECT * FROM driver_targets WHERE driver_id = $1',
+        [driverId]
+      );
+      return result.rows[0] || null;
+    } catch (error) {
+      logger.error('Failed to get driver target', { error: error.message });
+      return null;
+    }
+  }
+
+  /**
+   * Get all driver targets
+   */
+  async getAllDriverTargets() {
+    try {
+      const result = await this.pool.query('SELECT * FROM driver_targets ORDER BY driver_id');
+      return result.rows;
+    } catch (error) {
+      logger.error('Failed to get all driver targets', { error: error.message });
+      return [];
+    }
+  }
+
+  /**
+   * Update driver progress
+   */
+  async updateDriverProgress(driverId, deliveries, revenue) {
+    try {
+      await this.pool.query(`
+        UPDATE driver_targets
+        SET current_deliveries = current_deliveries + $2,
+            current_revenue = current_revenue + $3,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE driver_id = $1
+      `, [driverId, deliveries, revenue]);
+    } catch (error) {
+      logger.error('Failed to update driver progress', { error: error.message });
+    }
   }
 
   /**
@@ -113,11 +229,10 @@ class DynamicFleetManager {
   /**
    * Calculate driver scores for fair workload distribution
    *
-   * @param {string} driverId - Driver ID
+   * @param {Object} target - Driver target object from database
    * @returns {number} - Score (lower = needs more orders)
    */
-  calculateDriverScore(driverId) {
-    const target = this.driverTargets.get(driverId);
+  calculateDriverScore(target) {
     if (!target) return Infinity;
 
     const deliveryProgress = target.current_deliveries / target.target_deliveries;
@@ -155,11 +270,15 @@ class DynamicFleetManager {
         flexible: categorized.flexible.length,
       });
 
-      // Step 2: Calculate driver scores (who needs more orders)
+      // Step 2: Get all driver targets from database
+      const allTargets = await this.getAllDriverTargets();
+      const targetMap = new Map(allTargets.map(t => [t.driver_id, t]));
+
+      // Calculate driver scores (who needs more orders)
       const driverScores = drivers.map(driver => ({
         ...driver,
-        score: this.calculateDriverScore(driver.driver_id),
-        target: this.driverTargets.get(driver.driver_id),
+        target: targetMap.get(driver.driver_id),
+        score: this.calculateDriverScore(targetMap.get(driver.driver_id)),
       })).sort((a, b) => b.score - a.score); // Highest score first (needs orders most)
 
       // Step 3: Assign critical/urgent orders first to nearest drivers
@@ -182,12 +301,17 @@ class DynamicFleetManager {
             sla_deadline: new Date(Date.now() + order.remaining_minutes * 60000),
           });
 
-          // Update driver progress
-          const target = this.driverTargets.get(availableDriver.driver_id);
-          if (target) {
-            target.assigned_orders.push(order.order_id);
-            target.current_deliveries += 1;
-            target.current_revenue += order.revenue || 0;
+          // Update driver progress in database
+          await this.updateDriverProgress(
+            availableDriver.driver_id,
+            1,
+            order.revenue || 0
+          );
+
+          // Update local cache
+          if (availableDriver.target) {
+            availableDriver.target.current_deliveries += 1;
+            availableDriver.target.current_revenue += order.revenue || 0;
           }
         }
       }
@@ -203,8 +327,8 @@ class DynamicFleetManager {
         const driver = driverScores
           .filter(d => d.target?.status === 'available')
           .sort((a, b) => {
-            const scoreA = this.calculateDriverScore(a.driver_id);
-            const scoreB = this.calculateDriverScore(b.driver_id);
+            const scoreA = this.calculateDriverScore(a.target);
+            const scoreB = this.calculateDriverScore(b.target);
             return scoreB - scoreA;
           })[0];
 
@@ -217,12 +341,17 @@ class DynamicFleetManager {
             sla_deadline: new Date(Date.now() + order.remaining_minutes * 60000),
           });
 
-          // Update driver progress
-          const target = this.driverTargets.get(driver.driver_id);
-          if (target) {
-            target.assigned_orders.push(order.order_id);
-            target.current_deliveries += 1;
-            target.current_revenue += order.revenue || 0;
+          // Update driver progress in database
+          await this.updateDriverProgress(
+            driver.driver_id,
+            1,
+            order.revenue || 0
+          );
+
+          // Update local cache
+          if (driver.target) {
+            driver.target.current_deliveries += 1;
+            driver.target.current_revenue += order.revenue || 0;
           }
         }
       }
@@ -254,7 +383,7 @@ class DynamicFleetManager {
           normal: categorized.normal.length,
           flexible: categorized.flexible.length,
         },
-        driver_target_status: this.getTargetStatus(),
+        driver_target_status: await this.getTargetStatus(),
       };
     } catch (error) {
       logger.error('Dynamic assignment failed', { error: error.message });
@@ -324,47 +453,59 @@ class DynamicFleetManager {
   /**
    * Get current target achievement status for all drivers
    */
-  getTargetStatus() {
-    const status = [];
+  async getTargetStatus() {
+    try {
+      const targets = await this.getAllDriverTargets();
 
-    this.driverTargets.forEach((target, driverId) => {
-      const deliveryProgress = (target.current_deliveries / target.target_deliveries) * 100;
-      const revenueProgress = (target.current_revenue / target.target_revenue) * 100;
+      return targets.map(target => {
+        const deliveryProgress = (target.current_deliveries / target.target_deliveries) * 100;
+        const revenueProgress = (target.current_revenue / target.target_revenue) * 100;
 
-      status.push({
-        driver_id: driverId,
-        target_deliveries: target.target_deliveries,
-        current_deliveries: target.current_deliveries,
-        delivery_progress: deliveryProgress.toFixed(1) + '%',
-        target_revenue: target.target_revenue,
-        current_revenue: target.current_revenue,
-        revenue_progress: revenueProgress.toFixed(1) + '%',
-        on_track: deliveryProgress >= 50 && revenueProgress >= 50, // Halfway through day
-        status: target.status,
+        return {
+          driver_id: target.driver_id,
+          target_deliveries: target.target_deliveries,
+          current_deliveries: target.current_deliveries,
+          delivery_progress: deliveryProgress.toFixed(1) + '%',
+          target_revenue: target.target_revenue,
+          current_revenue: target.current_revenue,
+          revenue_progress: revenueProgress.toFixed(1) + '%',
+          on_track: deliveryProgress >= 50 && revenueProgress >= 50, // Halfway through day
+          status: target.status,
+          updated_at: target.updated_at,
+        };
       });
-    });
-
-    return status;
+    } catch (error) {
+      logger.error('Failed to get target status', { error: error.message });
+      return [];
+    }
   }
 
   /**
    * Check if all drivers are on track to meet targets
    */
-  checkTargetAchievement() {
-    const status = this.getTargetStatus();
-    const onTrack = status.filter(s => s.on_track).length;
-    const total = status.length;
+  async checkTargetAchievement() {
+    try {
+      const status = await this.getTargetStatus();
+      const onTrack = status.filter(s => s.on_track).length;
+      const total = status.length;
 
-    return {
-      success: true,
-      drivers_on_track: onTrack,
-      total_drivers: total,
-      percentage: ((onTrack / total) * 100).toFixed(1) + '%',
-      drivers: status,
-      recommendation: onTrack === total
-        ? 'All drivers on track to meet targets'
-        : `${total - onTrack} drivers need more orders`,
-    };
+      return {
+        success: true,
+        drivers_on_track: onTrack,
+        total_drivers: total,
+        percentage: total > 0 ? ((onTrack / total) * 100).toFixed(1) + '%' : '0%',
+        drivers: status,
+        recommendation: onTrack === total
+          ? 'All drivers on track to meet targets'
+          : `${total - onTrack} drivers need more orders`,
+      };
+    } catch (error) {
+      logger.error('Failed to check target achievement', { error: error.message });
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 
   /**
@@ -445,29 +586,138 @@ class DynamicFleetManager {
   /**
    * Update driver status (available, busy, break, offline)
    */
-  updateDriverStatus(driverId, status) {
-    const target = this.driverTargets.get(driverId);
-    if (target) {
-      target.status = status;
-      logger.info(`Driver ${driverId} status updated to ${status}`);
-      return { success: true, driver_id: driverId, status };
+  async updateDriverStatus(driverId, status) {
+    try {
+      const result = await this.pool.query(`
+        UPDATE driver_targets
+        SET status = $2, updated_at = CURRENT_TIMESTAMP
+        WHERE driver_id = $1
+        RETURNING *
+      `, [driverId, status]);
+
+      if (result.rows.length > 0) {
+        logger.info(`Driver ${driverId} status updated to ${status}`);
+        return { success: true, driver_id: driverId, status };
+      } else {
+        return { success: false, error: 'Driver not found' };
+      }
+    } catch (error) {
+      logger.error('Failed to update driver status', { error: error.message });
+      return { success: false, error: error.message };
     }
-    return { success: false, error: 'Driver not found' };
   }
 
   /**
    * Reset all targets (new day)
    */
-  resetDailyTargets() {
-    this.driverTargets.forEach((target) => {
-      target.current_deliveries = 0;
-      target.current_revenue = 0;
-      target.assigned_orders = [];
-      target.status = 'available';
-    });
+  async resetDailyTargets() {
+    try {
+      // First, snapshot current day's performance to history
+      await this.snapshotDailyPerformance();
 
-    logger.info('Daily targets reset');
-    return { success: true, message: 'All driver targets reset for new day' };
+      // Then reset current progress
+      await this.pool.query(`
+        UPDATE driver_targets
+        SET current_deliveries = 0,
+            current_revenue = 0,
+            status = 'available',
+            updated_at = CURRENT_TIMESTAMP
+      `);
+
+      logger.info('Daily targets reset');
+      return { success: true, message: 'All driver targets reset for new day' };
+    } catch (error) {
+      logger.error('Failed to reset daily targets', { error: error.message });
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Snapshot daily performance to history
+   */
+  async snapshotDailyPerformance() {
+    try {
+      await this.pool.query(`
+        INSERT INTO driver_performance_history
+          (driver_id, date, deliveries_completed, revenue_generated,
+           target_deliveries, target_revenue, target_achieved, achievement_percentage)
+        SELECT
+          driver_id,
+          CURRENT_DATE,
+          current_deliveries,
+          current_revenue,
+          target_deliveries,
+          target_revenue,
+          (current_deliveries >= target_deliveries AND current_revenue >= target_revenue),
+          calculate_achievement_percentage(current_deliveries, target_deliveries,
+                                          current_revenue, target_revenue)
+        FROM driver_targets
+        ON CONFLICT (driver_id, date)
+        DO UPDATE SET
+          deliveries_completed = EXCLUDED.deliveries_completed,
+          revenue_generated = EXCLUDED.revenue_generated,
+          target_achieved = EXCLUDED.target_achieved,
+          achievement_percentage = EXCLUDED.achievement_percentage
+      `);
+
+      logger.info('Daily performance snapshot saved');
+    } catch (error) {
+      logger.error('Failed to snapshot daily performance', { error: error.message });
+    }
+  }
+
+  /**
+   * Get historical performance for a driver
+   */
+  async getDriverHistory(driverId, days = 30) {
+    try {
+      const result = await this.pool.query(`
+        SELECT * FROM driver_performance_history
+        WHERE driver_id = $1
+        AND date >= CURRENT_DATE - INTERVAL '${days} days'
+        ORDER BY date DESC
+      `, [driverId]);
+
+      return result.rows;
+    } catch (error) {
+      logger.error('Failed to get driver history', { error: error.message });
+      return [];
+    }
+  }
+
+  /**
+   * Get top performing drivers
+   */
+  async getTopPerformers(days = 7, limit = 10) {
+    try {
+      const result = await this.pool.query(`
+        SELECT
+          driver_id,
+          COUNT(*) as days_worked,
+          SUM(deliveries_completed) as total_deliveries,
+          SUM(revenue_generated) as total_revenue,
+          AVG(achievement_percentage) as avg_achievement,
+          COUNT(*) FILTER (WHERE target_achieved = true) as days_achieved
+        FROM driver_performance_history
+        WHERE date >= CURRENT_DATE - INTERVAL '${days} days'
+        GROUP BY driver_id
+        ORDER BY avg_achievement DESC
+        LIMIT $1
+      `, [limit]);
+
+      return result.rows;
+    } catch (error) {
+      logger.error('Failed to get top performers', { error: error.message });
+      return [];
+    }
+  }
+
+  /**
+   * Cleanup - close database connections
+   */
+  async close() {
+    await this.pool.end();
+    logger.info('Dynamic Fleet Manager database connections closed');
   }
 }
 
