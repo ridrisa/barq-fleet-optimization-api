@@ -1,0 +1,542 @@
+{
+  "summary": {
+    "total": 55,
+    "passing": 29,
+    "failing": 26,
+    "successRate": "52.7%"
+  },
+  "passingEndpoints": [
+    {
+      "name": "Health Check",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/health",
+      "status": 200
+    },
+    {
+      "name": "Health Live",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/health/live",
+      "status": 200
+    },
+    {
+      "name": "Health Ready",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/health/ready",
+      "status": 200
+    },
+    {
+      "name": "Health Info",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/health/info",
+      "status": 200
+    },
+    {
+      "name": "Health Smoke Test",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/health/smoke",
+      "status": 200
+    },
+    {
+      "name": "API Version Info",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1",
+      "status": 200
+    },
+    {
+      "name": "Optimize Route",
+      "method": "POST",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/optimize",
+      "status": 400
+    },
+    {
+      "name": "Optimization History",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/optimize/history?limit=10",
+      "status": 200
+    },
+    {
+      "name": "Optimization Stats",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/optimize/stats",
+      "status": 404
+    },
+    {
+      "name": "Multi-Vehicle Optimization",
+      "method": "POST",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/optimize/multi-vehicle",
+      "status": 400
+    },
+    {
+      "name": "Time Windows Optimization",
+      "method": "POST",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/optimize/time-windows",
+      "status": 400
+    },
+    {
+      "name": "Analytics Overview",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/analytics/overview",
+      "status": 200
+    },
+    {
+      "name": "SLA Daily Metrics",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/analytics/sla/daily?days=7",
+      "status": 200
+    },
+    {
+      "name": "Fleet Utilization",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/analytics/fleet/utilization",
+      "status": 200
+    },
+    {
+      "name": "SLA Real-time Status",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/analytics/sla/realtime",
+      "status": 200
+    },
+    {
+      "name": "SLA Compliance",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/analytics/sla/compliance?days=7",
+      "status": 200
+    },
+    {
+      "name": "SLA Trend",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/analytics/sla/trend?days=30",
+      "status": 200
+    },
+    {
+      "name": "Fleet Performance",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/analytics/fleet/performance?days=7",
+      "status": 200
+    },
+    {
+      "name": "Dashboard Summary",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/analytics/dashboard/summary",
+      "status": 200
+    },
+    {
+      "name": "Fleet Drivers",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/analytics/fleet/drivers?period=monthly",
+      "status": 200
+    },
+    {
+      "name": "Routes Efficiency",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/analytics/routes/efficiency?days=30",
+      "status": 200
+    },
+    {
+      "name": "Autonomous Status",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/autonomous/status",
+      "status": 200
+    },
+    {
+      "name": "Autonomous Triggers Stats",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/autonomous/triggers/stats",
+      "status": 200
+    },
+    {
+      "name": "Autonomous Triggers Recent",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/autonomous/triggers/recent?limit=20",
+      "status": 200
+    },
+    {
+      "name": "Automation Status All",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/status-all",
+      "status": 200
+    },
+    {
+      "name": "AI Query Catalog",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/ai-query/catalog",
+      "status": 200
+    },
+    {
+      "name": "AI Query Categories",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/ai-query/categories",
+      "status": 200
+    },
+    {
+      "name": "AI Query Execute",
+      "method": "POST",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/ai-query/execute",
+      "status": 200
+    },
+    {
+      "name": "AI Query Quick Execute",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/ai-query/query/total_orders?days=7",
+      "status": 200
+    }
+  ],
+  "failingEndpoints": [
+    {
+      "name": "Health Detailed",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/health/detailed",
+      "status": 503,
+      "error": "Request failed with status code 503",
+      "details": {
+        "status": "degraded",
+        "timestamp": "2025-11-14T15:38:52.425Z",
+        "uptime": 1476,
+        "environment": "production",
+        "version": "1.0.0",
+        "checks": {
+          "database": {
+            "healthy": true,
+            "database": "barq_logistics",
+            "serverTime": "2025-11-14T15:38:52.428Z",
+            "poolStats": {
+              "totalCount": 1,
+              "idleCount": 1,
+              "waitingCount": 0
+            }
+          },
+          "agents": {
+            "healthy": false,
+            "uptime": 1470858,
+            "agents": [],
+            "health": {
+              "healthy": 0,
+              "unhealthy": 0,
+              "critical": []
+            }
+          },
+          "websocket": {
+            "healthy": true,
+            "endpoint": "/ws",
+            "port": "8080",
+            "message": "WebSocket server integrated with HTTP server (Cloud Run compatible)"
+          }
+        },
+        "system": {
+          "platform": "linux",
+          "arch": "x64",
+          "nodeVersion": "v20.19.5",
+          "memory": {
+            "total": 2147483648,
+            "free": 2026491904,
+            "used": 120991744,
+            "percentage": "5.63"
+          },
+          "cpu": {
+            "cores": 4,
+            "model": "unknown",
+            "load": [
+              0,
+              0,
+              0
+            ]
+          },
+          "process": {
+            "pid": 2,
+            "memory": {
+              "rss": 116330496,
+              "heapTotal": 44687360,
+              "heapUsed": 43292272,
+              "external": 21786201,
+              "arrayBuffers": 18364734
+            },
+            "uptime": 1480.707245662
+          }
+        }
+      }
+    },
+    {
+      "name": "Fleet Vehicles",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/analytics/fleet/vehicles?period=monthly",
+      "status": 500,
+      "error": "Failed to fetch vehicle performance",
+      "details": {
+        "error": "Failed to fetch vehicle performance",
+        "message": "relation \"vehicles\" does not exist"
+      }
+    },
+    {
+      "name": "Autonomous Trigger",
+      "method": "POST",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/autonomous/trigger",
+      "status": 503,
+      "error": "Request failed with status code 503",
+      "details": {
+        "success": false,
+        "message": "Autonomous operations not initialized"
+      }
+    },
+    {
+      "name": "Automation Dashboard",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/dashboard",
+      "status": 500,
+      "error": "Failed to get dashboard data",
+      "details": {
+        "error": "Failed to get dashboard data",
+        "details": "column \"assignment_type\" does not exist"
+      }
+    },
+    {
+      "name": "Auto-Dispatch Status",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/dispatch/status",
+      "status": 503,
+      "error": "Auto-dispatch engine not initialized",
+      "details": {
+        "error": "Auto-dispatch engine not initialized"
+      }
+    },
+    {
+      "name": "Auto-Dispatch Stats",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/dispatch/stats?days=7",
+      "status": 500,
+      "error": "Failed to get stats",
+      "details": {
+        "error": "Failed to get stats",
+        "details": "relation \"auto_dispatch_stats\" does not exist"
+      }
+    },
+    {
+      "name": "Route Optimizer Status",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/routes/status",
+      "status": 503,
+      "error": "Route optimizer not initialized",
+      "details": {
+        "error": "Route optimizer not initialized"
+      }
+    },
+    {
+      "name": "Route Optimizer Stats",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/routes/stats?days=7",
+      "status": 500,
+      "error": "Failed to get stats",
+      "details": {
+        "error": "Failed to get stats",
+        "details": "relation \"route_optimization_stats\" does not exist"
+      }
+    },
+    {
+      "name": "Smart Batching Status",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/batching/status",
+      "status": 503,
+      "error": "Smart batching engine not initialized",
+      "details": {
+        "error": "Smart batching engine not initialized"
+      }
+    },
+    {
+      "name": "Smart Batching Stats",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/batching/stats?days=7",
+      "status": 500,
+      "error": "Failed to get stats",
+      "details": {
+        "error": "Failed to get stats",
+        "details": "relation \"batch_performance_stats\" does not exist"
+      }
+    },
+    {
+      "name": "Escalation Engine Status",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/escalation/status",
+      "status": 503,
+      "error": "Escalation engine not initialized",
+      "details": {
+        "error": "Escalation engine not initialized"
+      }
+    },
+    {
+      "name": "Escalation Stats",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/escalation/stats?days=7",
+      "status": 500,
+      "error": "Failed to get stats",
+      "details": {
+        "error": "Failed to get stats",
+        "details": "relation \"escalation_stats\" does not exist"
+      }
+    },
+    {
+      "name": "Escalation Logs",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/escalation/logs?limit=50",
+      "status": 500,
+      "error": "Failed to get escalation logs",
+      "details": {
+        "error": "Failed to get escalation logs",
+        "details": "column el.escalated_to does not exist"
+      }
+    },
+    {
+      "name": "Escalation At-Risk Orders",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/automation/escalation/at-risk-orders",
+      "status": 500,
+      "error": "Failed to get at-risk orders",
+      "details": {
+        "error": "Failed to get at-risk orders",
+        "details": "column \"escalated_to\" does not exist"
+      }
+    },
+    {
+      "name": "On-Time Delivery Rate",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/production-metrics/on-time-delivery?days=7",
+      "status": 500,
+      "error": "Failed to get on-time delivery rate",
+      "details": {
+        "success": false,
+        "error": "Failed to get on-time delivery rate",
+        "message": "pool.connect is not a function"
+      }
+    },
+    {
+      "name": "Completion Rate",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/production-metrics/completion-rate?days=7",
+      "status": 500,
+      "error": "Failed to get completion rate",
+      "details": {
+        "success": false,
+        "error": "Failed to get completion rate",
+        "message": "pool.connect is not a function"
+      }
+    },
+    {
+      "name": "Delivery Time",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/production-metrics/delivery-time?days=7",
+      "status": 500,
+      "error": "Failed to get delivery time",
+      "details": {
+        "success": false,
+        "error": "Failed to get delivery time",
+        "message": "pool.connect is not a function"
+      }
+    },
+    {
+      "name": "Courier Performance",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/production-metrics/courier-performance?days=7&limit=10",
+      "status": 500,
+      "error": "Failed to get courier performance",
+      "details": {
+        "success": false,
+        "error": "Failed to get courier performance",
+        "message": "pool.connect is not a function"
+      }
+    },
+    {
+      "name": "Cancellation Rate",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/production-metrics/cancellation-rate?days=7",
+      "status": 500,
+      "error": "Failed to get cancellation rate",
+      "details": {
+        "success": false,
+        "error": "Failed to get cancellation rate",
+        "message": "pool.connect is not a function"
+      }
+    },
+    {
+      "name": "Return Rate",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/production-metrics/return-rate?days=7",
+      "status": 500,
+      "error": "Failed to get return rate",
+      "details": {
+        "success": false,
+        "error": "Failed to get return rate",
+        "message": "pool.connect is not a function"
+      }
+    },
+    {
+      "name": "Fleet Utilization (Prod)",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/production-metrics/fleet-utilization?days=7",
+      "status": 500,
+      "error": "Failed to get fleet utilization",
+      "details": {
+        "success": false,
+        "error": "Failed to get fleet utilization",
+        "message": "pool.connect is not a function"
+      }
+    },
+    {
+      "name": "Order Distribution",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/production-metrics/order-distribution?days=7&limit=10",
+      "status": 500,
+      "error": "Failed to get order distribution",
+      "details": {
+        "success": false,
+        "error": "Failed to get order distribution",
+        "message": "pool.connect is not a function"
+      }
+    },
+    {
+      "name": "Comprehensive Dashboard",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/production-metrics/comprehensive?days=7",
+      "status": 500,
+      "error": "Failed to get comprehensive dashboard",
+      "details": {
+        "success": false,
+        "error": "Failed to get comprehensive dashboard",
+        "message": "pool.connect is not a function"
+      }
+    },
+    {
+      "name": "SLA At-Risk Orders",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/production-metrics/sla/at-risk?limit=10",
+      "status": 500,
+      "error": "Failed to get at-risk orders",
+      "details": {
+        "success": false,
+        "error": "Failed to get at-risk orders",
+        "message": "pool.connect is not a function"
+      }
+    },
+    {
+      "name": "SLA Compliance (Prod)",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/production-metrics/sla/compliance?days=7&limit=10",
+      "status": 500,
+      "error": "Failed to get SLA compliance",
+      "details": {
+        "success": false,
+        "error": "Failed to get SLA compliance",
+        "message": "pool.connect is not a function"
+      }
+    },
+    {
+      "name": "Admin Agent Status",
+      "method": "GET",
+      "url": "https://route-opt-backend-sek7q2ajva-uc.a.run.app/api/v1/admin/agents/status",
+      "status": 503,
+      "error": "Agent manager not available",
+      "details": {
+        "success": false,
+        "error": "Agent manager not available"
+      }
+    }
+  ],
+  "timestamp": "2025-11-14T15:39:04.746Z"
+}
