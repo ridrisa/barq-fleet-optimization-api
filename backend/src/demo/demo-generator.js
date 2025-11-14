@@ -6,10 +6,15 @@
 const { v4: uuidv4 } = require('uuid');
 const { logger } = require('../utils/logger');
 const EventEmitter = require('events');
+const demoDatabaseService = require('./demo-database.service');
 
 class DemoGenerator extends EventEmitter {
   constructor() {
     super();
+
+    // Database service for persisting orders
+    this.dbService = demoDatabaseService;
+    this.dbOrderMap = new Map(); // Map demo order IDs to database order IDs
 
     // Saudi Arabia major cities coordinates
     this.cities = {
@@ -244,6 +249,9 @@ class DemoGenerator extends EventEmitter {
     // Emit order created event
     this.emit('orderCreated', order);
 
+    // Save order to database
+    this.saveOrderToDatabase(order);
+
     logger.info(`[DemoGenerator] Generated ${serviceType} order ${orderId}`, {
       scenario: scenario.type,
       distance: order.distance,
@@ -397,6 +405,7 @@ class DemoGenerator extends EventEmitter {
         driver.activeOrders++;
 
         this.emit('orderAssigned', { order, driver });
+        this.updateOrderStatusInDatabase(order.id, 'assigned', { driver_id: driver.id });
         logger.info(`[DemoGenerator] Order ${order.id} assigned to ${driver.id}`);
 
         // Simulate driver acceptance
@@ -414,6 +423,7 @@ class DemoGenerator extends EventEmitter {
               order.status = 'in_transit';
               order.pickedUpAt = new Date();
               this.emit('orderPickedUp', { order, driver });
+              this.updateOrderStatusInDatabase(order.id, 'picked_up');
 
               // Simulate delivery
               setTimeout(() => {
@@ -427,6 +437,7 @@ class DemoGenerator extends EventEmitter {
                     order.failureReason = 'Customer not available';
                     this.stats.failed++;
                     this.emit('orderFailed', { order, reason: order.failureReason });
+                    this.updateOrderStatusInDatabase(order.id, 'failed', { failure_reason: order.failureReason });
                   } else {
                     order.status = 'completed';
                     order.completedAt = new Date();
@@ -435,6 +446,7 @@ class DemoGenerator extends EventEmitter {
                     );
                     this.stats.completed++;
                     this.emit('orderCompleted', { order, driver });
+                    this.updateOrderStatusInDatabase(order.id, 'delivered');
 
                     // Generate customer rating
                     order.customerRating = 3 + Math.random() * 2;
@@ -548,6 +560,36 @@ class DemoGenerator extends EventEmitter {
    */
   stop() {
     this.stopGeneration();
+  }
+
+  /**
+   * Save order to database
+   */
+  async saveOrderToDatabase(order) {
+    try {
+      const dbOrder = await this.dbService.saveOrder(order);
+      if (dbOrder) {
+        this.dbOrderMap.set(order.id, dbOrder.id);
+        logger.info(`[DemoGenerator] Saved order to database: ${dbOrder.order_number} (DB ID: ${dbOrder.id})`);
+      }
+    } catch (error) {
+      logger.error('[DemoGenerator] Failed to save order to database', { error: error.message });
+      // Continue even if DB save fails - don't break the demo
+    }
+  }
+
+  /**
+   * Update order status in database
+   */
+  async updateOrderStatusInDatabase(demoOrderId, status, additionalData = {}) {
+    try {
+      const dbOrderId = this.dbOrderMap.get(demoOrderId);
+      if (dbOrderId) {
+        await this.dbService.updateOrderStatus(dbOrderId, status, additionalData);
+      }
+    } catch (error) {
+      logger.error('[DemoGenerator] Failed to update order status in database', { error: error.message });
+    }
   }
 
   /**
