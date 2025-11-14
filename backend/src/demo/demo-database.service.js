@@ -192,7 +192,11 @@ class DemoDatabaseService {
     } catch (error) {
       logger.error('[DemoDB] Failed to save demo order', {
         error: error.message,
+        stack: error.stack,
+        code: error.code,
+        detail: error.detail,
         demoOrderId: demoOrder.id,
+        query: query.substring(0, 200),
       });
       // Don't throw - let demo continue even if DB save fails
       return null;
