@@ -93,8 +93,18 @@ class DynamicFleetManager {
    * @param {Array} drivers - Array of {driver_id, target_deliveries, target_revenue}
    */
   async setDriverTargets(drivers) {
+    const startTime = Date.now();
     try {
+      logger.info('Setting driver targets', {
+        operation: 'setDriverTargets',
+        driver_count: drivers.length,
+        driver_ids: drivers.map(d => d.driver_id),
+      });
+
       for (const driver of drivers) {
+        const targetDeliveries = driver.target_deliveries || 20;
+        const targetRevenue = driver.target_revenue || 5000;
+
         await this.pool.query(`
           INSERT INTO driver_targets (driver_id, target_deliveries, target_revenue, status)
           VALUES ($1, $2, $3, 'available')
@@ -106,20 +116,38 @@ class DynamicFleetManager {
             current_deliveries = 0,
             current_revenue = 0,
             updated_at = CURRENT_TIMESTAMP
-        `, [
-          driver.driver_id,
-          driver.target_deliveries || 20,
-          driver.target_revenue || 5000
-        ]);
+        `, [driver.driver_id, targetDeliveries, targetRevenue]);
+
+        logger.debug('Driver target set', {
+          operation: 'setDriverTargets',
+          driver_id: driver.driver_id,
+          target_deliveries: targetDeliveries,
+          target_revenue: targetRevenue,
+        });
       }
 
-      logger.info(`Targets set for ${drivers.length} drivers`);
+      const duration = Date.now() - startTime;
+      logger.info('Driver targets configured successfully', {
+        operation: 'setDriverTargets',
+        drivers_configured: drivers.length,
+        duration_ms: duration,
+        status: 'success',
+      });
+
       return {
         success: true,
         drivers_configured: drivers.length,
       };
     } catch (error) {
-      logger.error('Failed to set driver targets', { error: error.message });
+      const duration = Date.now() - startTime;
+      logger.error('Failed to set driver targets', {
+        operation: 'setDriverTargets',
+        error: error.message,
+        error_stack: error.stack,
+        driver_count: drivers.length,
+        duration_ms: duration,
+        status: 'error',
+      });
       throw error;
     }
   }
@@ -254,20 +282,31 @@ class DynamicFleetManager {
    * @returns {Promise<Object>} - Assignment result
    */
   async assignOrdersDynamic(orders, drivers, pickupPoints) {
+    const startTime = Date.now();
+    const operationId = `assign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     try {
       logger.info('Starting dynamic order assignment', {
-        orders: orders.length,
-        drivers: drivers.length,
+        operation: 'assignOrdersDynamic',
+        operation_id: operationId,
+        orders_count: orders.length,
+        drivers_count: drivers.length,
+        pickup_points_count: pickupPoints?.length || 0,
+        timestamp: new Date().toISOString(),
       });
 
       // Step 1: Categorize orders by urgency
       const categorized = this.categorizeOrdersByUrgency(orders);
 
       logger.info('Orders categorized by urgency', {
-        critical: categorized.critical.length,
-        urgent: categorized.urgent.length,
-        normal: categorized.normal.length,
-        flexible: categorized.flexible.length,
+        operation: 'assignOrdersDynamic',
+        operation_id: operationId,
+        critical_count: categorized.critical.length,
+        urgent_count: categorized.urgent.length,
+        normal_count: categorized.normal.length,
+        flexible_count: categorized.flexible.length,
+        critical_orders: categorized.critical.map(o => ({ id: o.order_id, remaining_min: o.remaining_minutes })),
+        urgent_orders: categorized.urgent.map(o => ({ id: o.order_id, remaining_min: o.remaining_minutes })),
       });
 
       // Step 2: Get all driver targets from database
@@ -368,9 +407,32 @@ class DynamicFleetManager {
         optimizationRequest
       );
 
-      logger.info('Dynamic assignment completed', {
-        assignments: assignments.length,
-        routes: optimizedRoutes.routes?.length || 0,
+      const duration = Date.now() - startTime;
+      const targetStatus = await this.getTargetStatus();
+
+      logger.info('Dynamic assignment completed successfully', {
+        operation: 'assignOrdersDynamic',
+        operation_id: operationId,
+        assignments_count: assignments.length,
+        routes_count: optimizedRoutes.routes?.length || 0,
+        duration_ms: duration,
+        status: 'success',
+        urgency_breakdown: {
+          critical: categorized.critical.length,
+          urgent: categorized.urgent.length,
+          normal: categorized.normal.length,
+          flexible: categorized.flexible.length,
+        },
+        driver_achievements: targetStatus.drivers.map(d => ({
+          driver_id: d.driver_id,
+          achievement: d.achievement_percentage,
+          deliveries: `${d.current_deliveries}/${d.target_deliveries}`,
+        })),
+        performance_summary: {
+          total_drivers: targetStatus.drivers.length,
+          on_target_drivers: targetStatus.drivers.filter(d => d.achievement_percentage >= 100).length,
+          average_achievement: targetStatus.fleet_summary.average_achievement,
+        },
       });
 
       return {
@@ -383,10 +445,20 @@ class DynamicFleetManager {
           normal: categorized.normal.length,
           flexible: categorized.flexible.length,
         },
-        driver_target_status: await this.getTargetStatus(),
+        driver_target_status: targetStatus,
       };
     } catch (error) {
-      logger.error('Dynamic assignment failed', { error: error.message });
+      const duration = Date.now() - startTime;
+      logger.error('Dynamic assignment failed', {
+        operation: 'assignOrdersDynamic',
+        operation_id: operationId,
+        error: error.message,
+        error_stack: error.stack,
+        orders_count: orders.length,
+        drivers_count: drivers.length,
+        duration_ms: duration,
+        status: 'error',
+      });
       return {
         success: false,
         error: error.message,

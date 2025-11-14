@@ -1,0 +1,244 @@
+# Cloud Monitoring Alert Policies for BARQ Fleet Manager
+# Deploy with: gcloud alpha monitoring policies create --policy-from-file=<policy-file>
+
+# Alert 1: High Error Rate (5xx responses)
+---
+displayName: "BARQ - High Error Rate (5xx)"
+documentation:
+  content: |
+    ## High Error Rate Detected
+
+    **What's happening:** Server errors (5xx) are occurring at an elevated rate.
+
+    **Impact:** Users may be experiencing service failures.
+
+    **Action Required:**
+    1. Check Cloud Run logs: `gcloud run services logs read route-opt-backend --limit=50`
+    2. Look for error patterns in application logs
+    3. Check database connectivity and performance
+    4. Review recent deployments for issues
+
+    **Escalation:** If errors persist > 15 minutes, escalate to on-call engineer.
+  mimeType: text/markdown
+conditions:
+  - displayName: "Error rate > 1% of requests"
+    conditionThreshold:
+      filter: |
+        resource.type = "cloud_run_revision"
+        AND resource.labels.service_name = "route-opt-backend"
+        AND metric.type = "run.googleapis.com/request_count"
+        AND metric.labels.response_code_class = "5xx"
+      aggregations:
+        - alignmentPeriod: 60s
+          perSeriesAligner: ALIGN_RATE
+          crossSeriesReducer: REDUCE_SUM
+          groupByFields:
+            - resource.service_name
+      comparison: COMPARISON_GT
+      thresholdValue: 1.0
+      duration: 300s  # 5 minutes
+alertStrategy:
+  autoClose: 1800s  # 30 minutes
+
+# Alert 2: High Response Latency
+---
+displayName: "BARQ - High Response Latency (P95 > 1s)"
+documentation:
+  content: |
+    ## High Response Latency Detected
+
+    **What's happening:** API response times are elevated (P95 > 1 second).
+
+    **Impact:** Users experiencing slow performance.
+
+    **Action Required:**
+    1. Check current load: Number of active instances
+    2. Review database query performance
+    3. Check for slow external API calls (GROQ, Maps)
+    4. Consider scaling up if needed
+
+    **Quick Fixes:**
+    - Enable caching if not already active
+    - Review recent code changes for performance issues
+  mimeType: text/markdown
+conditions:
+  - displayName: "P95 latency > 1000ms"
+    conditionThreshold:
+      filter: |
+        resource.type = "cloud_run_revision"
+        AND resource.labels.service_name = "route-opt-backend"
+        AND metric.type = "run.googleapis.com/request_latencies"
+      aggregations:
+        - alignmentPeriod: 60s
+          perSeriesAligner: ALIGN_DELTA
+          crossSeriesReducer: REDUCE_PERCENTILE_95
+          groupByFields:
+            - resource.service_name
+      comparison: COMPARISON_GT
+      thresholdValue: 1000  # 1 second in milliseconds
+      duration: 300s  # 5 minutes
+alertStrategy:
+  autoClose: 1800s
+
+# Alert 3: High CPU Utilization
+---
+displayName: "BARQ - High CPU Utilization (> 80%)"
+documentation:
+  content: |
+    ## High CPU Utilization
+
+    **What's happening:** Container CPU usage is consistently above 80%.
+
+    **Impact:** May lead to request throttling or timeouts.
+
+    **Action Required:**
+    1. Check current request rate and patterns
+    2. Review recent deployments for CPU-intensive changes
+    3. Consider increasing CPU allocation in Cloud Run
+    4. Look for inefficient algorithms or infinite loops
+
+    **Scaling:**
+    ```bash
+    gcloud run services update route-opt-backend \
+      --cpu=2 --memory=2Gi --region=us-central1
+    ```
+  mimeType: text/markdown
+conditions:
+  - displayName: "CPU utilization > 80%"
+    conditionThreshold:
+      filter: |
+        resource.type = "cloud_run_revision"
+        AND resource.labels.service_name = "route-opt-backend"
+        AND metric.type = "run.googleapis.com/container/cpu/utilizations"
+      aggregations:
+        - alignmentPeriod: 60s
+          perSeriesAligner: ALIGN_MEAN
+          crossSeriesReducer: REDUCE_MEAN
+          groupByFields:
+            - resource.service_name
+      comparison: COMPARISON_GT
+      thresholdValue: 0.80
+      duration: 600s  # 10 minutes
+alertStrategy:
+  autoClose: 1800s
+
+# Alert 4: High Memory Utilization
+---
+displayName: "BARQ - High Memory Utilization (> 90%)"
+documentation:
+  content: |
+    ## High Memory Utilization
+
+    **What's happening:** Container memory usage is critically high (> 90%).
+
+    **Impact:** Risk of OOM (Out of Memory) crashes and service restarts.
+
+    **Action Required:**
+    1. Check for memory leaks in recent deployments
+    2. Review caching strategies (may be over-caching)
+    3. Increase memory allocation if legitimate usage
+    4. Check for unbounded data structures or large payloads
+
+    **Immediate Action:**
+    ```bash
+    gcloud run services update route-opt-backend \
+      --memory=2Gi --region=us-central1
+    ```
+  mimeType: text/markdown
+conditions:
+  - displayName: "Memory utilization > 90%"
+    conditionThreshold:
+      filter: |
+        resource.type = "cloud_run_revision"
+        AND resource.labels.service_name = "route-opt-backend"
+        AND metric.type = "run.googleapis.com/container/memory/utilizations"
+      aggregations:
+        - alignmentPeriod: 60s
+          perSeriesAligner: ALIGN_MEAN
+          crossSeriesReducer: REDUCE_MEAN
+          groupByFields:
+            - resource.service_name
+      comparison: COMPARISON_GT
+      thresholdValue: 0.90
+      duration: 300s  # 5 minutes
+alertStrategy:
+  autoClose: 1800s
+
+# Alert 5: Database Connection Spike
+---
+displayName: "BARQ - Database Connection Spike"
+documentation:
+  content: |
+    ## Unusual Database Connection Count
+
+    **What's happening:** Cloud SQL connections are unusually high.
+
+    **Impact:** May indicate connection leaks or need for connection pooling.
+
+    **Action Required:**
+    1. Check application logs for connection errors
+    2. Review connection pool configuration
+    3. Look for missing connection.release() calls
+    4. Monitor for connection exhaustion
+
+    **Connection Pool Settings:**
+    - Max connections: 100 (default)
+    - Idle timeout: 30s
+    - Consider increasing if legitimate high traffic
+  mimeType: text/markdown
+conditions:
+  - displayName: "Database connections > 80"
+    conditionThreshold:
+      filter: |
+        resource.type = "cloudsql_database"
+        AND metric.type = "cloudsql.googleapis.com/database/postgresql/num_backends"
+      aggregations:
+        - alignmentPeriod: 60s
+          perSeriesAligner: ALIGN_MEAN
+          crossSeriesReducer: REDUCE_MEAN
+          groupByFields:
+            - resource.database_id
+      comparison: COMPARISON_GT
+      thresholdValue: 80
+      duration: 300s
+alertStrategy:
+  autoClose: 1800s
+
+# Alert 6: No Traffic (Service Down)
+---
+displayName: "BARQ - No Traffic Detected (Service May Be Down)"
+documentation:
+  content: |
+    ## No Traffic Detected
+
+    **What's happening:** No requests received in the last 5 minutes.
+
+    **Impact:** Service may be down or unreachable.
+
+    **Action Required:**
+    1. Check service health: `gcloud run services describe route-opt-backend`
+    2. Test endpoint: `curl https://route-opt-backend-sek7q2ajva-uc.a.run.app/health`
+    3. Review recent deployments for breaking changes
+    4. Check Cloud Build status for failed deployments
+    5. Verify DNS and routing configuration
+
+    **Critical:** This is a P1 incident. Immediate action required.
+  mimeType: text/markdown
+conditions:
+  - displayName: "Request count = 0 for 5 minutes"
+    conditionThreshold:
+      filter: |
+        resource.type = "cloud_run_revision"
+        AND resource.labels.service_name = "route-opt-backend"
+        AND metric.type = "run.googleapis.com/request_count"
+      aggregations:
+        - alignmentPeriod: 60s
+          perSeriesAligner: ALIGN_RATE
+          crossSeriesReducer: REDUCE_SUM
+          groupByFields:
+            - resource.service_name
+      comparison: COMPARISON_LT
+      thresholdValue: 0.01  # Effectively zero
+      duration: 300s
+alertStrategy:
+  autoClose: 600s

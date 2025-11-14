@@ -10,6 +10,7 @@ const { asyncHandler } = require('../../middleware/error.middleware');
 const dynamicFleetManager = require('../../services/dynamic-fleet-manager.service');
 const llmFleetAdvisor = require('../../services/llm-fleet-advisor.service');
 const { logger } = require('../../utils/logger');
+const { standardLimiter, aiLimiter, optimizationLimiter } = require('../../middleware/rate-limit.middleware');
 
 /**
  * POST /api/v1/fleet-manager/targets/set
@@ -17,6 +18,7 @@ const { logger } = require('../../utils/logger');
  */
 router.post(
   '/targets/set',
+  standardLimiter, // Rate limit standard endpoints (100 req/15min)
   asyncHandler(async (req, res) => {
     const { drivers } = req.body;
 
@@ -63,6 +65,7 @@ router.post(
  */
 router.post(
   '/assign',
+  optimizationLimiter, // Rate limit optimization endpoints (30 req/15min)
   asyncHandler(async (req, res) => {
     const { orders, drivers, pickupPoints } = req.body;
 
@@ -101,6 +104,7 @@ router.post(
  */
 router.post(
   '/reoptimize',
+  optimizationLimiter, // Rate limit optimization endpoints (30 req/15min)
   asyncHandler(async (req, res) => {
     const { currentRoutes, newOrders, drivers, pickupPoints } = req.body;
 
@@ -209,6 +213,7 @@ router.get(
  */
 router.post(
   '/ai/suggest-driver',
+  aiLimiter, // Rate limit AI endpoints (20 req/15min)
   asyncHandler(async (req, res) => {
     const { order, availableDrivers } = req.body;
 
@@ -248,6 +253,7 @@ router.post(
  */
 router.post(
   '/ai/predict-sla',
+  aiLimiter, // Rate limit AI endpoints (20 req/15min)
   asyncHandler(async (req, res) => {
     const { orders, drivers, currentRoutes } = req.body;
 
@@ -279,6 +285,7 @@ router.post(
  */
 router.post(
   '/ai/query',
+  aiLimiter, // Rate limit AI endpoints (20 req/15min)
   asyncHandler(async (req, res) => {
     const { query } = req.body;
 
@@ -312,6 +319,7 @@ router.post(
  */
 router.post(
   '/ai/recommendations',
+  aiLimiter, // Rate limit AI endpoints (20 req/15min)
   asyncHandler(async (req, res) => {
     const { fleetMetrics } = req.body;
 
