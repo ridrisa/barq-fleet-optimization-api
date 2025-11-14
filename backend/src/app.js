@@ -510,16 +510,18 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
     logger.warn('Analytics and automation features may not work without database connection');
   }
 
-  // Initialize agent system
-  if (process.env.DISABLE_AUTONOMOUS_AGENTS === 'true') {
-    logger.warn('⚠️  AUTONOMOUS AGENTS DISABLED - Running in API-only mode');
-    logger.info('Route optimization API is available at POST /api/optimize');
-  } else {
-    logger.info('Initializing agent system...');
-    try {
-      const initResult = await AgentInitializer.initialize();
-      logger.info('Agent system initialized successfully', initResult);
+  // Initialize agent system (ALWAYS - agents != autonomous operations)
+  logger.info('Initializing agent system...');
+  try {
+    const initResult = await AgentInitializer.initialize();
+    logger.info('Agent system initialized successfully', initResult);
 
+    // Initialize autonomous operations only if not disabled
+    if (process.env.DISABLE_AUTONOMOUS_AGENTS === 'true') {
+      logger.warn('⚠️  AUTONOMOUS OPERATIONS DISABLED - Agents available but not running autonomously');
+      logger.info('Agent APIs available at /api/v1/agents/*');
+      logger.info('Route optimization API available at POST /api/optimize');
+    } else {
       // Initialize autonomous operations using Worker Threads (non-blocking)
       logger.info('Initializing autonomous operations with Worker Threads...');
       try {
@@ -561,9 +563,10 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
         logger.warn('Server will continue without autonomous functionality');
         logger.info('All agent APIs still available via /api/v1/agents/*');
       }
+    } // Close else block for autonomous operations
 
-      // Initialize Phase 4 Automation Engines
-      logger.info('Initializing Phase 4 automation engines...');
+    // Initialize Phase 4 Automation Engines
+    logger.info('Initializing Phase 4 automation engines...');
       try {
         const automationResult = await automationInitializer.initialize(
           AgentInitializer.getAgentManager(),
@@ -619,10 +622,9 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
         logger.warn('Server will continue with limited automation functionality');
         logger.info('Agent APIs still available via /api/v1/agents/*');
       }
-    } catch (error) {
-      logger.error('Failed to initialize agent system', { error: error.message });
-      logger.warn('Server will continue without agent functionality');
-    }
+  } catch (error) {
+    logger.error('Failed to initialize agent system', { error: error.message });
+    logger.warn('Server will continue without agent functionality');
   }
 
   // ⚡ CRITICAL: Mark application as ready
