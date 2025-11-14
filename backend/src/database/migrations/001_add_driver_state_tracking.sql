@@ -35,7 +35,8 @@ ALTER TABLE drivers
   ADD COLUMN IF NOT EXISTS delivery_started_at TIMESTAMP WITH TIME ZONE,
   ADD COLUMN IF NOT EXISTS pickup_completed_at TIMESTAMP WITH TIME ZONE,
   ADD COLUMN IF NOT EXISTS eta_to_dropoff TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN IF NOT EXISTS dropoff_location GEOGRAPHY(POINT, 4326);
+  ADD COLUMN IF NOT EXISTS dropoff_latitude DECIMAL(10, 8),
+  ADD COLUMN IF NOT EXISTS dropoff_longitude DECIMAL(11, 8);
 
 -- Performance tracking (daily targets)
 ALTER TABLE drivers
@@ -81,7 +82,7 @@ CREATE INDEX IF NOT EXISTS idx_drivers_operational_state
 
 -- Index for state and location lookup
 CREATE INDEX IF NOT EXISTS idx_drivers_state_location
-  ON drivers(operational_state, current_location)
+  ON drivers(operational_state, current_latitude, current_longitude)
   WHERE operational_state = 'AVAILABLE';
 
 -- Index for performance tracking
@@ -113,7 +114,8 @@ CREATE TABLE IF NOT EXISTS driver_state_transitions (
 
   -- Context
   order_id UUID,
-  location GEOGRAPHY(POINT, 4326),
+  location_latitude DECIMAL(10, 8),
+  location_longitude DECIMAL(11, 8),
 
   -- Metadata
   triggered_by VARCHAR(100), -- 'system', 'driver', 'admin', 'agent'
@@ -193,13 +195,15 @@ BEGIN
       driver_id,
       from_state,
       to_state,
-      location,
+      location_latitude,
+      location_longitude,
       triggered_by
     ) VALUES (
       NEW.id,
       OLD.operational_state,
       NEW.operational_state,
-      NEW.current_location,
+      NEW.current_latitude,
+      NEW.current_longitude,
       COALESCE(current_setting('app.current_user', true), 'system')
     );
 
@@ -306,7 +310,8 @@ SELECT
   (d.max_working_hours - d.hours_worked_today) as hours_remaining,
   d.consecutive_deliveries,
   d.requires_break_after,
-  d.current_location,
+  d.current_latitude,
+  d.current_longitude,
   d.capacity_kg,
   d.current_load_kg,
   (d.capacity_kg - d.current_load_kg) as available_capacity_kg,
