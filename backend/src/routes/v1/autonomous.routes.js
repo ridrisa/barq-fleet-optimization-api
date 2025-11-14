@@ -333,6 +333,64 @@ router.post(
 );
 
 /**
+ * POST /api/v1/autonomous/enable
+ * Enable autonomous mode (simplified endpoint)
+ */
+router.post(
+  '/enable',
+  authenticate,
+  authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    if (!autonomousOrchestrator) {
+      return res.status(503).json({
+        success: false,
+        message: 'Autonomous orchestrator not initialized',
+      });
+    }
+
+    const newMode = autonomousOrchestrator.setAutonomousMode(true);
+
+    res.json({
+      success: true,
+      data: {
+        autonomousMode: newMode,
+        message: 'Autonomous mode ENABLED',
+        timestamp: new Date(),
+      },
+    });
+  })
+);
+
+/**
+ * POST /api/v1/autonomous/disable
+ * Disable autonomous mode (simplified endpoint)
+ */
+router.post(
+  '/disable',
+  authenticate,
+  authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    if (!autonomousOrchestrator) {
+      return res.status(503).json({
+        success: false,
+        message: 'Autonomous orchestrator not initialized',
+      });
+    }
+
+    const newMode = autonomousOrchestrator.setAutonomousMode(false);
+
+    res.json({
+      success: true,
+      data: {
+        autonomousMode: newMode,
+        message: 'Autonomous mode DISABLED',
+        timestamp: new Date(),
+      },
+    });
+  })
+);
+
+/**
  * POST /api/autonomous/mode
  * Toggle autonomous mode on/off
  */

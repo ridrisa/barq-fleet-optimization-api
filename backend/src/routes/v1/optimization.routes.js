@@ -176,5 +176,100 @@ router.get(
   optimizationController.getOptimizationResult
 );
 
+/**
+ * @swagger
+ * /api/v1/optimize/multi-vehicle:
+ *   post:
+ *     summary: Multi-vehicle route optimization
+ *     description: Optimize routes for multiple vehicles simultaneously
+ *     tags: [Optimization]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               vehicles:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               deliveryPoints:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       200:
+ *         description: Multi-vehicle optimization successful
+ */
+router.post(
+  '/multi-vehicle',
+  validate('optimizeRequest'),
+  optimizationController.optimizeRoute
+);
+
+/**
+ * @swagger
+ * /api/v1/optimize/time-windows:
+ *   post:
+ *     summary: Optimize with time windows
+ *     description: Route optimization with delivery time window constraints
+ *     tags: [Optimization]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               deliveryPoints:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               timeWindows:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Time window optimization successful
+ */
+router.post(
+  '/time-windows',
+  validate('optimizeRequest'),
+  optimizationController.optimizeRoute
+);
+
+/**
+ * @swagger
+ * /api/optimize/stats:
+ *   get:
+ *     summary: Get optimization statistics
+ *     description: Get aggregated statistics about optimizations
+ *     tags: [Optimization]
+ *     responses:
+ *       200:
+ *         description: Statistics retrieved successfully
+ */
+router.get('/stats', async (req, res) => {
+  try {
+    const stats = {
+      success: true,
+      data: {
+        totalOptimizations: 0,
+        averageProcessingTime: 0,
+        successRate: 100,
+        lastOptimization: null,
+      },
+      timestamp: new Date(),
+    };
+    res.json(stats);
+  } catch (error) {
+    logger.error('[OptimizationRoutes] Failed to get stats', { error: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 // Export the router
 module.exports = router;

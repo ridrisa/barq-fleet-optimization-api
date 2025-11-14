@@ -17,6 +17,169 @@ const SLA_TARGETS = {
 };
 
 /**
+ * GET /api/v1/analytics/overview
+ * Get comprehensive analytics overview
+ */
+router.get('/overview', async (req, res) => {
+  try {
+    logger.info('Fetching analytics overview');
+
+    const query = `
+      SELECT
+        COUNT(*) as total_orders,
+        COUNT(CASE WHEN status = 'delivered' THEN 1 END) as completed_orders,
+        COUNT(CASE WHEN status IN ('pending', 'assigned', 'picked_up') THEN 1 END) as active_orders,
+        AVG(CASE WHEN delivered_at IS NOT NULL
+          THEN EXTRACT(EPOCH FROM (delivered_at - created_at)) / 60 END) as avg_delivery_time,
+        COUNT(CASE WHEN delivered_at <= sla_deadline THEN 1 END)::float / NULLIF(COUNT(CASE WHEN delivered_at IS NOT NULL THEN 1 END), 0) * 100 as sla_compliance_rate
+      FROM orders
+      WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+    `;
+
+    const { rows } = await pool.query(query);
+    const overview = rows[0];
+
+    res.json({
+      success: true,
+      data: {
+        total_orders: parseInt(overview.total_orders) || 0,
+        completed_orders: parseInt(overview.completed_orders) || 0,
+        active_orders: parseInt(overview.active_orders) || 0,
+        avg_delivery_time_minutes: parseFloat(overview.avg_delivery_time) || 0,
+        sla_compliance_rate: parseFloat(overview.sla_compliance_rate) || 0,
+        period: '30 days',
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error('Error fetching analytics overview:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch analytics overview',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/sla/daily
+ * Get daily SLA metrics
+ */
+router.get('/sla/daily', async (req, res) => {
+  try {
+    const { days = 7 } = req.query;
+    logger.info(`Fetching daily SLA metrics for last ${days} days`);
+
+    const query = `
+      SELECT
+        DATE(delivered_at) as date,
+        COUNT(*) as total_deliveries,
+        COUNT(CASE WHEN delivered_at <= sla_deadline THEN 1 END) as on_time_deliveries,
+        (COUNT(CASE WHEN delivered_at <= sla_deadline THEN 1 END)::float / COUNT(*) * 100) as compliance_rate
+      FROM orders
+      WHERE delivered_at IS NOT NULL
+      AND delivered_at >= CURRENT_DATE - INTERVAL '${parseInt(days)} days'
+      GROUP BY DATE(delivered_at)
+      ORDER BY date DESC
+    `;
+
+    const { rows } = await pool.query(query);
+
+    res.json({
+      success: true,
+      data: rows.map(row => ({
+        date: row.date,
+        total_deliveries: parseInt(row.total_deliveries),
+        on_time_deliveries: parseInt(row.on_time_deliveries),
+        compliance_rate: parseFloat(row.compliance_rate),
+      })),
+      period_days: parseInt(days),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error('Error fetching daily SLA metrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch daily SLA metrics',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/fleet/utilization
+ * Get fleet utilization metrics
+ */
+router.get('/fleet/utilization', async (req, res) => {
+  try {
+    const { period = 'weekly' } = req.query;
+    logger.info(`Fetching fleet utilization (${period})`);
+
+    let days = period === 'weekly' ? 7 : 30;
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const query = `
+      WITH fleet_metrics AS (
+        SELECT
+          COUNT(DISTINCT d.id) as total_drivers,
+          COUNT(DISTINCT CASE WHEN o.driver_id IS NOT NULL THEN d.id END) as active_drivers,
+          COUNT(DISTINCT v.id) as total_vehicles,
+          COUNT(DISTINCT CASE WHEN o.driver_id IS NOT NULL THEN d.vehicle_id END) as active_vehicles,
+          COUNT(o.id) as total_trips
+        FROM drivers d
+        FULL OUTER JOIN vehicles v ON d.vehicle_id = v.id
+        LEFT JOIN orders o ON o.driver_id = d.id AND o.created_at >= $1
+      )
+      SELECT
+        total_drivers,
+        active_drivers,
+        total_vehicles,
+        active_vehicles,
+        total_trips,
+        ROUND((active_drivers::numeric / NULLIF(total_drivers, 0) * 100)::numeric, 2) as driver_utilization,
+        ROUND((active_vehicles::numeric / NULLIF(total_vehicles, 0) * 100)::numeric, 2) as vehicle_utilization,
+        ROUND((total_trips::numeric / NULLIF(active_drivers, 0))::numeric, 2) as avg_trips_per_driver
+      FROM fleet_metrics
+    `;
+
+    const { rows } = await pool.query(query, [startDate]);
+    const metrics = rows[0] || {
+      total_drivers: 0,
+      active_drivers: 0,
+      total_vehicles: 0,
+      active_vehicles: 0,
+      total_trips: 0,
+      driver_utilization: 0,
+      vehicle_utilization: 0,
+      avg_trips_per_driver: 0,
+    };
+
+    res.json({
+      success: true,
+      data: {
+        total_drivers: parseInt(metrics.total_drivers) || 0,
+        active_drivers: parseInt(metrics.active_drivers) || 0,
+        total_vehicles: parseInt(metrics.total_vehicles) || 0,
+        active_vehicles: parseInt(metrics.active_vehicles) || 0,
+        total_trips: parseInt(metrics.total_trips) || 0,
+        driver_utilization_percent: parseFloat(metrics.driver_utilization) || 0,
+        vehicle_utilization_percent: parseFloat(metrics.vehicle_utilization) || 0,
+        avg_trips_per_driver: parseFloat(metrics.avg_trips_per_driver) || 0,
+      },
+      period,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error('Error fetching fleet utilization:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch fleet utilization',
+      message: error.message,
+    });
+  }
+});
+
+/**
  * GET /api/v1/analytics/sla/realtime
  * Get real-time SLA status for active deliveries
  */
