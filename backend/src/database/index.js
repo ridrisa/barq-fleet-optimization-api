@@ -223,6 +223,10 @@ class DatabaseManager {
       logger.error('[Database] Query failed', {
         query: text.substring(0, 100),
         error: error.message,
+        code: error.code,
+        detail: error.detail,
+        hint: error.hint,
+        position: error.position,
       });
       throw error;
     }

@@ -162,6 +162,16 @@ class PostgresService {
   }
 
   /**
+   * Get a client from the pool (alias for getClient)
+   * Provided for compatibility with node-pg Pool interface
+   * Don't forget to release the client!
+   * @returns {Promise<Client>}
+   */
+  async connect() {
+    return await this.pool.connect();
+  }
+
+  /**
    * Check database health
    * @returns {Promise<Object>} - Health status
    */

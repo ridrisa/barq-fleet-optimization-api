@@ -85,6 +85,7 @@ class DemoDatabaseService {
    * Save order to database
    */
   async saveOrder(demoOrder) {
+    let query = ''; // Declare outside try block for error logging
     try {
       await this.initialize();
 
@@ -100,8 +101,8 @@ class DemoDatabaseService {
         customer_id: customer.id,
         service_type: demoOrder.serviceType,
         pickup_location: {
-          lat: demoOrder.pickup.lat,
-          lng: demoOrder.pickup.lng,
+          lat: demoOrder.pickup.location?.lat || demoOrder.pickup.lat,
+          lng: demoOrder.pickup.location?.lng || demoOrder.pickup.lng,
         },
         pickup_address: {
           street: demoOrder.pickup.address,
@@ -109,8 +110,8 @@ class DemoDatabaseService {
           district: demoOrder.pickup.district || 'Downtown',
         },
         dropoff_location: {
-          lat: demoOrder.delivery.lat,
-          lng: demoOrder.delivery.lng,
+          lat: demoOrder.delivery.location?.lat || demoOrder.delivery.lat,
+          lng: demoOrder.delivery.location?.lng || demoOrder.delivery.lng,
         },
         dropoff_address: {
           street: demoOrder.delivery.address,
@@ -135,7 +136,7 @@ class DemoDatabaseService {
       const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
       const totalAmount = delivery_fee + orderData.cod_amount;
 
-      const query = `
+      query = `
         INSERT INTO orders (
           order_number,
           customer_id,
@@ -146,6 +147,7 @@ class DemoDatabaseService {
           dropoff_latitude,
           dropoff_longitude,
           dropoff_address,
+          estimated_distance,
           package_details,
           priority,
           cod_amount,
@@ -157,7 +159,7 @@ class DemoDatabaseService {
           $1, $2, $3,
           $4, $5, $6,
           $7, $8, $9,
-          $10, $11, $12, $13, $14, $15, $16
+          $10, $11, $12, $13, $14, $15, $16, $17
         ) RETURNING *
       `;
 
@@ -167,11 +169,12 @@ class DemoDatabaseService {
         orderData.service_type,
         orderData.pickup_location.lat,
         orderData.pickup_location.lng,
-        JSON.stringify(orderData.pickup_address),
+        orderData.pickup_address,
         orderData.dropoff_location.lat,
         orderData.dropoff_location.lng,
-        JSON.stringify(orderData.dropoff_address),
-        JSON.stringify(orderData.package_details),
+        orderData.dropoff_address,
+        demoOrder.distance,
+        orderData.package_details,
         orderData.priority,
         orderData.cod_amount,
         orderData.delivery_fee,

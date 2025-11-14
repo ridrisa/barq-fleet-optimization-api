@@ -917,21 +917,23 @@ router.get('/fleet/vehicles', async (req, res) => {
     const query = `
       WITH vehicle_stats AS (
         SELECT
-          v.id,
-          v.license_plate as plate,
+          d.vehicle_number as id,
+          d.vehicle_number as plate,
+          d.vehicle_type,
           COUNT(DISTINCT o.id) as total_trips,
           COUNT(DISTINCT CASE WHEN o.status = 'delivered' THEN o.id END) as successful_trips,
           COUNT(DISTINCT DATE(o.created_at)) as days_active
-        FROM vehicles v
-        LEFT JOIN drivers d ON d.vehicle_id = v.id
+        FROM drivers d
         LEFT JOIN orders o ON o.driver_id = d.id
           AND o.created_at >= $1
-        WHERE v.status = 'active'
-        GROUP BY v.id, v.license_plate
+        WHERE d.is_active = true
+          AND d.vehicle_number IS NOT NULL
+        GROUP BY d.vehicle_number, d.vehicle_type
       )
       SELECT
         id,
         plate,
+        vehicle_type,
         total_trips as trips,
         ROUND((successful_trips::numeric / NULLIF(total_trips, 0) * 100)::numeric, 2) as success_rate,
         ROUND((days_active::numeric / 30 * 100)::numeric, 2) as utilization,
@@ -953,6 +955,7 @@ router.get('/fleet/vehicles', async (req, res) => {
     const vehicles = result.rows.map(row => ({
       id: row.id,
       plate: row.plate,
+      vehicle_type: row.vehicle_type,
       vpi: parseFloat(row.vpi) || 0,
       success_rate: parseFloat(row.success_rate) || 0,
       utilization: parseFloat(row.utilization) || 0,
