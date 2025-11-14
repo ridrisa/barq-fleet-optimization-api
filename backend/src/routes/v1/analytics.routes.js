@@ -123,21 +123,18 @@ router.get('/fleet/utilization', async (req, res) => {
         SELECT
           COUNT(DISTINCT d.id) as total_drivers,
           COUNT(DISTINCT CASE WHEN o.driver_id IS NOT NULL THEN d.id END) as active_drivers,
-          COUNT(DISTINCT v.id) as total_vehicles,
-          COUNT(DISTINCT CASE WHEN o.driver_id IS NOT NULL THEN d.vehicle_id END) as active_vehicles,
+          COUNT(DISTINCT d.vehicle_type) as vehicle_types_in_use,
           COUNT(o.id) as total_trips
         FROM drivers d
-        FULL OUTER JOIN vehicles v ON d.vehicle_id = v.id
         LEFT JOIN orders o ON o.driver_id = d.id AND o.created_at >= $1
+        WHERE d.is_active = true
       )
       SELECT
         total_drivers,
         active_drivers,
-        total_vehicles,
-        active_vehicles,
+        vehicle_types_in_use,
         total_trips,
         ROUND((active_drivers::numeric / NULLIF(total_drivers, 0) * 100)::numeric, 2) as driver_utilization,
-        ROUND((active_vehicles::numeric / NULLIF(total_vehicles, 0) * 100)::numeric, 2) as vehicle_utilization,
         ROUND((total_trips::numeric / NULLIF(active_drivers, 0))::numeric, 2) as avg_trips_per_driver
       FROM fleet_metrics
     `;
@@ -146,11 +143,9 @@ router.get('/fleet/utilization', async (req, res) => {
     const metrics = rows[0] || {
       total_drivers: 0,
       active_drivers: 0,
-      total_vehicles: 0,
-      active_vehicles: 0,
+      vehicle_types_in_use: 0,
       total_trips: 0,
       driver_utilization: 0,
-      vehicle_utilization: 0,
       avg_trips_per_driver: 0,
     };
 
@@ -159,11 +154,9 @@ router.get('/fleet/utilization', async (req, res) => {
       data: {
         total_drivers: parseInt(metrics.total_drivers) || 0,
         active_drivers: parseInt(metrics.active_drivers) || 0,
-        total_vehicles: parseInt(metrics.total_vehicles) || 0,
-        active_vehicles: parseInt(metrics.active_vehicles) || 0,
+        vehicle_types_in_use: parseInt(metrics.vehicle_types_in_use) || 0,
         total_trips: parseInt(metrics.total_trips) || 0,
         driver_utilization_percent: parseFloat(metrics.driver_utilization) || 0,
-        vehicle_utilization_percent: parseFloat(metrics.vehicle_utilization) || 0,
         avg_trips_per_driver: parseFloat(metrics.avg_trips_per_driver) || 0,
       },
       period,
