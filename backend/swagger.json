@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "version": "1.0.0",
-    "title": "Route Optimization API",
-    "description": "API documentation for the AI-powered logistics optimization platform",
+    "version": "2.0.0",
+    "title": "BARQ Fleet Optimization API",
+    "description": "AI-powered logistics optimization platform with Dynamic Fleet Management, SLA-based routing, and LLM-powered recommendations",
     "license": {
       "name": "MIT"
     },
@@ -14,626 +14,1250 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3002",
+      "url": "http://localhost:8080",
       "description": "Development server"
+    },
+    {
+      "url": "https://route-opt-backend-426674819922.us-central1.run.app",
+      "description": "Production server"
     }
   ],
-  "components": {
-    "schemas": {
-      "OptimizationRequest": {
-        "type": "object",
-        "properties": {
-          "pickupPoints": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PickupPoint"
+  "tags": [
+    {
+      "name": "Fleet Manager",
+      "description": "Dynamic fleet management with driver targets and SLA tracking"
+    },
+    {
+      "name": "AI Advisor",
+      "description": "LLM-powered fleet recommendations and predictions"
+    },
+    {
+      "name": "Optimization",
+      "description": "Route optimization endpoints"
+    }
+  ],
+  "paths": {
+    "/api/v1/fleet-manager/targets/set": {
+      "post": {
+        "tags": ["Fleet Manager"],
+        "summary": "Set daily targets for drivers",
+        "description": "Configure daily delivery and revenue targets for drivers. Targets persist in database and survive restarts.",
+        "operationId": "setDriverTargets",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTargetsRequest"
+              },
+              "example": {
+                "drivers": [
+                  {
+                    "driver_id": "DRV_001",
+                    "target_deliveries": 25,
+                    "target_revenue": 5000
+                  },
+                  {
+                    "driver_id": "DRV_002",
+                    "target_deliveries": 30,
+                    "target_revenue": 6000
+                  }
+                ]
+              }
             }
-          },
-          "deliveryPoints": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DeliveryPoint"
-            }
-          },
-          "fleet": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Vehicle"
-            }
-          },
-          "businessRules": {
-            "$ref": "#/components/schemas/BusinessRules"
-          },
-          "preferences": {
-            "$ref": "#/components/schemas/Preferences"
-          },
-          "context": {
-            "$ref": "#/components/schemas/Context"
-          },
-          "prompt": {
-            "type": "string",
-            "description": "Optional natural language prompt for specific optimization goals"
           }
         },
-        "required": [
-          "pickupPoints",
-          "deliveryPoints",
-          "fleet",
-          "businessRules"
-        ]
-      },
-      "OptimizationResponse": {
-        "type": "object",
-        "description": "Standard API response structure for optimization results (v3.1.1 - Simplified structure)",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "Whether the optimization was successful"
+        "responses": {
+          "200": {
+            "description": "Targets set successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetTargetsResponse"
+                },
+                "example": {
+                  "success": true,
+                  "drivers_configured": 2
+                }
+              }
+            }
           },
-          "requestId": {
-            "type": "string",
-            "description": "Unique ID for the optimization request"
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/targets/status": {
+      "get": {
+        "tags": ["Fleet Manager"],
+        "summary": "Get target achievement status",
+        "description": "Returns current progress for all drivers against their daily targets",
+        "operationId": "getTargetStatus",
+        "responses": {
+          "200": {
+            "description": "Target status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetStatusResponse"
+                },
+                "example": {
+                  "success": true,
+                  "drivers_on_track": 8,
+                  "total_drivers": 10,
+                  "percentage": "80.0%",
+                  "recommendation": "2 drivers need more orders",
+                  "drivers": [
+                    {
+                      "driver_id": "DRV_001",
+                      "target_deliveries": 25,
+                      "current_deliveries": 18,
+                      "delivery_progress": "72.0%",
+                      "target_revenue": 5000,
+                      "current_revenue": 3600,
+                      "revenue_progress": "72.0%",
+                      "on_track": true,
+                      "status": "available"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/targets/reset": {
+      "post": {
+        "tags": ["Fleet Manager"],
+        "summary": "Reset daily targets",
+        "description": "Resets all driver targets for a new day. Snapshots previous day's performance to history before resetting.",
+        "operationId": "resetTargets",
+        "responses": {
+          "200": {
+            "description": "Targets reset successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "message": "All driver targets reset for new day"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/assign": {
+      "post": {
+        "tags": ["Fleet Manager"],
+        "summary": "Dynamically assign orders to drivers",
+        "description": "Assigns orders based on SLA urgency and driver target achievement. Prioritizes critical/urgent orders.",
+        "operationId": "assignOrders",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignOrdersRequest"
+              },
+              "example": {
+                "orders": [
+                  {
+                    "order_id": "ORD_001",
+                    "customer_name": "أحمد العتيبي",
+                    "delivery_lat": 24.7136,
+                    "delivery_lng": 46.6753,
+                    "load_kg": 15,
+                    "revenue": 250,
+                    "created_at": "2025-11-14T18:00:00Z",
+                    "sla_hours": 4
+                  }
+                ],
+                "drivers": [
+                  {
+                    "driver_id": "DRV_001",
+                    "name": "محمد السالم",
+                    "vehicle_type": "CAR",
+                    "capacity_kg": 500
+                  }
+                ],
+                "pickupPoints": [
+                  {
+                    "id": "HUB_001",
+                    "name": "الرياض - المركز",
+                    "lat": 24.7136,
+                    "lng": 46.6753
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Orders assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignOrdersResponse"
+                }
+              }
+            }
           },
-          "time_taken": {
-            "type": "number",
-            "description": "Time taken to process the request in milliseconds"
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/reoptimize": {
+      "post": {
+        "tags": ["Fleet Manager"],
+        "summary": "Reoptimize routes with new orders",
+        "description": "Combines undelivered orders from current routes with new orders and reoptimizes all assignments",
+        "operationId": "reoptimizeRoutes",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReoptimizeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Routes reoptimized successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignOrdersResponse"
+                }
+              }
+            }
           },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Timestamp when the optimization was completed"
-          },
-          "businessRules": {
-            "$ref": "#/components/schemas/BusinessRules",
-            "description": "The business rules used for this optimization."
-          },
-          "allowedZones": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AreaDefinition"
-            },
-            "description": "Allowed driving zones used (derived from business rules)."
-          },
-          "restrictedAreas": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AreaDefinition"
-            },
-            "description": "Restricted driving areas used (derived from business rules)."
-          },
-          "routes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Route"
-            },
-            "description": "List of optimized routes."
-          },
-          "summary": {
-            "$ref": "#/components/schemas/Summary",
-            "description": "Overall summary statistics for the optimization plan."
-          },
-          "insights": {
-            "type": "array",
-            "items": {
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/at-risk": {
+      "post": {
+        "tags": ["Fleet Manager"],
+        "summary": "Get orders at risk of SLA violation",
+        "description": "Returns orders with less than 60 minutes remaining until SLA deadline",
+        "operationId": "getAtRiskOrders",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "orders": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Order"
+                    }
+                  }
+                },
+                "required": ["orders"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "At-risk orders retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtRiskResponse"
+                },
+                "example": {
+                  "success": true,
+                  "at_risk_count": 3,
+                  "orders": [
+                    {
+                      "order_id": "ORD_123",
+                      "customer_name": "فاطمة الشمري",
+                      "created_at": "2025-11-14T17:30:00Z",
+                      "remaining_minutes": 25,
+                      "priority": "CRITICAL"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/driver/{driverId}/status": {
+      "put": {
+        "tags": ["Fleet Manager"],
+        "summary": "Update driver status",
+        "description": "Update driver availability status (available, busy, break, offline)",
+        "operationId": "updateDriverStatus",
+        "parameters": [
+          {
+            "name": "driverId",
+            "in": "path",
+            "required": true,
+            "schema": {
               "type": "string"
             },
-            "description": "AI-generated insights or notes about the optimization plan."
-          },
-          "unserviceablePoints": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UnserviceablePoint"
-            },
-            "description": "Points that could not be included in routes (e.g., due to restricted areas)."
-          },
-          "error": {
-            "type": "string",
-            "description": "Error message if optimization failed",
-            "nullable": true
+            "description": "Driver ID",
+            "example": "DRV_001"
           }
-        }
-      },
-      "PickupPoint": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the pickup point"
-          },
-          "lat": {
-            "type": "number",
-            "description": "Latitude of the pickup point"
-          },
-          "lng": {
-            "type": "number",
-            "description": "Longitude of the pickup point"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "outlet",
-              "warehouse",
-              "hub",
-              "depot",
-              "store"
-            ],
-            "description": "Type of pickup point"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the pickup point"
-          },
-          "working_hours": {
-            "$ref": "#/components/schemas/WorkingHours"
-          }
-        },
-        "required": [
-          "id",
-          "lat",
-          "lng",
-          "name"
-        ]
-      },
-      "DeliveryPoint": {
-        "type": "object",
-        "properties": {
-          "lat": {
-            "type": "number",
-            "description": "Latitude of the delivery point"
-          },
-          "lng": {
-            "type": "number",
-            "description": "Longitude of the delivery point"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "delivery",
-              "pickup"
-            ],
-            "description": "Type of delivery point"
-          },
-          "order_id": {
-            "type": "string",
-            "description": "Order ID for the delivery"
-          },
-          "customer_name": {
-            "type": "string",
-            "description": "Customer name for the delivery",
-            "example": "محمد العتيبي"
-          },
-          "load_kg": {
-            "type": "number",
-            "description": "Weight of the delivery in kg"
-          },
-          "time_window": {
-            "type": "string",
-            "description": "Time window for delivery in format HH:MM-HH:MM"
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "HIGH",
-              "MEDIUM",
-              "LOW"
-            ],
-            "description": "Priority of the delivery"
-          }
-        },
-        "required": [
-          "lat",
-          "lng",
-          "order_id",
-          "customer_name"
-        ]
-      },
-      "Vehicle": {
-        "type": "object",
-        "properties": {
-          "fleet_id": {
-            "type": "string",
-            "description": "ID of the vehicle in the fleet"
-          },
-          "vehicle_type": {
-            "type": "string",
-            "enum": [
-              "TRUCK",
-              "CAR",
-              "VAN",
-              "MOTORCYCLE"
-            ],
-            "description": "Type of vehicle"
-          },
-          "capacity_kg": {
-            "type": "number",
-            "description": "Capacity of the vehicle in kg"
-          },
-          "current_latitude": {
-            "type": "number",
-            "description": "Current latitude of the vehicle"
-          },
-          "current_longitude": {
-            "type": "number",
-            "description": "Current longitude of the vehicle"
-          },
-          "outlet_id": {
-            "type": "number",
-            "description": "ID of the outlet this vehicle belongs to"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "AVAILABLE",
-              "UNAVAILABLE",
-              "DELIVERING",
-              "RETURNING"
-            ],
-            "description": "Status of the vehicle"
-          }
-        },
-        "required": [
-          "fleet_id",
-          "vehicle_type",
-          "capacity_kg",
-          "current_latitude",
-          "current_longitude",
-          "outlet_id",
-          "status"
-        ]
-      },
-      "BusinessRules": {
-        "type": "object",
-        "properties": {
-          "maxDriverHours": {
-            "type": "number",
-            "description": "Maximum hours a driver can work"
-          },
-          "restPeriodMinutes": {
-            "type": "number",
-            "description": "Required rest period in minutes"
-          },
-          "maxConsecutiveDriveTime": {
-            "type": "number",
-            "description": "Maximum consecutive drive time in hours"
-          },
-          "allowedZones": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AreaDefinition"
-            },
-            "description": "Zones where driving is allowed, defined by polygons"
-          },
-          "restrictedAreas": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AreaDefinition"
-            },
-            "description": "Areas where driving is restricted, defined by polygons"
-          }
-        }
-      },
-      "AreaDefinition": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the area"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the area"
-          },
-          "area": {
-            "type": "array",
-            "items": {
-              "type": "array",
-              "items": {
-                "type": "number"
-              }
-            },
-            "description": "Polygon defining the area as pairs of [lat, lng]"
-          },
-          "timeRestriction": {
-            "type": "string",
-            "description": "Time when the area is restricted in format HH:MM-HH:MM (for restricted areas only)"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "area"
-        ]
-      },
-      "RestrictedArea": {
-        "type": "object",
-        "properties": {
-          "polygon": {
-            "type": "array",
-            "items": {
-              "type": "array",
-              "items": {
-                "type": "number"
-              }
-            },
-            "description": "Polygon defining the restricted area"
-          },
-          "timeRestriction": {
-            "type": "string",
-            "description": "Time when the area is restricted in format HH:MM-HH:MM"
-          }
-        }
-      },
-      "Preferences": {
-        "type": "object",
-        "properties": {
-          "sustainabilityScore": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "Weight for sustainability in optimization (0-1)"
-          },
-          "costScore": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "Weight for cost in optimization (0-1)"
-          },
-          "serviceScore": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "Weight for service quality in optimization (0-1)"
-          },
-          "distribution_strategy": {
-            "type": "string",
-            "enum": [
-              "single_vehicle",
-              "balanced_vehicles",
-              "proximity_based",
-              "capacity_based",
-              "auto"
-            ],
-            "default": "auto",
-            "description": "Strategy for distributing deliveries across vehicles. In \"auto\" mode, the system intelligently selects the best strategy based on the scenario."
-          }
-        }
-      },
-      "Context": {
-        "type": "object",
-        "properties": {
-          "weatherConditions": {
-            "type": "string",
-            "enum": [
-              "sunny",
-              "rainy",
-              "cloudy",
-              "snowy",
-              "normal"
-            ],
-            "description": "Current weather conditions"
-          },
-          "trafficData": {
-            "type": "string",
-            "enum": [
-              "light",
-              "medium",
-              "heavy",
-              "normal"
-            ],
-            "description": "Current traffic conditions"
-          },
-          "specialEvents": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Special events affecting routing"
-          },
-          "historicalData": {
-            "type": "boolean",
-            "description": "Whether to use historical data"
-          }
-        }
-      },
-      "WorkingHours": {
-        "type": "object",
-        "properties": {
-          "sun": {
-            "type": "string",
-            "description": "Sunday working hours in format HH:MM-HH:MM or \"closed\""
-          },
-          "mon": {
-            "type": "string",
-            "description": "Monday working hours in format HH:MM-HH:MM or \"closed\""
-          },
-          "tue": {
-            "type": "string",
-            "description": "Tuesday working hours in format HH:MM-HH:MM or \"closed\""
-          },
-          "wed": {
-            "type": "string",
-            "description": "Wednesday working hours in format HH:MM-HH:MM or \"closed\""
-          },
-          "thu": {
-            "type": "string",
-            "description": "Thursday working hours in format HH:MM-HH:MM or \"closed\""
-          },
-          "fri": {
-            "type": "string",
-            "description": "Friday working hours in format HH:MM-HH:MM or \"closed\""
-          },
-          "sat": {
-            "type": "string",
-            "description": "Saturday working hours in format HH:MM-HH:MM or \"closed\""
-          }
-        }
-      },
-      "Route": {
-        "type": "object",
-        "properties": {
-          "trip_id": {
-            "type": "string",
-            "description": "Unique ID for the trip"
-          },
-          "vehicle": {
-            "$ref": "#/components/schemas/VehicleInfo"
-          },
-          "waypoints": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Waypoint"
-            },
-            "description": "Waypoints for the route"
-          },
-          "distance": {
-            "type": "number",
-            "description": "Total distance of the route in km"
-          },
-          "duration": {
-            "type": "number",
-            "description": "Total duration of the route in minutes"
-          },
-          "deliveries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DeliveryInfo"
-            },
-            "description": "Deliveries in this route"
-          },
-          "geometry": {
-            "type": "string",
-            "description": "Encoded polyline geometry of the route"
-          },
-          "load_kg": {
-            "type": "number",
-            "description": "Total load of the route in kg"
-          }
-        }
-      },
-      "VehicleInfo": {
-        "type": "object",
-        "properties": {
-          "fleet_id": {
-            "type": "string",
-            "description": "ID of the vehicle in the fleet"
-          },
-          "vehicle_type": {
-            "type": "string",
-            "description": "Type of vehicle"
-          },
-          "capacity_kg": {
-            "type": "number",
-            "description": "Capacity of the vehicle in kg"
-          }
-        }
-      },
-      "Waypoint": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "start",
-              "delivery",
-              "end"
-            ],
-            "description": "Type of waypoint"
-          },
-          "location": {
-            "type": "object",
-            "properties": {
-              "lat": {
-                "type": "number",
-                "description": "Latitude of the waypoint"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["available", "busy", "break", "offline"]
+                  }
+                },
+                "required": ["status"]
               },
-              "lng": {
-                "type": "number",
-                "description": "Longitude of the waypoint"
+              "example": {
+                "status": "break"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "driver_id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "driver_id": "DRV_001",
+                  "status": "break"
+                }
               }
             }
           },
-          "name": {
-            "type": "string",
-            "description": "Name of the waypoint (for start/end)"
-          },
-          "delivery": {
-            "$ref": "#/components/schemas/DeliveryInfo",
-            "description": "Delivery information (for delivery waypoints)"
-          }
-        }
-      },
-      "DeliveryInfo": {
-        "type": "object",
-        "properties": {
-          "order_id": {
-            "type": "string",
-            "description": "Order ID for the delivery"
-          },
-          "customer_name": {
-            "type": "string",
-            "description": "Customer name for the delivery",
-            "example": "فاطمة الشمري"
-          },
-          "load_kg": {
-            "type": "number",
-            "description": "Weight of the delivery in kg"
-          }
-        }
-      },
-      "Summary": {
-        "type": "object",
-        "properties": {
-          "total_routes": {
-            "type": "number",
-            "description": "Total number of routes"
-          },
-          "total_distance": {
-            "type": "number",
-            "description": "Total distance of all routes in km"
-          },
-          "total_duration": {
-            "type": "number",
-            "description": "Total duration of all routes in minutes"
-          },
-          "total_deliveries": {
-            "type": "number",
-            "description": "Total number of deliveries"
-          },
-          "total_load": {
-            "type": "number",
-            "description": "Total load of all routes in kg"
-          }
-        }
-      },
-      "UnserviceablePoint": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "ID of the point (e.g., order ID or internal ID)"
-          },
-          "location": {
-            "type": "object",
-            "properties": {
-              "lat": {
-                "type": "number",
-                "description": "Latitude"
-              },
-              "lng": {
-                "type": "number",
-                "description": "Longitude"
+          "400": {
+            "description": "Invalid status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
-            },
-            "description": "Coordinates of the unserviceable point"
-          },
-          "reason": {
-            "type": "string",
-            "description": "Reason why the point was unserviceable (e.g., inside restricted area)"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/dashboard": {
+      "get": {
+        "tags": ["Fleet Manager"],
+        "summary": "Get comprehensive dashboard data",
+        "description": "Returns complete fleet status including target achievement and performance metrics",
+        "operationId": "getDashboard",
+        "responses": {
+          "200": {
+            "description": "Dashboard data retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "target_achievement": {
+                          "$ref": "#/components/schemas/TargetStatusResponse"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/ai/suggest-driver": {
+      "post": {
+        "tags": ["AI Advisor"],
+        "summary": "Get AI-powered driver assignment recommendation",
+        "description": "Uses LLM to analyze order and driver data, returning the best driver assignment with reasoning",
+        "operationId": "suggestDriver",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestDriverRequest"
+              },
+              "example": {
+                "order": {
+                  "order_id": "ORD_123",
+                  "customer_name": "علي الدوسري",
+                  "delivery_lat": 24.7240,
+                  "delivery_lng": 46.6800,
+                  "load_kg": 20,
+                  "revenue": 300,
+                  "priority": "HIGH"
+                },
+                "availableDrivers": [
+                  {
+                    "driver_id": "DRV_001",
+                    "name": "محمد السالم",
+                    "current_deliveries": 15,
+                    "target_deliveries": 25,
+                    "distance_km": 3.5
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Driver suggestion generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIDriverSuggestion"
+                },
+                "example": {
+                  "success": true,
+                  "recommended_driver_id": "DRV_001",
+                  "confidence": 0.92,
+                  "reasoning": "Driver DRV_001 is closest (3.5km) and needs 10 more deliveries to meet target",
+                  "alternative_drivers": ["DRV_003"],
+                  "llm_powered": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/ai/predict-sla": {
+      "post": {
+        "tags": ["AI Advisor"],
+        "summary": "Predict SLA violations using AI",
+        "description": "Uses LLM to analyze fleet capacity and predict which orders are likely to violate SLA",
+        "operationId": "predictSLA",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PredictSLARequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SLA predictions generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AISLAPrediction"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/ai/query": {
+      "post": {
+        "tags": ["AI Advisor"],
+        "summary": "Natural language query about fleet status",
+        "description": "Ask questions about fleet performance using natural language. LLM analyzes current data and provides answers.",
+        "operationId": "queryFleet",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "Natural language question",
+                    "example": "Which drivers are behind on their targets?"
+                  }
+                },
+                "required": ["query"]
+              },
+              "examples": {
+                "targetQuery": {
+                  "value": {
+                    "query": "Which drivers are behind on their targets?"
+                  }
+                },
+                "performanceQuery": {
+                  "value": {
+                    "query": "What's the average delivery completion rate today?"
+                  }
+                },
+                "optimizationQuery": {
+                  "value": {
+                    "query": "Should I add more drivers to the south zone?"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Query answered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIQueryResponse"
+                },
+                "example": {
+                  "success": true,
+                  "answer": "Currently 2 drivers are behind on their targets: DRV_004 (60% complete) and DRV_007 (55% complete). Both need 8-10 more deliveries to meet daily targets.",
+                  "confidence": 0.95,
+                  "data_points_analyzed": 10,
+                  "llm_powered": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/ai/recommendations": {
+      "post": {
+        "tags": ["AI Advisor"],
+        "summary": "Get AI-powered optimization recommendations",
+        "description": "Analyzes fleet metrics and provides actionable optimization recommendations",
+        "operationId": "getRecommendations",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fleetMetrics": {
+                    "type": "object",
+                    "description": "Optional current fleet metrics. If not provided, uses live data."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recommendations generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIRecommendations"
+                },
+                "example": {
+                  "success": true,
+                  "recommendations": [
+                    {
+                      "priority": "HIGH",
+                      "category": "resource_allocation",
+                      "title": "Reassign orders from overloaded drivers",
+                      "description": "DRV_001 has 35 pending orders (140% of target). Redistribute 10 orders to drivers with < 80% target achievement.",
+                      "expected_impact": "Reduce SLA violations by ~25%",
+                      "action": "rebalance_load"
+                    }
+                  ],
+                  "summary": "3 high-priority actions identified",
+                  "llm_powered": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet-manager/ai/status": {
+      "get": {
+        "tags": ["AI Advisor"],
+        "summary": "Get LLM advisor service status",
+        "description": "Returns status of the AI/LLM service including enabled features and API key configuration",
+        "operationId": "getAIStatus",
+        "responses": {
+          "200": {
+            "description": "AI status retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "llm_advisor": {
+                      "$ref": "#/components/schemas/AIStatus"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "llm_advisor": {
+                    "enabled": true,
+                    "model": "mixtral-8x7b-32768",
+                    "provider": "Groq",
+                    "features": {
+                      "driver_suggestions": true,
+                      "sla_predictions": true,
+                      "natural_language_queries": true,
+                      "optimization_recommendations": true
+                    },
+                    "api_key_configured": true
+                  }
+                }
+              }
+            }
           }
         }
       }
     }
   },
-  "paths": {},
-  "tags": []
+  "components": {
+    "schemas": {
+      "SetTargetsRequest": {
+        "type": "object",
+        "required": ["drivers"],
+        "properties": {
+          "drivers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriverTarget"
+            }
+          }
+        }
+      },
+      "DriverTarget": {
+        "type": "object",
+        "required": ["driver_id"],
+        "properties": {
+          "driver_id": {
+            "type": "string",
+            "description": "Unique driver identifier"
+          },
+          "target_deliveries": {
+            "type": "integer",
+            "description": "Daily delivery target",
+            "default": 20
+          },
+          "target_revenue": {
+            "type": "number",
+            "description": "Daily revenue target (currency)",
+            "default": 5000
+          }
+        }
+      },
+      "SetTargetsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "drivers_configured": {
+            "type": "integer"
+          }
+        }
+      },
+      "TargetStatusResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "drivers_on_track": {
+            "type": "integer",
+            "description": "Number of drivers meeting targets"
+          },
+          "total_drivers": {
+            "type": "integer"
+          },
+          "percentage": {
+            "type": "string",
+            "description": "Percentage on track"
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "drivers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriverStatus"
+            }
+          }
+        }
+      },
+      "DriverStatus": {
+        "type": "object",
+        "properties": {
+          "driver_id": {
+            "type": "string"
+          },
+          "target_deliveries": {
+            "type": "integer"
+          },
+          "current_deliveries": {
+            "type": "integer"
+          },
+          "delivery_progress": {
+            "type": "string",
+            "example": "72.0%"
+          },
+          "target_revenue": {
+            "type": "number"
+          },
+          "current_revenue": {
+            "type": "number"
+          },
+          "revenue_progress": {
+            "type": "string",
+            "example": "72.0%"
+          },
+          "on_track": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["available", "busy", "break", "offline"]
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "required": ["order_id", "customer_name", "delivery_lat", "delivery_lng", "created_at"],
+        "properties": {
+          "order_id": {
+            "type": "string"
+          },
+          "customer_name": {
+            "type": "string"
+          },
+          "delivery_lat": {
+            "type": "number"
+          },
+          "delivery_lng": {
+            "type": "number"
+          },
+          "load_kg": {
+            "type": "number",
+            "default": 10
+          },
+          "revenue": {
+            "type": "number",
+            "default": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sla_hours": {
+            "type": "integer",
+            "description": "SLA window in hours (1-4)",
+            "minimum": 1,
+            "maximum": 4,
+            "default": 4
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["HIGH", "MEDIUM", "LOW"]
+          },
+          "pickup_id": {
+            "type": "string"
+          }
+        }
+      },
+      "Driver": {
+        "type": "object",
+        "required": ["driver_id", "name"],
+        "properties": {
+          "driver_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "vehicle_type": {
+            "type": "string",
+            "enum": ["CAR", "VAN", "TRUCK", "MOTORCYCLE"],
+            "default": "CAR"
+          },
+          "capacity_kg": {
+            "type": "number",
+            "default": 500
+          }
+        }
+      },
+      "PickupPoint": {
+        "type": "object",
+        "required": ["id", "name", "lat", "lng"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          }
+        }
+      },
+      "AssignOrdersRequest": {
+        "type": "object",
+        "required": ["orders", "drivers"],
+        "properties": {
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Order"
+            }
+          },
+          "drivers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Driver"
+            }
+          },
+          "pickupPoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PickupPoint"
+            }
+          }
+        }
+      },
+      "AssignOrdersResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "assignments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "order_id": {
+                  "type": "string"
+                },
+                "driver_id": {
+                  "type": "string"
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": ["CRITICAL", "URGENT", "NORMAL"]
+                },
+                "remaining_minutes": {
+                  "type": "number"
+                },
+                "sla_deadline": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "routes": {
+            "type": "array",
+            "description": "Optimized routes for assigned orders"
+          },
+          "urgency_breakdown": {
+            "type": "object",
+            "properties": {
+              "critical": {
+                "type": "integer"
+              },
+              "urgent": {
+                "type": "integer"
+              },
+              "normal": {
+                "type": "integer"
+              },
+              "flexible": {
+                "type": "integer"
+              }
+            }
+          },
+          "driver_target_status": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriverStatus"
+            }
+          }
+        }
+      },
+      "ReoptimizeRequest": {
+        "type": "object",
+        "required": ["currentRoutes", "newOrders"],
+        "properties": {
+          "currentRoutes": {
+            "type": "array",
+            "description": "Existing routes with undelivered orders"
+          },
+          "newOrders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Order"
+            }
+          },
+          "drivers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Driver"
+            }
+          },
+          "pickupPoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PickupPoint"
+            }
+          }
+        }
+      },
+      "AtRiskResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "at_risk_count": {
+            "type": "integer"
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "order_id": {
+                  "type": "string"
+                },
+                "customer_name": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "remaining_minutes": {
+                  "type": "number"
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": ["CRITICAL", "URGENT"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "SuggestDriverRequest": {
+        "type": "object",
+        "required": ["order", "availableDrivers"],
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/Order"
+          },
+          "availableDrivers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "driver_id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "current_deliveries": {
+                  "type": "integer"
+                },
+                "target_deliveries": {
+                  "type": "integer"
+                },
+                "distance_km": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AIDriverSuggestion": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "recommended_driver_id": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "description": "Confidence score (0-1)"
+          },
+          "reasoning": {
+            "type": "string",
+            "description": "AI-generated explanation"
+          },
+          "alternative_drivers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "llm_powered": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PredictSLARequest": {
+        "type": "object",
+        "required": ["orders"],
+        "properties": {
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Order"
+            }
+          },
+          "drivers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Driver"
+            }
+          },
+          "currentRoutes": {
+            "type": "object"
+          }
+        }
+      },
+      "AISLAPrediction": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "predictions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "order_id": {
+                  "type": "string"
+                },
+                "violation_probability": {
+                  "type": "number"
+                },
+                "reasoning": {
+                  "type": "string"
+                },
+                "recommended_action": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "overall_risk": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH"]
+          },
+          "llm_powered": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AIQueryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "answer": {
+            "type": "string",
+            "description": "Natural language answer from LLM"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "data_points_analyzed": {
+            "type": "integer"
+          },
+          "llm_powered": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AIRecommendations": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "priority": {
+                  "type": "string",
+                  "enum": ["HIGH", "MEDIUM", "LOW"]
+                },
+                "category": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "expected_impact": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "summary": {
+            "type": "string"
+          },
+          "llm_powered": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AIStatus": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "model": {
+            "type": "string",
+            "example": "mixtral-8x7b-32768"
+          },
+          "provider": {
+            "type": "string",
+            "example": "Groq"
+          },
+          "features": {
+            "type": "object",
+            "properties": {
+              "driver_suggestions": {
+                "type": "boolean"
+              },
+              "sla_predictions": {
+                "type": "boolean"
+              },
+              "natural_language_queries": {
+                "type": "boolean"
+              },
+              "optimization_recommendations": {
+                "type": "boolean"
+              }
+            }
+          },
+          "api_key_configured": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        }
+      }
+    }
+  }
 }
