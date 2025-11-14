@@ -1,17 +1,17 @@
 /**
  * Database Connection Manager
- * Handles PostgreSQL connection pooling and intelligent schema initialization
+ * Handles PostgreSQL connection pooling and initialization
  */
 
 const { Pool } = require('pg');
 const { logger } = require('../utils/logger');
-const SchemaManager = require('./schema-manager');
+const fs = require('fs').promises;
+const path = require('path');
 
 class DatabaseManager {
   constructor() {
     this.pool = null;
     this.isConnected = false;
-    this.schemaManager = null;
     this.config = this.loadConfig();
   }
 
@@ -70,19 +70,15 @@ class DatabaseManager {
         logger.error('[Database] Unexpected error on idle client', err);
       });
 
-      // Initialize schema manager
-      this.schemaManager = new SchemaManager(this.pool);
-
-      // Initialize schema with intelligent version tracking
+      // Initialize schema if needed - wrap in try-catch to prevent connection pool breakage
       try {
-        const result = await this.schemaManager.initialize();
-        logger.info('[Database] Schema initialization complete', result);
+        await this.initializeSchema();
       } catch (schemaError) {
-        logger.warn('[Database] Schema initialization encountered issues', {
+        logger.warn('[Database] Schema initialization failed, but connection is working', {
           error: schemaError.message,
           stack: schemaError.stack,
         });
-        // Continue with just the connection pool - database might already be initialized
+        // Continue with just the connection pool - don't throw error
       }
 
       return true;
@@ -141,20 +137,65 @@ class DatabaseManager {
   }
 
   /**
-   * Get schema manager instance
+   * Initialize database schema
    */
-  getSchemaManager() {
-    return this.schemaManager;
+  async initializeSchema() {
+    try {
+      const schemaPath = path.join(__dirname, 'schema.sql');
+      const schemaSQL = await fs.readFile(schemaPath, 'utf8');
+
+      await this.executeTransaction(async (client) => {
+        await client.query(schemaSQL);
+      });
+
+      logger.info('[Database] Schema initialized');
+
+      // Run migrations
+      await this.runMigrations();
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        logger.warn('[Database] Schema file not found, skipping initialization');
+      } else {
+        logger.error('[Database] Failed to initialize schema', error);
+      }
+    }
   }
 
   /**
-   * Get schema information
+   * Run database migrations
    */
-  async getSchemaInfo() {
-    if (!this.schemaManager) {
-      return { error: 'Schema manager not initialized' };
+  async runMigrations() {
+    try {
+      const migrationsDir = path.join(__dirname, 'migrations');
+
+      // Check if migrations directory exists
+      try {
+        await fs.access(migrationsDir);
+      } catch {
+        logger.info('[Database] No migrations directory found');
+        return;
+      }
+
+      // Read all migration files
+      const files = await fs.readdir(migrationsDir);
+      const migrationFiles = files.filter((f) => f.endsWith('.sql')).sort();
+
+      logger.info(`[Database] Found ${migrationFiles.length} migration(s)`);
+
+      // Execute each migration
+      for (const file of migrationFiles) {
+        const migrationPath = path.join(migrationsDir, file);
+        const migrationSQL = await fs.readFile(migrationPath, 'utf8');
+
+        await this.executeTransaction(async (client) => {
+          await client.query(migrationSQL);
+        });
+
+        logger.info(`[Database] Migration applied: ${file}`);
+      }
+    } catch (error) {
+      logger.error('[Database] Failed to run migrations', error);
     }
-    return await this.schemaManager.getDatabaseInfo();
   }
 
   /**
@@ -242,13 +283,6 @@ class DatabaseManager {
   async healthCheck() {
     try {
       const result = await this.query('SELECT NOW() as time, current_database() as database');
-
-      // Get schema health if manager is available
-      let schemaHealth = null;
-      if (this.schemaManager) {
-        schemaHealth = await this.schemaManager.healthCheck();
-      }
-
       return {
         healthy: true,
         database: result.rows[0].database,
@@ -258,7 +292,6 @@ class DatabaseManager {
           idleCount: this.pool.idleCount,
           waitingCount: this.pool.waitingCount,
         },
-        schema: schemaHealth,
       };
     } catch (error) {
       return {
@@ -321,21 +354,5 @@ module.exports = {
   healthCheck: async () => {
     const db = module.exports.getInstance();
     return await db.healthCheck();
-  },
-
-  /**
-   * Get schema information
-   */
-  getSchemaInfo: async () => {
-    const db = module.exports.getInstance();
-    return await db.getSchemaInfo();
-  },
-
-  /**
-   * Get schema manager
-   */
-  getSchemaManager: () => {
-    const db = module.exports.getInstance();
-    return db.getSchemaManager();
   },
 };
