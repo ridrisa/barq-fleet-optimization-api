@@ -351,6 +351,204 @@ class ProductionMetricsService {
   }
 
   /**
+   * Get fleet performance metrics
+   * Fleet utilization, availability, and performance by vehicle type
+   */
+  static async getFleetPerformance(startDate, endDate) {
+    const query = `
+      SELECT
+        d.vehicle_type,
+        COUNT(DISTINCT d.id) as total_drivers,
+        COUNT(DISTINCT d.id) FILTER(WHERE d.status = 'available') as available_drivers,
+        COUNT(DISTINCT d.id) FILTER(WHERE d.status = 'busy') as busy_drivers,
+        COUNT(DISTINCT d.id) FILTER(WHERE d.status = 'offline') as offline_drivers,
+        COALESCE(
+          CAST(COUNT(DISTINCT d.id) FILTER(WHERE d.status IN ('available', 'busy')) AS DECIMAL) * 100.0 /
+          NULLIF(COUNT(DISTINCT d.id), 0),
+          0.0
+        ) as utilization_rate,
+        AVG(d.rating) as avg_rating,
+        SUM(d.total_deliveries) as total_deliveries,
+        SUM(d.successful_deliveries) as successful_deliveries,
+        SUM(d.failed_deliveries) as failed_deliveries,
+        COALESCE(
+          CAST(SUM(d.successful_deliveries) AS DECIMAL) * 100.0 /
+          NULLIF(SUM(d.total_deliveries), 0),
+          0.0
+        ) as success_rate
+      FROM drivers d
+      WHERE d.is_active = true
+      GROUP BY d.vehicle_type
+      ORDER BY total_drivers DESC
+    `;
+
+    try {
+      const result = await executeMetricsQuery(pool, query, [], {
+        timeout: TIMEOUT_CONFIG.METRICS,
+      });
+
+      const metrics = result.rows.map((row) => ({
+        vehicle_type: row.vehicle_type,
+        total_drivers: parseInt(row.total_drivers) || 0,
+        available_drivers: parseInt(row.available_drivers) || 0,
+        busy_drivers: parseInt(row.busy_drivers) || 0,
+        offline_drivers: parseInt(row.offline_drivers) || 0,
+        utilization_rate: parseFloat(row.utilization_rate) || 0,
+        avg_rating: parseFloat(row.avg_rating) || 0,
+        total_deliveries: parseInt(row.total_deliveries) || 0,
+        successful_deliveries: parseInt(row.successful_deliveries) || 0,
+        failed_deliveries: parseInt(row.failed_deliveries) || 0,
+        success_rate: parseFloat(row.success_rate) || 0,
+      }));
+
+      // Calculate overall fleet metrics
+      const overall = {
+        total_drivers: metrics.reduce((sum, m) => sum + m.total_drivers, 0),
+        available_drivers: metrics.reduce((sum, m) => sum + m.available_drivers, 0),
+        busy_drivers: metrics.reduce((sum, m) => sum + m.busy_drivers, 0),
+        offline_drivers: metrics.reduce((sum, m) => sum + m.offline_drivers, 0),
+        total_deliveries: metrics.reduce((sum, m) => sum + m.total_deliveries, 0),
+        successful_deliveries: metrics.reduce((sum, m) => sum + m.successful_deliveries, 0),
+        failed_deliveries: metrics.reduce((sum, m) => sum + m.failed_deliveries, 0),
+      };
+
+      overall.utilization_rate = overall.total_drivers > 0
+        ? ((overall.available_drivers + overall.busy_drivers) / overall.total_drivers) * 100
+        : 0;
+
+      overall.success_rate = overall.total_deliveries > 0
+        ? (overall.successful_deliveries / overall.total_deliveries) * 100
+        : 0;
+
+      overall.avg_rating = metrics.length > 0
+        ? metrics.reduce((sum, m) => sum + m.avg_rating, 0) / metrics.length
+        : 0;
+
+      return {
+        overall,
+        by_vehicle_type: metrics,
+      };
+    } catch (error) {
+      logger.error('Error getting fleet performance:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get driver efficiency metrics
+   * Deliveries per hour, route efficiency, working time analysis
+   */
+  static async getDriverEfficiency(startDate, endDate) {
+    const query = `
+      WITH driver_stats AS (
+        SELECT
+          driver_id,
+          COUNT(*) as total_orders,
+          COUNT(*) FILTER(WHERE status = 'delivered') as completed_orders,
+          AVG(
+            EXTRACT(EPOCH FROM (delivered_at - picked_up_at)) / 60.0
+          ) FILTER(WHERE status = 'delivered' AND delivered_at > picked_up_at) as avg_delivery_time_minutes,
+          AVG(estimated_distance) FILTER(WHERE estimated_distance > 0) as avg_estimated_distance,
+          AVG(actual_distance) FILTER(WHERE actual_distance > 0) as avg_actual_distance,
+          MIN(created_at) as first_order_time,
+          MAX(delivered_at) as last_delivery_time
+        FROM orders
+        WHERE created_at BETWEEN $1 AND $2
+          AND driver_id IS NOT NULL
+        GROUP BY driver_id
+      ),
+      driver_details AS (
+        SELECT
+          ds.*,
+          d.name as driver_name,
+          d.vehicle_type,
+          d.rating,
+          EXTRACT(EPOCH FROM (ds.last_delivery_time - ds.first_order_time)) / 3600.0 as working_hours
+        FROM driver_stats ds
+        JOIN drivers d ON ds.driver_id = d.id
+      )
+      SELECT
+        driver_id,
+        driver_name,
+        vehicle_type,
+        rating,
+        total_orders,
+        completed_orders,
+        avg_delivery_time_minutes,
+        avg_estimated_distance,
+        avg_actual_distance,
+        working_hours,
+        CASE
+          WHEN working_hours > 0 THEN completed_orders / working_hours
+          ELSE 0
+        END as deliveries_per_hour,
+        CASE
+          WHEN avg_estimated_distance > 0 AND avg_actual_distance > 0
+          THEN (avg_estimated_distance / NULLIF(avg_actual_distance, 0)) * 100.0
+          ELSE 100.0
+        END as route_efficiency_percent,
+        COALESCE(
+          CAST(completed_orders AS DECIMAL) * 100.0 /
+          NULLIF(total_orders, 0),
+          0.0
+        ) as completion_rate
+      FROM driver_details
+      WHERE completed_orders > 0
+      ORDER BY deliveries_per_hour DESC, completion_rate DESC
+    `;
+
+    try {
+      const result = await executeMetricsQuery(pool, query, [startDate, endDate], {
+        timeout: TIMEOUT_CONFIG.METRICS,
+      });
+
+      const drivers = result.rows.map((row) => ({
+        driver_id: row.driver_id,
+        driver_name: row.driver_name,
+        vehicle_type: row.vehicle_type,
+        rating: parseFloat(row.rating) || 0,
+        total_orders: parseInt(row.total_orders) || 0,
+        completed_orders: parseInt(row.completed_orders) || 0,
+        avg_delivery_time_minutes: parseFloat(row.avg_delivery_time_minutes) || 0,
+        avg_estimated_distance: parseFloat(row.avg_estimated_distance) || 0,
+        avg_actual_distance: parseFloat(row.avg_actual_distance) || 0,
+        working_hours: parseFloat(row.working_hours) || 0,
+        deliveries_per_hour: parseFloat(row.deliveries_per_hour) || 0,
+        route_efficiency_percent: parseFloat(row.route_efficiency_percent) || 100,
+        completion_rate: parseFloat(row.completion_rate) || 0,
+      }));
+
+      // Calculate summary statistics
+      const summary = {
+        total_drivers: drivers.length,
+        avg_deliveries_per_hour: drivers.length > 0
+          ? drivers.reduce((sum, d) => sum + d.deliveries_per_hour, 0) / drivers.length
+          : 0,
+        avg_route_efficiency: drivers.length > 0
+          ? drivers.reduce((sum, d) => sum + d.route_efficiency_percent, 0) / drivers.length
+          : 100,
+        avg_completion_rate: drivers.length > 0
+          ? drivers.reduce((sum, d) => sum + d.completion_rate, 0) / drivers.length
+          : 0,
+        avg_delivery_time_minutes: drivers.length > 0
+          ? drivers.reduce((sum, d) => sum + d.avg_delivery_time_minutes, 0) / drivers.length
+          : 0,
+        total_completed_orders: drivers.reduce((sum, d) => sum + d.completed_orders, 0),
+        total_working_hours: drivers.reduce((sum, d) => sum + d.working_hours, 0),
+      };
+
+      return {
+        summary,
+        top_performers: drivers.slice(0, 10), // Top 10 by deliveries per hour
+        all_drivers: drivers,
+      };
+    } catch (error) {
+      logger.error('Error getting driver efficiency:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get comprehensive dashboard metrics
    * All key metrics in one call
    */

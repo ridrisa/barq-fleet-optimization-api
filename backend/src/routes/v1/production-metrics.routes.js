@@ -264,6 +264,56 @@ router.get('/order-distribution', async (req, res) => {
 });
 
 /**
+ * GET /api/v1/production-metrics/fleet-performance
+ * Get fleet performance metrics - utilization, availability, performance by vehicle type
+ */
+router.get('/fleet-performance', async (req, res) => {
+  try {
+    const { startDate, endDate } = getDateRange(req);
+    const metrics = await ProductionMetricsService.getFleetPerformance(startDate, endDate);
+
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      data: metrics,
+    });
+  } catch (error) {
+    logger.error('Error getting fleet performance:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get fleet performance metrics',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/v1/production-metrics/driver-efficiency
+ * Get driver efficiency metrics - deliveries per hour, route efficiency, etc.
+ * Query params: days, start_date, end_date
+ */
+router.get('/driver-efficiency', async (req, res) => {
+  try {
+    const { startDate, endDate } = getDateRange(req);
+    const metrics = await ProductionMetricsService.getDriverEfficiency(startDate, endDate);
+
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      period: { start: startDate, end: endDate },
+      data: metrics,
+    });
+  } catch (error) {
+    logger.error('Error getting driver efficiency:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get driver efficiency metrics',
+      message: error.message,
+    });
+  }
+});
+
+/**
  * GET /api/v1/production-metrics/comprehensive
  * Get all metrics in one call
  */
