@@ -8,6 +8,7 @@ const express = require('express');
 const router = express.Router();
 const { asyncHandler } = require('../../middleware/error.middleware');
 const dynamicFleetManager = require('../../services/dynamic-fleet-manager.service');
+const llmFleetAdvisor = require('../../services/llm-fleet-advisor.service');
 const { logger } = require('../../utils/logger');
 
 /**
@@ -196,6 +197,150 @@ router.get(
         target_achievement: targetStatus,
         timestamp: new Date(),
       },
+    });
+  })
+);
+
+// ==================== LLM-POWERED ENDPOINTS ====================
+
+/**
+ * POST /api/v1/fleet-manager/ai/suggest-driver
+ * Get AI-powered driver assignment recommendation
+ */
+router.post(
+  '/ai/suggest-driver',
+  asyncHandler(async (req, res) => {
+    const { order, availableDrivers } = req.body;
+
+    if (!order || !order.order_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'order object with order_id is required',
+      });
+    }
+
+    if (!availableDrivers || !Array.isArray(availableDrivers)) {
+      return res.status(400).json({
+        success: false,
+        error: 'availableDrivers array is required',
+      });
+    }
+
+    logger.info('AI driver suggestion request', {
+      order_id: order.order_id,
+      num_drivers: availableDrivers.length,
+    });
+
+    const targetStatus = dynamicFleetManager.checkTargetAchievement();
+    const suggestion = await llmFleetAdvisor.suggestDriverAssignment(
+      order,
+      availableDrivers,
+      targetStatus
+    );
+
+    res.json(suggestion);
+  })
+);
+
+/**
+ * POST /api/v1/fleet-manager/ai/predict-sla
+ * Get AI-powered SLA violation predictions
+ */
+router.post(
+  '/ai/predict-sla',
+  asyncHandler(async (req, res) => {
+    const { orders, drivers, currentRoutes } = req.body;
+
+    if (!orders || !Array.isArray(orders)) {
+      return res.status(400).json({
+        success: false,
+        error: 'orders array is required',
+      });
+    }
+
+    logger.info('AI SLA prediction request', {
+      num_orders: orders.length,
+      num_drivers: drivers?.length || 0,
+    });
+
+    const prediction = await llmFleetAdvisor.predictSLAViolations(
+      orders,
+      drivers || [],
+      currentRoutes || {}
+    );
+
+    res.json(prediction);
+  })
+);
+
+/**
+ * POST /api/v1/fleet-manager/ai/query
+ * Natural language query about fleet status
+ */
+router.post(
+  '/ai/query',
+  asyncHandler(async (req, res) => {
+    const { query } = req.body;
+
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'query string is required',
+      });
+    }
+
+    logger.info('AI natural language query', {
+      query: query.substring(0, 100),
+    });
+
+    // Gather fleet data for context
+    const targetStatus = dynamicFleetManager.checkTargetAchievement();
+    const fleetData = {
+      targetStatus: targetStatus,
+      // Add more context as needed
+    };
+
+    const response = await llmFleetAdvisor.queryFleetStatus(query, fleetData);
+
+    res.json(response);
+  })
+);
+
+/**
+ * POST /api/v1/fleet-manager/ai/recommendations
+ * Get AI-powered optimization recommendations
+ */
+router.post(
+  '/ai/recommendations',
+  asyncHandler(async (req, res) => {
+    const { fleetMetrics } = req.body;
+
+    logger.info('AI optimization recommendations request');
+
+    // If no metrics provided, use current fleet status
+    const metrics = fleetMetrics || {
+      targetStatus: dynamicFleetManager.checkTargetAchievement(),
+      timestamp: new Date(),
+    };
+
+    const recommendations = await llmFleetAdvisor.getOptimizationRecommendations(metrics);
+
+    res.json(recommendations);
+  })
+);
+
+/**
+ * GET /api/v1/fleet-manager/ai/status
+ * Get LLM advisor service status
+ */
+router.get(
+  '/ai/status',
+  asyncHandler(async (req, res) => {
+    const status = llmFleetAdvisor.getStatus();
+
+    res.json({
+      success: true,
+      llm_advisor: status,
     });
   })
 );

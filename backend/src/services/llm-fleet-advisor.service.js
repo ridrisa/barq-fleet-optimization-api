@@ -1,0 +1,550 @@
+/**
+ * LLM Fleet Advisor Service
+ *
+ * Provides AI-powered intelligent recommendations for:
+ * - Driver assignment optimization
+ * - SLA violation predictions
+ * - Natural language fleet queries
+ * - Smart order prioritization
+ * - Real-time decision support
+ */
+
+const { getUnifiedAdvisor } = require('../ai/unifiedAdvisor');
+const { logger } = require('../utils/logger');
+const Groq = require('groq-sdk');
+
+class LLMFleetAdvisor {
+  constructor() {
+    this.unifiedAdvisor = getUnifiedAdvisor();
+
+    // Initialize Groq for fast inference
+    this.groq = process.env.GROQ_API_KEY
+      ? new Groq({ apiKey: process.env.GROQ_API_KEY })
+      : null;
+
+    this.model = process.env.GROQ_MODEL || 'mixtral-8x7b-32768';
+
+    logger.info('LLM Fleet Advisor initialized', {
+      hasGroq: !!this.groq,
+      hasUnifiedAdvisor: !!this.unifiedAdvisor,
+      model: this.model,
+    });
+  }
+
+  /**
+   * Analyze driver assignment and suggest optimal driver
+   *
+   * @param {Object} order - Order details
+   * @param {Array} availableDrivers - List of available drivers
+   * @param {Object} targetStatus - Current target achievement status
+   * @returns {Promise<Object>} - AI recommendation
+   */
+  async suggestDriverAssignment(order, availableDrivers, targetStatus) {
+    try {
+      if (!this.groq) {
+        return this._getFallbackDriverSuggestion(order, availableDrivers, targetStatus);
+      }
+
+      const prompt = this._buildDriverAssignmentPrompt(order, availableDrivers, targetStatus);
+
+      const completion = await this.groq.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: `You are an AI fleet management expert specializing in optimal driver assignment for last-mile delivery.
+
+Your goal is to:
+1. Ensure ALL drivers meet their daily targets
+2. Guarantee all orders are delivered within 1-4 hour SLA
+3. Distribute workload fairly across the fleet
+4. Minimize total distance and maximize efficiency
+
+Consider:
+- Order urgency (remaining time until SLA deadline)
+- Driver progress toward targets (deliveries + revenue)
+- Driver proximity to pickup/delivery locations
+- Current workload balance
+- Vehicle capacity and capabilities
+
+Respond ONLY with valid JSON matching this schema:
+{
+  "recommended_driver": "driver_id",
+  "confidence": 0.0-1.0,
+  "reasoning": "brief explanation",
+  "risk_level": "low|medium|high",
+  "alternative_drivers": ["driver_id_2", "driver_id_3"]
+}`,
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 1000,
+        response_format: { type: 'json_object' },
+      });
+
+      const response = JSON.parse(completion.choices[0].message.content);
+
+      logger.info('LLM driver assignment suggestion generated', {
+        order_id: order.order_id,
+        recommended: response.recommended_driver,
+        confidence: response.confidence,
+      });
+
+      return {
+        success: true,
+        recommendation: response,
+        model: this.model,
+        ai_powered: true,
+      };
+    } catch (error) {
+      logger.error('LLM driver assignment failed', { error: error.message });
+      return this._getFallbackDriverSuggestion(order, availableDrivers, targetStatus);
+    }
+  }
+
+  /**
+   * Predict SLA violations and suggest preventive actions
+   *
+   * @param {Array} orders - All pending orders
+   * @param {Array} drivers - All drivers
+   * @param {Object} currentRoutes - Current route assignments
+   * @returns {Promise<Object>} - Predictions and recommendations
+   */
+  async predictSLAViolations(orders, drivers, currentRoutes) {
+    try {
+      if (!this.groq) {
+        return this._getFallbackSLAPrediction(orders, drivers);
+      }
+
+      const prompt = this._buildSLAPredictionPrompt(orders, drivers, currentRoutes);
+
+      const completion = await this.groq.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: `You are an AI logistics analyst specializing in SLA compliance prediction and risk management.
+
+Analyze pending orders and predict which orders are at risk of violating 1-4 hour SLA deadlines.
+
+Factors to consider:
+- Time remaining until SLA deadline
+- Current traffic conditions (assume moderate traffic)
+- Driver availability and current workload
+- Distance to delivery location
+- Number of stops before this order
+
+Respond ONLY with valid JSON matching this schema:
+{
+  "high_risk_orders": [
+    {
+      "order_id": "string",
+      "violation_probability": 0.0-1.0,
+      "estimated_delay_minutes": number,
+      "recommended_action": "string"
+    }
+  ],
+  "medium_risk_orders": [...],
+  "recommendations": [
+    "actionable recommendation 1",
+    "actionable recommendation 2"
+  ],
+  "overall_risk_level": "low|medium|high"
+}`,
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.2,
+        max_tokens: 2000,
+        response_format: { type: 'json_object' },
+      });
+
+      const response = JSON.parse(completion.choices[0].message.content);
+
+      logger.info('LLM SLA prediction generated', {
+        high_risk: response.high_risk_orders?.length || 0,
+        medium_risk: response.medium_risk_orders?.length || 0,
+        overall_risk: response.overall_risk_level,
+      });
+
+      return {
+        success: true,
+        prediction: response,
+        model: this.model,
+        ai_powered: true,
+      };
+    } catch (error) {
+      logger.error('LLM SLA prediction failed', { error: error.message });
+      return this._getFallbackSLAPrediction(orders, drivers);
+    }
+  }
+
+  /**
+   * Natural language query about fleet status
+   *
+   * @param {string} query - User's natural language question
+   * @param {Object} fleetData - Current fleet data (drivers, orders, routes)
+   * @returns {Promise<Object>} - AI response
+   */
+  async queryFleetStatus(query, fleetData) {
+    try {
+      if (!this.groq) {
+        return {
+          success: false,
+          response: 'LLM service not available. Please check fleet status manually.',
+          ai_powered: false,
+        };
+      }
+
+      const prompt = this._buildFleetQueryPrompt(query, fleetData);
+
+      const completion = await this.groq.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: `You are an AI fleet operations assistant. Answer questions about the current fleet status using the provided data.
+
+Be concise, accurate, and actionable. Provide specific numbers and metrics when relevant.
+
+If asked about recommendations, provide 2-3 actionable suggestions.`,
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.4,
+        max_tokens: 500,
+      });
+
+      const response = completion.choices[0].message.content;
+
+      logger.info('LLM fleet query answered', {
+        query: query.substring(0, 50),
+        response_length: response.length,
+      });
+
+      return {
+        success: true,
+        query: query,
+        response: response,
+        model: this.model,
+        ai_powered: true,
+      };
+    } catch (error) {
+      logger.error('LLM fleet query failed', { error: error.message });
+      return {
+        success: false,
+        query: query,
+        response: 'Unable to process query. Please try again or check status manually.',
+        error: error.message,
+        ai_powered: false,
+      };
+    }
+  }
+
+  /**
+   * Get intelligent recommendations for fleet optimization
+   *
+   * @param {Object} fleetMetrics - Current fleet performance metrics
+   * @returns {Promise<Object>} - AI recommendations
+   */
+  async getOptimizationRecommendations(fleetMetrics) {
+    try {
+      if (!this.groq) {
+        return this._getFallbackOptimizationRecommendations(fleetMetrics);
+      }
+
+      const prompt = this._buildOptimizationPrompt(fleetMetrics);
+
+      const completion = await this.groq.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: `You are an AI operations optimization expert for last-mile delivery fleets.
+
+Analyze fleet performance metrics and provide actionable recommendations to:
+1. Improve driver target achievement
+2. Reduce SLA violations
+3. Balance workload more fairly
+4. Increase operational efficiency
+
+Respond ONLY with valid JSON matching this schema:
+{
+  "top_recommendations": [
+    {
+      "priority": "high|medium|low",
+      "action": "specific action to take",
+      "expected_impact": "quantified expected improvement",
+      "implementation": "how to implement"
+    }
+  ],
+  "performance_insights": {
+    "strengths": ["strength 1", "strength 2"],
+    "weaknesses": ["weakness 1", "weakness 2"],
+    "opportunities": ["opportunity 1", "opportunity 2"]
+  },
+  "predicted_improvements": {
+    "target_achievement": "percentage improvement",
+    "sla_compliance": "percentage improvement",
+    "efficiency_gain": "percentage improvement"
+  }
+}`,
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 1500,
+        response_format: { type: 'json_object' },
+      });
+
+      const response = JSON.parse(completion.choices[0].message.content);
+
+      logger.info('LLM optimization recommendations generated', {
+        num_recommendations: response.top_recommendations?.length || 0,
+      });
+
+      return {
+        success: true,
+        recommendations: response,
+        model: this.model,
+        ai_powered: true,
+      };
+    } catch (error) {
+      logger.error('LLM optimization recommendations failed', { error: error.message });
+      return this._getFallbackOptimizationRecommendations(fleetMetrics);
+    }
+  }
+
+  // ==================== PROMPT BUILDERS ====================
+
+  _buildDriverAssignmentPrompt(order, drivers, targetStatus) {
+    return `Order Details:
+- Order ID: ${order.order_id}
+- Customer: ${order.customer_name || 'N/A'}
+- Created: ${order.created_at}
+- SLA Deadline: ${order.sla_hours} hours
+- Remaining Time: ${this._calculateRemainingMinutes(order.created_at, order.sla_hours)} minutes
+- Pickup Location: ${order.pickup_id}
+- Delivery: ${order.delivery_lat}, ${order.delivery_lng}
+- Load: ${order.load_kg || 0} kg
+- Revenue: $${order.revenue || 0}
+
+Available Drivers:
+${drivers
+  .map(
+    (d, i) => `${i + 1}. ${d.driver_id}
+   - Vehicle: ${d.vehicle_type}, Capacity: ${d.capacity_kg} kg
+   - Target Progress: ${this._getDriverProgress(d.driver_id, targetStatus)}
+   - Status: ${this._getDriverStatus(d.driver_id, targetStatus)}`
+  )
+  .join('\n')}
+
+Target Achievement Status:
+${JSON.stringify(targetStatus, null, 2)}
+
+Which driver should be assigned this order? Provide reasoning and confidence level.`;
+  }
+
+  _buildSLAPredictionPrompt(orders, drivers, currentRoutes) {
+    return `Pending Orders:
+${orders
+  .map(
+    (o, i) => `${i + 1}. ${o.order_id}
+   - Created: ${o.created_at}
+   - SLA: ${o.sla_hours} hours
+   - Remaining: ${this._calculateRemainingMinutes(o.created_at, o.sla_hours)} minutes
+   - Location: ${o.delivery_lat}, ${o.delivery_lng}`
+  )
+  .join('\n')}
+
+Active Drivers: ${drivers.length}
+Current Routes: ${currentRoutes ? Object.keys(currentRoutes).length : 0}
+
+Analyze SLA violation risk and provide actionable recommendations.`;
+  }
+
+  _buildFleetQueryPrompt(query, fleetData) {
+    const summary = {
+      total_drivers: fleetData.drivers?.length || 0,
+      pending_orders: fleetData.orders?.length || 0,
+      target_achievement: fleetData.targetStatus || {},
+      active_routes: fleetData.routes?.length || 0,
+    };
+
+    return `User Question: "${query}"
+
+Current Fleet Data:
+${JSON.stringify(summary, null, 2)}
+
+Provide a clear, concise answer to the user's question based on the fleet data.`;
+  }
+
+  _buildOptimizationPrompt(metrics) {
+    return `Fleet Performance Metrics:
+${JSON.stringify(metrics, null, 2)}
+
+Analyze performance and provide top 3-5 actionable recommendations for improvement.`;
+  }
+
+  // ==================== HELPER METHODS ====================
+
+  _calculateRemainingMinutes(createdAt, slaHours) {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const deadlineMinutes = slaHours * 60;
+    const elapsedMinutes = (now - created) / (1000 * 60);
+    return Math.max(0, Math.round(deadlineMinutes - elapsedMinutes));
+  }
+
+  _getDriverProgress(driverId, targetStatus) {
+    const driver = targetStatus?.drivers?.find((d) => d.driver_id === driverId);
+    if (!driver) return 'Unknown';
+    return `${driver.current_deliveries}/${driver.target_deliveries} deliveries (${driver.delivery_progress})`;
+  }
+
+  _getDriverStatus(driverId, targetStatus) {
+    const driver = targetStatus?.drivers?.find((d) => d.driver_id === driverId);
+    return driver?.status || 'available';
+  }
+
+  // ==================== FALLBACK METHODS ====================
+
+  _getFallbackDriverSuggestion(order, drivers, targetStatus) {
+    // Simple fallback: choose driver with lowest progress
+    const sortedDrivers = drivers.sort((a, b) => {
+      const progressA = this._getSimpleProgress(a.driver_id, targetStatus);
+      const progressB = this._getSimpleProgress(b.driver_id, targetStatus);
+      return progressA - progressB;
+    });
+
+    return {
+      success: true,
+      recommendation: {
+        recommended_driver: sortedDrivers[0]?.driver_id || drivers[0]?.driver_id,
+        confidence: 0.6,
+        reasoning: 'Rule-based assignment (LLM unavailable): Selected driver with lowest target progress',
+        risk_level: 'medium',
+        alternative_drivers: sortedDrivers.slice(1, 3).map((d) => d.driver_id),
+      },
+      model: 'fallback',
+      ai_powered: false,
+    };
+  }
+
+  _getFallbackSLAPrediction(orders, drivers) {
+    const now = new Date();
+    const atRisk = orders.filter((o) => {
+      const remaining = this._calculateRemainingMinutes(o.created_at, o.sla_hours);
+      return remaining < 60;
+    });
+
+    return {
+      success: true,
+      prediction: {
+        high_risk_orders: atRisk
+          .filter((o) => this._calculateRemainingMinutes(o.created_at, o.sla_hours) < 30)
+          .map((o) => ({
+            order_id: o.order_id,
+            violation_probability: 0.9,
+            estimated_delay_minutes: 15,
+            recommended_action: 'Assign to nearest available driver immediately',
+          })),
+        medium_risk_orders: atRisk
+          .filter((o) => {
+            const remaining = this._calculateRemainingMinutes(o.created_at, o.sla_hours);
+            return remaining >= 30 && remaining < 60;
+          })
+          .map((o) => ({
+            order_id: o.order_id,
+            violation_probability: 0.5,
+            estimated_delay_minutes: 10,
+            recommended_action: 'Prioritize in next assignment batch',
+          })),
+        recommendations: [
+          'Increase driver availability for critical orders',
+          'Consider reoptimizing current routes',
+          'Monitor traffic conditions for affected areas',
+        ],
+        overall_risk_level: atRisk.length > 5 ? 'high' : atRisk.length > 2 ? 'medium' : 'low',
+      },
+      model: 'fallback',
+      ai_powered: false,
+    };
+  }
+
+  _getFallbackOptimizationRecommendations(metrics) {
+    return {
+      success: true,
+      recommendations: {
+        top_recommendations: [
+          {
+            priority: 'high',
+            action: 'Rebalance workload across underperforming drivers',
+            expected_impact: '15-20% improvement in target achievement',
+            implementation: 'Use dynamic assignment to prioritize low-progress drivers',
+          },
+          {
+            priority: 'medium',
+            action: 'Increase monitoring frequency for at-risk orders',
+            expected_impact: '10% reduction in SLA violations',
+            implementation: 'Check at-risk orders every 15 minutes instead of 30',
+          },
+        ],
+        performance_insights: {
+          strengths: ['Fair workload distribution active', 'Real-time SLA tracking enabled'],
+          weaknesses: ['Some drivers below target pace', 'Traffic conditions not factored'],
+          opportunities: ['Implement predictive analytics', 'Add real-time traffic data'],
+        },
+        predicted_improvements: {
+          target_achievement: '15-25% improvement',
+          sla_compliance: '10-15% improvement',
+          efficiency_gain: '8-12% improvement',
+        },
+      },
+      model: 'fallback',
+      ai_powered: false,
+    };
+  }
+
+  _getSimpleProgress(driverId, targetStatus) {
+    const driver = targetStatus?.drivers?.find((d) => d.driver_id === driverId);
+    if (!driver) return 0;
+
+    const deliveryProgress = driver.current_deliveries / driver.target_deliveries;
+    const revenueProgress = driver.current_revenue / driver.target_revenue;
+    return (deliveryProgress + revenueProgress) / 2;
+  }
+
+  /**
+   * Get service status
+   */
+  getStatus() {
+    return {
+      enabled: !!this.groq,
+      model: this.model,
+      unified_advisor_status: this.unifiedAdvisor?.getStatus() || null,
+      capabilities: {
+        driver_assignment: true,
+        sla_prediction: true,
+        natural_language_queries: !!this.groq,
+        optimization_recommendations: true,
+      },
+    };
+  }
+}
+
+// Export singleton
+module.exports = new LLMFleetAdvisor();
