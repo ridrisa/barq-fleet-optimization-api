@@ -8,6 +8,7 @@
  */
 
 const cvrpClient = require('./cvrp-client.service');
+const enhancedCvrpOptimizer = require('./enhanced-cvrp-optimizer.service');
 const { logger } = require('../utils/logger');
 
 class HybridOptimizationService {
@@ -91,7 +92,48 @@ class HybridOptimizationService {
    */
   async optimizeWithCVRP(request) {
     try {
-      logger.info('Using CVRP optimization engine');
+      // Check if enhanced multi-vehicle optimization is requested
+      const useEnhanced = request.options?.useEnhanced || request.options?.enhanced || false;
+      const slaMinutes = request.options?.slaMinutes || 120;
+
+      if (useEnhanced) {
+        logger.info('Using ENHANCED CVRP optimization engine', {
+          deliveries: request.deliveryPoints?.length || 0,
+          vehicles: request.fleet?.length || 0,
+          pickups: request.pickupPoints?.length || 0,
+          slaMinutes: slaMinutes,
+        });
+
+        // Call enhanced optimizer directly
+        const result = await enhancedCvrpOptimizer.optimizeWithEnhancements(request);
+
+        if (result.success) {
+          logger.info('Enhanced CVRP optimization successful', {
+            routes: result.routes.length,
+            vehiclesUsed: result.optimization_metadata.vehicles_used,
+            vehiclesAvailable: result.optimization_metadata.vehicles_available,
+            utilization: result.optimization_metadata.utilization_rate,
+          });
+
+          return {
+            ...result,
+            optimizationEngine: 'Enhanced CVRP',
+            optimizationMetadata: {
+              ...result.optimization_metadata,
+              engine: 'Enhanced Multi-Pickup CVRP',
+              fairDistribution: true,
+              capacityConstrained: true,
+              multiPickupSupport: true,
+              slaAware: true,
+            },
+          };
+        } else {
+          throw new Error(result.error || 'Enhanced CVRP optimization failed');
+        }
+      }
+
+      // Standard CVRP optimization
+      logger.info('Using standard CVRP optimization engine');
 
       // Check if CVRP service is healthy
       const health = await cvrpClient.healthCheck();
