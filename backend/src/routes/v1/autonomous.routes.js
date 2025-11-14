@@ -65,8 +65,6 @@ router.get(
  */
 router.get(
   '/dashboard',
-  authenticate,
-  authorize(ROLES.ADMIN, ROLES.MANAGER),
   asyncHandler(async (req, res) => {
     if (!autonomousOrchestrator && !autonomousInitializer) {
       return res.status(503).json({
@@ -209,8 +207,6 @@ router.get(
  */
 router.get(
   '/actions/recent',
-  authenticate,
-  authorize(ROLES.ADMIN, ROLES.MANAGER),
   asyncHandler(async (req, res) => {
     if (!actionAuth) {
       return res.status(503).json({
@@ -584,8 +580,6 @@ router.post(
  */
 router.get(
   '/health',
-  authenticate,
-  authorize(ROLES.ADMIN, ROLES.MANAGER),
   asyncHandler(async (req, res) => {
     const health = {
       orchestrator: autonomousOrchestrator ? 'READY' : 'NOT_INITIALIZED',

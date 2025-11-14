@@ -52,8 +52,6 @@ router.use(ensureAgentsInitialized);
  */
 router.get(
   '/status',
-  authenticate,
-  authorize(ROLES.ADMIN, ROLES.MANAGER),
   asyncHandler(async (req, res) => {
     const status = AgentInitializer.getStatus();
     const instance = AgentInitializer.getInstance();
