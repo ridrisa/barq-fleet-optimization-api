@@ -70,6 +70,72 @@ router.get(
 
 /**
  * @swagger
+ * /api/agents/trigger:
+ *   post:
+ *     summary: Trigger agent execution
+ *     description: Manually trigger any agent by name
+ *     tags: [Agents]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - agentName
+ *             properties:
+ *               agentName:
+ *                 type: string
+ *                 description: Name of the agent to trigger
+ *                 example: orderAssignment
+ *               context:
+ *                 type: object
+ *                 description: Optional context data for the agent
+ *     responses:
+ *       200:
+ *         description: Agent triggered successfully
+ *       400:
+ *         description: Invalid agent name or missing parameters
+ *       404:
+ *         description: Agent not found
+ */
+router.post(
+  '/trigger',
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.MANAGER),
+  asyncHandler(async (req, res) => {
+    const { agentName, context = {} } = req.body;
+
+    if (!agentName) {
+      throw new ValidationError('Agent name is required');
+    }
+
+    const instance = AgentInitializer.getInstance();
+    const agent = instance.agents[agentName];
+
+    if (!agent) {
+      throw new NotFoundError(`Agent '${agentName}' not found`);
+    }
+
+    // Add timestamp to context
+    context.timestamp = context.timestamp || new Date();
+    context.triggeredBy = 'api';
+
+    const result = await agent.execute(context);
+
+    res.json({
+      success: true,
+      agentName,
+      data: result,
+      triggeredAt: context.timestamp,
+    });
+  })
+);
+
+/**
+ * @swagger
  * /api/agents/health:
  *   get:
  *     summary: Get agent health status
