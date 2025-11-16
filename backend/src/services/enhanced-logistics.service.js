@@ -669,6 +669,75 @@ class EnhancedLogisticsService {
   }
 
   /**
+   * Get optimization history with pagination
+   */
+  getOptimizationHistory(limit = 10, page = 1) {
+    logger.info(`Getting optimization history with limit: ${limit}, page: ${page}`);
+
+    try {
+      // Get requests from the database with their results
+      const requests = db.get('requests').value() || [];
+      const results = db.get('results').value() || [];
+
+      logger.info(`Found ${requests.length} requests and ${results.length} results`);
+
+      // Map requests to include their results
+      const allHistory = requests
+        .map((request) => {
+          const result = results.find((r) => r.requestId === request.id);
+
+          return {
+            id: request.id,
+            timestamp: request.timestamp,
+            pickupPoints: request.pickupPoints,
+            deliveryPoints: request.deliveryPoints,
+            fleet: request.fleet,
+            vehicles: request.vehicles,
+            serviceType: request.serviceType,
+            status: request.status,
+            success: result ? result.success : null,
+            time_taken: result ? result.time_taken : null,
+            routes: result ? result.data?.routes : null,
+            total_distance: result ? result.data?.summary?.total_distance : null,
+            total_duration: result ? result.data?.summary?.total_duration : null,
+            completed: !!result,
+          };
+        })
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      // Apply pagination
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedHistory = allHistory.slice(startIndex, endIndex);
+
+      logger.info(
+        `Returning ${paginatedHistory.length} history records (page ${page} of ${Math.ceil(allHistory.length / limit)})`
+      );
+
+      return {
+        items: paginatedHistory,
+        pagination: {
+          total: allHistory.length,
+          page: page,
+          limit: limit,
+          pages: Math.ceil(allHistory.length / limit),
+        },
+      };
+    } catch (error) {
+      logger.error('Failed to get optimization history', { error: error.message });
+      return {
+        items: [],
+        pagination: {
+          total: 0,
+          page: page,
+          limit: limit,
+          pages: 0,
+        },
+      };
+    }
+  }
+
+  /**
    * Cleanup and shutdown
    */
   async shutdown() {
@@ -696,6 +765,10 @@ const wrappedService = {
   getOptimizationStatus: logFunctionExecution(
     service.getOptimizationStatus.bind(service),
     'EnhancedLogisticsService.getOptimizationStatus'
+  ),
+  getOptimizationHistory: logFunctionExecution(
+    service.getOptimizationHistory.bind(service),
+    'EnhancedLogisticsService.getOptimizationHistory'
   ),
   shutdown: logFunctionExecution(
     service.shutdown.bind(service),
