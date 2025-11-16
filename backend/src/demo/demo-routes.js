@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { asyncHandler } = require('../utils/error.handler');
 const { logger } = require('../utils/logger');
+const { generateId } = require('../utils/helper');
 
 // Import demo components
 const DemoGenerator = require('./demo-generator');
@@ -537,6 +538,9 @@ router.post(
         vehicles: vehicles.length,
       });
 
+      // Generate unique request ID for this optimization
+      const requestId = generateId();
+
       const optimizationRequest = {
         pickupPoints,
         deliveryPoints,
@@ -554,7 +558,7 @@ router.post(
         },
       };
 
-      const result = await logisticsService.processOptimizationRequest(optimizationRequest);
+      const result = await logisticsService.processOptimizationRequest(requestId, optimizationRequest);
 
       logger.info('Real optimization completed', {
         success: result.success,
