@@ -55,6 +55,22 @@ export default function DemoDashboard() {
           // Update demo status from backend
           if (response.data?.isRunning) {
             dispatch(setDemoStatus(true));
+          } else {
+            dispatch(setDemoStatus(false));
+          }
+
+          // Update metrics from backend stats
+          if (response.data?.stats) {
+            dispatch(updateMetrics({
+              totalOrders: response.data.stats.totalOrders || 0,
+              completedOrders: response.data.stats.completedOrders || 0,
+              failedOrders: response.data.stats.failedOrders || 0,
+              activeOrders: response.data.stats.activeOrders || 0,
+              activeDrivers: response.data.stats.activeDrivers || 0,
+              busyDrivers: response.data.stats.busyDrivers || 0,
+              averageDeliveryTime: response.data.stats.averageDeliveryTime || 0,
+              slaCompliance: response.data.stats.slaCompliance || 100,
+            }));
           }
         }
       } catch (error) {
