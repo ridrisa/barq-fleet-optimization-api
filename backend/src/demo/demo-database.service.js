@@ -209,6 +209,83 @@ class DemoDatabaseService {
   }
 
   /**
+   * Get orders with filters
+   */
+  async getOrders(filters = {}) {
+    try {
+      const { status, serviceType, limit = 100 } = filters;
+
+      let query = `
+        SELECT * FROM orders
+        WHERE package_details->>'source' = 'demo'
+      `;
+      const values = [];
+      let valueIndex = 1;
+
+      // Filter by status (case-insensitive)
+      if (status) {
+        query += ` AND UPPER(status) = UPPER($${valueIndex})`;
+        values.push(status);
+        valueIndex++;
+      }
+
+      // Filter by service type
+      if (serviceType) {
+        query += ` AND service_type = $${valueIndex}`;
+        values.push(serviceType);
+        valueIndex++;
+      }
+
+      query += ` ORDER BY created_at DESC LIMIT $${valueIndex}`;
+      values.push(limit);
+
+      const result = await db.query(query, values);
+
+      logger.info(`[DemoDB] Found ${result.rows.length} orders`, {
+        filters: { status, serviceType, limit }
+      });
+
+      // Transform to match expected format
+      return result.rows.map(order => ({
+        id: order.id,
+        orderNumber: order.order_number,
+        customer: {
+          id: order.customer_id,
+          name: 'Demo Customer' // We can enhance this later
+        },
+        delivery: {
+          location: {
+            lat: order.dropoff_latitude,
+            lng: order.dropoff_longitude
+          },
+          address: typeof order.dropoff_address === 'string'
+            ? order.dropoff_address
+            : `${order.dropoff_address?.street || ''}, ${order.dropoff_address?.city || 'Riyadh'}`
+        },
+        pickup: {
+          location: {
+            lat: order.pickup_latitude,
+            lng: order.pickup_longitude
+          },
+          address: typeof order.pickup_address === 'string'
+            ? order.pickup_address
+            : `${order.pickup_address?.street || ''}, ${order.pickup_address?.city || 'Riyadh'}`
+        },
+        serviceType: order.service_type,
+        priority: order.priority || 0,
+        timeWindow: order.sla_deadline ? {
+          latest: order.sla_deadline
+        } : null,
+        status: order.status,
+        createdAt: order.created_at
+      }));
+    } catch (error) {
+      logger.error('[DemoDB] Failed to get orders', error);
+      return [];
+    }
+  }
+
+  /**
    * Update order status
    */
   async updateOrderStatus(orderId, status, additionalData = {}) {
