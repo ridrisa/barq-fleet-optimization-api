@@ -12,6 +12,9 @@ const { logger } = require('../utils/logger');
 // Import Agent Manager for instant delivery
 const AgentManagerService = require('./agent-manager.service');
 
+// Import LLM Fleet Advisor for intelligent optimization
+const LLMFleetAdvisor = require('./llm-fleet-advisor.service');
+
 // Import legacy agents for backward compatibility
 const PlanningAgent = require('../agents/planning.agent');
 const OptimizationAgent = require('../agents/optimization.agent');
@@ -23,6 +26,9 @@ class EnhancedLogisticsService {
 
     // Use provided agent manager or create new one for instant delivery
     this.agentManager = agentManager || new AgentManagerService(this.llmConfig);
+
+    // Initialize LLM Fleet Advisor for intelligent optimization
+    this.llmFleetAdvisor = LLMFleetAdvisor;
 
     // Initialize legacy agents for backward compatibility
     this.initializeLegacyAgents();
@@ -188,10 +194,10 @@ class EnhancedLogisticsService {
   }
 
   /**
-   * Process using legacy optimization system
+   * Process using legacy optimization system with LLM enhancement
    */
   async processLegacyOptimization(requestId, request) {
-    logger.info('[EnhancedLogistics] Using legacy optimization system');
+    logger.info('[EnhancedLogistics] Using legacy optimization system with LLM enhancement');
 
     try {
       // Step 1: Planning
@@ -199,6 +205,42 @@ class EnhancedLogisticsService {
 
       if (!initialPlan.routes || initialPlan.routes.length === 0) {
         throw new Error('No valid routes generated');
+      }
+
+      logger.info(`[EnhancedLogistics] Initial plan created with ${initialPlan.routes.length} routes`);
+
+      // Step 1.5: LLM Multi-Vehicle Optimization (if multiple vehicles available)
+      const vehicles = request.fleet?.vehicles || request.fleet || request.vehicles || [];
+      const pickupPoints = request.pickupPoints || [];
+      const deliveryPoints = request.deliveryPoints || [];
+
+      // Only use LLM optimization if we have multiple vehicles and deliveries
+      if (vehicles.length > 1 && deliveryPoints.length > vehicles.length) {
+        logger.info(
+          `[EnhancedLogistics] Applying LLM multi-vehicle optimization (${vehicles.length} vehicles, ${deliveryPoints.length} deliveries)`
+        );
+
+        try {
+          // Get LLM's intelligent vehicle distribution
+          const llmOptimization = await this.llmFleetAdvisor.optimizeMultiVehicleRoutes(
+            pickupPoints,
+            deliveryPoints,
+            vehicles
+          );
+
+          if (llmOptimization.success && llmOptimization.optimization?.vehicle_assignments) {
+            logger.info(
+              `[EnhancedLogistics] LLM suggested ${llmOptimization.optimization.strategy.vehicles_used} vehicles, utilization: ${(llmOptimization.optimization.optimization_metrics.utilization_rate * 100).toFixed(1)}%`
+            );
+
+            // Enhance the initial plan with LLM's vehicle assignments
+            initialPlan.llmOptimization = llmOptimization.optimization;
+            initialPlan.aiPowered = llmOptimization.ai_powered;
+          }
+        } catch (llmError) {
+          logger.warn(`[EnhancedLogistics] LLM optimization failed: ${llmError.message}`);
+          // Continue with standard optimization
+        }
       }
 
       // Step 2: Optimization
@@ -209,11 +251,46 @@ class EnhancedLogisticsService {
         businessRules: request.businessRules || {},
       });
 
+      // Step 2.5: Add ETAs to all routes
+      if (optimizedPlan.routes && optimizedPlan.routes.length > 0) {
+        logger.info(`[EnhancedLogistics] Calculating ETAs for ${optimizedPlan.routes.length} routes`);
+
+        const startTime = request.startTime
+          ? new Date(request.startTime)
+          : new Date();
+
+        optimizedPlan.routes = optimizedPlan.routes.map((route) => {
+          try {
+            // Calculate ETAs for this route
+            const routeWithETAs = this.llmFleetAdvisor.calculateRouteETAs(route, startTime);
+            return routeWithETAs;
+          } catch (etaError) {
+            logger.warn(
+              `[EnhancedLogistics] Failed to calculate ETAs for route ${route.id}: ${etaError.message}`
+            );
+            return route; // Return original route if ETA calculation fails
+          }
+        });
+
+        logger.info('[EnhancedLogistics] ETAs calculated for all routes');
+      }
+
       // Step 3: Formatting
       const formattedResponse = await this.formatAgent.format({
         optimizedPlan: optimizedPlan,
         request: request,
       });
+
+      // Add LLM optimization metadata to response
+      if (initialPlan.llmOptimization) {
+        formattedResponse.llmOptimization = {
+          enabled: true,
+          aiPowered: initialPlan.aiPowered,
+          strategy: initialPlan.llmOptimization.strategy,
+          metrics: initialPlan.llmOptimization.optimization_metrics,
+          recommendations: initialPlan.llmOptimization.recommendations,
+        };
+      }
 
       // Store and update status
       this.storeResult(requestId, formattedResponse);
@@ -225,6 +302,7 @@ class EnhancedLogisticsService {
         data: formattedResponse,
         serviceType: 'STANDARD',
         message: 'Optimization completed successfully',
+        llmEnhanced: !!initialPlan.llmOptimization,
       };
     } catch (error) {
       throw error;

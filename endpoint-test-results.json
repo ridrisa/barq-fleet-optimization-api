@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-11-12T13:08:30Z",
+  "timestamp": "2025-11-16T06:25:08Z",
   "tests": [
     {
       "category": "System",
@@ -185,6 +185,16 @@
       "status": "PASS"
     },
     {
+      "category": "AI",
+      "method": "GET",
+      "path": "/api/v1/agents/health",
+      "description": "Agent health",
+      "expected": 200,
+      "actual": 401,
+      "status": "FAIL",
+      "response": "{\"success\":false,\"error\":\"Authentication required\"}\n"
+    },
+    {
       "category": "Analytics",
       "method": "GET",
       "path": "/api/v1/analytics/sla/realtime",
@@ -226,9 +236,8 @@
       "path": "/api/v1/analytics/fleet/drivers",
       "description": "Fleet drivers",
       "expected": 200,
-      "actual": 500,
-      "status": "FAIL",
-      "response": "{\"error\":\"Failed to fetch driver performance\",\"message\":\"invalid input value for enum driver_status: \\\"active\\\"\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Analytics",
@@ -236,9 +245,8 @@
       "path": "/api/v1/analytics/fleet/vehicles",
       "description": "Fleet vehicles",
       "expected": 200,
-      "actual": 500,
-      "status": "FAIL",
-      "response": "{\"error\":\"Failed to fetch vehicle performance\",\"message\":\"relation \\\"vehicles\\\" does not exist\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Analytics",
@@ -254,6 +262,111 @@
       "method": "GET",
       "path": "/api/v1/analytics/dashboard/summary",
       "description": "Dashboard summary",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"error\":\"Failed to fetch dashboard summary\",\"message\":\"division by zero\"}\n"
+    },
+    {
+      "category": "Metrics",
+      "method": "GET",
+      "path": "/api/v1/production-metrics/on-time-delivery",
+      "description": "On-time delivery",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Metrics",
+      "method": "GET",
+      "path": "/api/v1/production-metrics/completion-rate",
+      "description": "Completion rate",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Metrics",
+      "method": "GET",
+      "path": "/api/v1/production-metrics/delivery-time",
+      "description": "Delivery time",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"success\":false,\"error\":\"Failed to get delivery time\",\"message\":\"column \\\"pickup_at\\\" does not exist\"}\n"
+    },
+    {
+      "category": "Metrics",
+      "method": "GET",
+      "path": "/api/v1/production-metrics/courier-performance",
+      "description": "Courier performance",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"success\":false,\"error\":\"Failed to get courier performance\",\"message\":\"column \\\"pickup_at\\\" does not exist\"}\n"
+    },
+    {
+      "category": "Metrics",
+      "method": "GET",
+      "path": "/api/v1/production-metrics/cancellation-rate",
+      "description": "Cancellation rate",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Metrics",
+      "method": "GET",
+      "path": "/api/v1/production-metrics/return-rate",
+      "description": "Return rate",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"success\":false,\"error\":\"Failed to get return rate\",\"message\":\"invalid input value for enum order_status: \\\"returned\\\"\"}\n"
+    },
+    {
+      "category": "Metrics",
+      "method": "GET",
+      "path": "/api/v1/production-metrics/fleet-utilization",
+      "description": "Fleet utilization",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"success\":false,\"error\":\"Failed to get fleet utilization\",\"message\":\"invalid input value for enum order_status: \\\"returned\\\"\"}\n"
+    },
+    {
+      "category": "Metrics",
+      "method": "GET",
+      "path": "/api/v1/production-metrics/order-distribution",
+      "description": "Order distribution",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Metrics",
+      "method": "GET",
+      "path": "/api/v1/production-metrics/comprehensive",
+      "description": "Comprehensive metrics",
+      "expected": 200,
+      "actual": 500,
+      "status": "FAIL",
+      "response": "{\"success\":false,\"error\":\"Failed to get comprehensive dashboard\",\"message\":\"column \\\"pickup_at\\\" does not exist\"}\n"
+    },
+    {
+      "category": "Metrics",
+      "method": "GET",
+      "path": "/api/v1/production-metrics/sla/at-risk",
+      "description": "SLA at-risk",
+      "expected": 200,
+      "actual": 200,
+      "status": "PASS"
+    },
+    {
+      "category": "Metrics",
+      "method": "GET",
+      "path": "/api/v1/production-metrics/sla/compliance",
+      "description": "SLA compliance",
       "expected": 200,
       "actual": 200,
       "status": "PASS"
@@ -273,9 +386,8 @@
       "path": "/api/v1/automation/dispatch/status",
       "description": "Dispatch status",
       "expected": 200,
-      "actual": 503,
-      "status": "FAIL",
-      "response": "{\"error\":\"Auto-dispatch engine not initialized\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Automation",
@@ -293,9 +405,8 @@
       "path": "/api/v1/automation/routes/status",
       "description": "Routes status",
       "expected": 200,
-      "actual": 503,
-      "status": "FAIL",
-      "response": "{\"error\":\"Route optimizer not initialized\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Automation",
@@ -313,9 +424,8 @@
       "path": "/api/v1/automation/batching/status",
       "description": "Batching status",
       "expected": 200,
-      "actual": 503,
-      "status": "FAIL",
-      "response": "{\"error\":\"Smart batching engine not initialized\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Automation",
@@ -333,9 +443,8 @@
       "path": "/api/v1/automation/escalation/status",
       "description": "Escalation status",
       "expected": 200,
-      "actual": 503,
-      "status": "FAIL",
-      "response": "{\"error\":\"Escalation engine not initialized\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Automation",
@@ -355,7 +464,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to get escalation logs\",\"details\":\"relation \\\"escalation_logs\\\" does not exist\"}\n"
+      "response": "{\"error\":\"Failed to get escalation logs\",\"details\":\"column el.escalated_to does not exist\"}\n"
     },
     {
       "category": "Automation",
@@ -363,9 +472,8 @@
       "path": "/api/v1/automation/escalation/alerts",
       "description": "Escalation alerts",
       "expected": 200,
-      "actual": 500,
-      "status": "FAIL",
-      "response": "{\"error\":\"Failed to get alerts\",\"details\":\"relation \\\"dispatch_alerts\\\" does not exist\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Automation",
@@ -375,7 +483,7 @@
       "expected": 200,
       "actual": 500,
       "status": "FAIL",
-      "response": "{\"error\":\"Failed to get at-risk orders\",\"details\":\"relation \\\"escalation_logs\\\" does not exist\"}\n"
+      "response": "{\"error\":\"Failed to get at-risk orders\",\"details\":\"column \\\"escalated_to\\\" does not exist\"}\n"
     },
     {
       "category": "Automation",
@@ -392,9 +500,8 @@
       "path": "/api/v1/automation/dashboard",
       "description": "Automation dashboard",
       "expected": 200,
-      "actual": 500,
-      "status": "FAIL",
-      "response": "{\"error\":\"Failed to get dashboard data\",\"details\":\"column \\\"distance_saved_km\\\" does not exist\"}\n"
+      "actual": 200,
+      "status": "PASS"
     },
     {
       "category": "Frontend",
@@ -409,9 +516,9 @@
   ],
   "summary": {
     "total": 56,
-    "passed": 25,
-    "failed": 30,
+    "passed": 38,
+    "failed": 17,
     "skipped": 1,
-    "success_rate": 44.64
+    "success_rate": 67.85
   }
 }
