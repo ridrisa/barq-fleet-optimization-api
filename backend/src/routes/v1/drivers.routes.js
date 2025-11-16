@@ -8,6 +8,7 @@ const router = express.Router();
 const { asyncHandler } = require('../../utils/error.handler');
 const { logger } = require('../../utils/logger');
 const driverStateService = require('../../services/driver-state.service');
+const DriverModel = require('../../models/driver.model');
 
 /**
  * @swagger
@@ -16,6 +17,22 @@ const driverStateService = require('../../services/driver-state.service');
  *     summary: Get available drivers
  *     description: Retrieve all drivers currently available for assignment
  *     tags: [Drivers]
+ *     parameters:
+ *       - in: query
+ *         name: lat
+ *         schema:
+ *           type: number
+ *         description: Pickup latitude (optional, defaults to Riyadh center)
+ *       - in: query
+ *         name: lng
+ *         schema:
+ *           type: number
+ *         description: Pickup longitude (optional, defaults to Riyadh center)
+ *       - in: query
+ *         name: serviceType
+ *         schema:
+ *           type: string
+ *         description: Service type filter (BARQ/BULLET)
  *     responses:
  *       200:
  *         description: Available drivers retrieved successfully
@@ -23,9 +40,16 @@ const driverStateService = require('../../services/driver-state.service');
 router.get(
   '/available',
   asyncHandler(async (req, res) => {
-    logger.info('Getting available drivers');
+    const lat = parseFloat(req.query.lat) || 24.7136; // Riyadh center
+    const lng = parseFloat(req.query.lng) || 46.6753;
+    const serviceType = req.query.serviceType;
 
-    const availableDrivers = driverStateService.getAvailableDrivers();
+    logger.info('Getting available drivers', { lat, lng, serviceType });
+
+    const availableDrivers = await driverStateService.getAvailableDrivers(
+      { lat, lng },
+      { serviceType }
+    );
 
     res.json({
       success: true,
@@ -63,19 +87,22 @@ router.get(
 
     logger.info('Getting driver state', { driverId });
 
-    const state = driverStateService.getDriverState(driverId);
+    try {
+      const state = await driverStateService.checkAvailability(driverId);
 
-    if (!state) {
-      return res.status(404).json({
-        success: false,
-        error: 'Driver not found',
+      res.json({
+        success: true,
+        data: state,
       });
+    } catch (error) {
+      if (error.message && error.message.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          error: 'Driver not found',
+        });
+      }
+      throw error;
     }
-
-    res.json({
-      success: true,
-      data: state,
-    });
   })
 );
 
@@ -112,15 +139,38 @@ router.put(
   '/:driverId/state',
   asyncHandler(async (req, res) => {
     const { driverId } = req.params;
-    const { state, reason } = req.body;
+    let { state, reason, location } = req.body;
 
-    logger.info('Updating driver state', { driverId, state, reason });
+    // Normalize state to uppercase for comparison
+    const normalizedState = state ? state.toUpperCase().replace(/-/g, '_') : null;
 
-    const result = driverStateService.updateDriverState(driverId, state, reason);
+    logger.info('Updating driver state', { driverId, state: normalizedState, reason });
+
+    let result;
+
+    // Route to appropriate state service method
+    switch (normalizedState) {
+      case 'AVAILABLE':
+        result = await driverStateService.startShift(driverId, location || { lat: 24.7136, lng: 46.6753 });
+        break;
+      case 'ON_BREAK':
+        result = await driverStateService.startBreak(driverId);
+        break;
+      case 'OFFLINE':
+        result = await driverStateService.endShift(driverId);
+        break;
+      default:
+        // Use DriverModel directly for other state transitions
+        result = await DriverModel.updateState(driverId, normalizedState, {
+          reason: reason || 'Manual state update',
+          triggeredBy: 'api',
+        });
+    }
 
     res.json({
       success: true,
       data: result,
+      message: `Driver state updated to ${normalizedState}`,
     });
   })
 );
@@ -146,10 +196,11 @@ router.get(
   '/:driverId/performance',
   asyncHandler(async (req, res) => {
     const { driverId } = req.params;
+    const period = req.query.period || '30 days';
 
-    logger.info('Getting driver performance', { driverId });
+    logger.info('Getting driver performance', { driverId, period });
 
-    const performance = driverStateService.getDriverPerformance(driverId);
+    const performance = await driverStateService.getDriverPerformance(driverId, period);
 
     res.json({
       success: true,
@@ -174,12 +225,18 @@ router.get(
   asyncHandler(async (req, res) => {
     logger.info('Getting fleet summary');
 
+    const fleetStatus = await driverStateService.getFleetStatus();
+
+    // Transform to simple summary format
     const summary = {
-      available: driverStateService.getAvailableDrivers().length,
-      busy: driverStateService.drivers.filter((d) => d.state === 'busy').length,
-      on_break: driverStateService.drivers.filter((d) => d.state === 'on_break').length,
-      offline: driverStateService.drivers.filter((d) => d.state === 'offline').length,
-      total: driverStateService.drivers.length,
+      total: fleetStatus.total || 0,
+      available: fleetStatus.by_state?.AVAILABLE?.count || 0,
+      busy: fleetStatus.by_state?.BUSY?.count || 0,
+      on_break: fleetStatus.by_state?.ON_BREAK?.count || 0,
+      offline: fleetStatus.by_state?.OFFLINE?.count || 0,
+      returning: fleetStatus.by_state?.RETURNING?.count || 0,
+      utilization_rate: fleetStatus.metrics?.utilization_rate || 0,
+      available_capacity: fleetStatus.metrics?.available_capacity || 0,
     };
 
     res.json({
