@@ -258,16 +258,36 @@ class EnhancedLogisticsService {
                 assignment.delivery_ids.includes(d.id)
               );
 
+              // Create waypoints array
+              const waypoints = [
+                ...(pickup ? [{...pickup, type: 'pickup'}] : []),
+                ...assignedDeliveries.map(d => ({...d, type: 'delivery'}))
+              ];
+
+              // CRITICAL: Create stops array for optimization agent
+              // The optimization agent expects routes to have a 'stops' array (line 60 of optimization.agent.js)
+              const stops = waypoints.map(wp => ({
+                ...wp,
+                id: wp.id,
+                name: wp.name || wp.address || `Stop ${wp.id}`,
+                location: {
+                  latitude: wp.lat,
+                  longitude: wp.lng
+                },
+                lat: wp.lat,
+                lng: wp.lng,
+                type: wp.type,
+                serviceTime: wp.serviceTime || 5
+              }));
+
               // Create a route with this vehicle's assigned deliveries
               return {
                 id: `route-${generateId()}`,
                 vehicle: vehicle,
                 pickupPoints: pickup ? [pickup] : [],
                 deliveryPoints: assignedDeliveries,
-                waypoints: [
-                  ...(pickup ? [{...pickup, type: 'pickup'}] : []),
-                  ...assignedDeliveries.map(d => ({...d, type: 'delivery'}))
-                ],
+                waypoints: waypoints,
+                stops: stops, // Required for optimization agent to process the route
                 llm_assigned: true,
               };
             });
