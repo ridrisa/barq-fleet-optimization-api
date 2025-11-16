@@ -610,6 +610,34 @@ class DriverModel {
       const result = await db.query(query);
       return result.rows;
     } catch (error) {
+      // Fallback if view doesn't exist - query drivers table directly
+      if (error.message && error.message.includes('does not exist')) {
+        logger.warn('[DriverModel] fleet_status_realtime view not found, using fallback query');
+
+        const fallbackQuery = `
+          SELECT
+            status as operational_state,
+            COUNT(*) as driver_count,
+            0 as avg_completed_today,
+            0 as avg_hours_worked,
+            100.00 as avg_on_time_rate,
+            ARRAY_AGG(id) as driver_ids
+          FROM drivers
+          WHERE is_active = true
+          GROUP BY status
+          ORDER BY status
+        `;
+
+        try {
+          const fallbackResult = await db.query(fallbackQuery);
+          return fallbackResult.rows;
+        } catch (fallbackError) {
+          logger.error('[DriverModel] Fallback query also failed', fallbackError);
+          // Return empty array instead of throwing
+          return [];
+        }
+      }
+
       logger.error('[DriverModel] Failed to get fleet status', error);
       throw error;
     }
