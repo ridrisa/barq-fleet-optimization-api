@@ -10,6 +10,7 @@ const { logger } = require('../utils/logger');
 
 // Import demo components
 const DemoGenerator = require('./demo-generator');
+const demoDatabaseService = require('./demo-database.service');
 
 // Global demo state (in production, this would be in a database or cache)
 let demoState = {
@@ -185,7 +186,16 @@ router.post(
 
       demoState.isRunning = false;
 
-      logger.info('Demo stopped', { runTimeSeconds: runTime });
+      // Auto-cleanup demo orders older than the demo duration
+      const cleanupMinutes = Math.ceil(runTime / 60) + 5; // Demo duration + 5 minutes buffer
+      const cleanupResult = await demoDatabaseService.cleanup({
+        olderThanMinutes: cleanupMinutes,
+      });
+
+      logger.info('Demo stopped', {
+        runTimeSeconds: runTime,
+        ordersCleanedUp: cleanupResult.deletedCount || 0,
+      });
 
       res.json({
         success: true,
@@ -194,6 +204,7 @@ router.post(
           endTime: endTime.toISOString(),
           runTimeSeconds: runTime,
           finalStats: demoState.stats,
+          cleanup: cleanupResult,
         },
       });
     } catch (error) {
@@ -298,6 +309,59 @@ router.post(
       res.status(500).json({
         success: false,
         error: 'Failed to reset demo',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      });
+    }
+  })
+);
+
+/**
+ * @swagger
+ * /api/demo/cleanup:
+ *   post:
+ *     summary: Clean up demo orders
+ *     description: Delete demo orders from the database
+ *     tags: [Demo]
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               all:
+ *                 type: boolean
+ *                 default: false
+ *                 description: Delete all demo orders
+ *               olderThanMinutes:
+ *                 type: integer
+ *                 description: Delete orders older than N minutes
+ *               keepLast:
+ *                 type: integer
+ *                 default: 1000
+ *                 description: Keep last N orders (if all and olderThanMinutes not specified)
+ *     responses:
+ *       200:
+ *         description: Cleanup completed successfully
+ */
+router.post(
+  '/cleanup',
+  asyncHandler(async (req, res) => {
+    try {
+      const { all = false, olderThanMinutes = null, keepLast = 1000 } = req.body;
+
+      const result = await demoDatabaseService.cleanup({
+        all,
+        olderThanMinutes,
+        keepLast,
+      });
+
+      res.json(result);
+    } catch (error) {
+      logger.error('Failed to cleanup demo orders', { error: error.message });
+      res.status(500).json({
+        success: false,
+        error: 'Failed to cleanup demo orders',
         details: process.env.NODE_ENV === 'development' ? error.message : undefined,
       });
     }

@@ -49,7 +49,16 @@ router.post('/dispatch/start', async (req, res) => {
     }
 
     if (autoDispatchEngine.isRunning) {
-      return res.status(400).json({ error: 'Auto-dispatch engine is already running' });
+      return res.json({
+        success: true,
+        message: 'Auto-dispatch engine is already running',
+        alreadyRunning: true,
+        config: {
+          checkInterval: '10 seconds',
+          offerTimeout: `${autoDispatchEngine.offerTimeout} seconds`,
+          maxOffersPerOrder: autoDispatchEngine.maxOffersPerOrder,
+        },
+      });
     }
 
     await autoDispatchEngine.start();
@@ -213,7 +222,16 @@ router.post('/routes/start', async (req, res) => {
     }
 
     if (dynamicRouteOptimizer.isRunning) {
-      return res.status(400).json({ error: 'Route optimizer is already running' });
+      return res.json({
+        success: true,
+        message: 'Route optimizer is already running',
+        alreadyRunning: true,
+        config: {
+          optimizationInterval: '5 minutes',
+          improvementThreshold: `${dynamicRouteOptimizer.improvementThreshold}%`,
+          trafficCheckInterval: '1 minute',
+        },
+      });
     }
 
     await dynamicRouteOptimizer.start();
@@ -433,7 +451,17 @@ router.post('/batching/start', async (req, res) => {
     }
 
     if (smartBatchingEngine.isRunning) {
-      return res.status(400).json({ error: 'Smart batching engine is already running' });
+      return res.json({
+        success: true,
+        message: 'Smart batching engine is already running',
+        alreadyRunning: true,
+        config: {
+          batchingInterval: '10 minutes',
+          minOrdersInBatch: smartBatchingEngine.minOrdersInBatch,
+          maxOrdersInBatch: smartBatchingEngine.maxOrdersInBatch,
+          maxDistanceKm: smartBatchingEngine.maxDistance / 1000,
+        },
+      });
     }
 
     await smartBatchingEngine.start();
@@ -643,7 +671,15 @@ router.post('/escalation/start', async (req, res) => {
     }
 
     if (autonomousEscalationEngine.isRunning) {
-      return res.status(400).json({ error: 'Escalation engine is already running' });
+      return res.json({
+        success: true,
+        message: 'Escalation engine is already running',
+        alreadyRunning: true,
+        config: {
+          checkInterval: '30 seconds',
+          slaThresholds: autonomousEscalationEngine.slaThresholds,
+        },
+      });
     }
 
     await autonomousEscalationEngine.start();

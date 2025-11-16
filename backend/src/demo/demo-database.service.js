@@ -123,6 +123,8 @@ class DemoDatabaseService {
           weight: demoOrder.weight || 1,
           description: demoOrder.description || 'Demo order',
           special_instructions: demoOrder.specialInstructions || '',
+          source: 'demo', // Tag for identifying demo orders for cleanup
+          demo_id: demoOrder.id, // Reference to original demo order ID
         },
         priority: demoOrder.priority || 0,
         cod_amount: demoOrder.codAmount || 0,
@@ -180,7 +182,7 @@ class DemoDatabaseService {
         orderData.delivery_fee,
         slaDeadline.toISOString(),
         totalAmount,
-        'pending', // Initial status
+        'PENDING', // Initial status - UPPERCASE for automation engines to pick up
       ];
 
       const result = await db.query(query, values);
@@ -253,25 +255,62 @@ class DemoDatabaseService {
   }
 
   /**
-   * Clean up old demo orders (optional - keep last 1000)
+   * Clean up demo orders
+   * @param {Object} options - Cleanup options
+   * @param {boolean} options.all - Delete all demo orders (default: false)
+   * @param {number} options.olderThanMinutes - Delete orders older than N minutes (default: keep all if not specified)
+   * @param {number} options.keepLast - Keep last N orders (default: 1000)
    */
-  async cleanup() {
+  async cleanup(options = {}) {
     try {
-      const query = `
-        DELETE FROM orders
-        WHERE id IN (
-          SELECT id FROM orders
-          WHERE customer_id IN (
-            SELECT id FROM customers WHERE phone LIKE '+966501234%'
+      const { all = false, olderThanMinutes = null, keepLast = 1000 } = options;
+
+      let query;
+      let values = [];
+
+      if (all) {
+        // Delete ALL demo orders
+        query = `
+          DELETE FROM orders
+          WHERE package_details->>'source' = 'demo'
+        `;
+        logger.info('[DemoDB] Deleting ALL demo orders...');
+      } else if (olderThanMinutes) {
+        // Delete demo orders older than N minutes
+        query = `
+          DELETE FROM orders
+          WHERE package_details->>'source' = 'demo'
+            AND created_at < NOW() - INTERVAL '${parseInt(olderThanMinutes)} minutes'
+        `;
+        logger.info(`[DemoDB] Deleting demo orders older than ${olderThanMinutes} minutes...`);
+      } else {
+        // Keep last N demo orders, delete the rest
+        query = `
+          DELETE FROM orders
+          WHERE id IN (
+            SELECT id FROM orders
+            WHERE package_details->>'source' = 'demo'
+            ORDER BY created_at DESC
+            OFFSET ${parseInt(keepLast)}
           )
-          ORDER BY created_at DESC
-          OFFSET 1000
-        )
-      `;
-      const result = await db.query(query);
-      logger.info(`[DemoDB] Cleaned up ${result.rowCount} old demo orders`);
+        `;
+        logger.info(`[DemoDB] Keeping last ${keepLast} demo orders, deleting the rest...`);
+      }
+
+      const result = await db.query(query, values);
+      logger.info(`[DemoDB] Cleaned up ${result.rowCount} demo orders`);
+
+      return {
+        success: true,
+        deletedCount: result.rowCount,
+        message: `Deleted ${result.rowCount} demo orders`,
+      };
     } catch (error) {
-      logger.error('[DemoDB] Failed to cleanup old demo orders', error);
+      logger.error('[DemoDB] Failed to cleanup demo orders', error);
+      return {
+        success: false,
+        error: error.message,
+      };
     }
   }
 }
