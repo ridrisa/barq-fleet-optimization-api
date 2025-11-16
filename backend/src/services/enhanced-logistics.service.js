@@ -7,7 +7,7 @@
 const LLMConfigManager = require('../config/llm.config');
 const db = require('../config/db.config');
 const { generateId } = require('../utils/helper');
-const { logger } = require('../utils/logger');
+const { logger, logFunctionExecution } = require('../utils/logger');
 
 // Import Agent Manager for instant delivery
 const AgentManagerService = require('./agent-manager.service');
