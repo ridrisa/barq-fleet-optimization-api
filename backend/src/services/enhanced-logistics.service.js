@@ -221,16 +221,21 @@ class EnhancedLogisticsService {
         );
 
         try {
-          // Get LLM's intelligent vehicle distribution
+          // Get LLM's intelligent vehicle distribution with SLA constraint
+          const slaHours = request.constraints?.maxDeliveryTime
+            ? request.constraints.maxDeliveryTime / 60
+            : 4; // Default 4-hour SLA
+
           const llmOptimization = await this.llmFleetAdvisor.optimizeMultiVehicleRoutes(
             pickupPoints,
             deliveryPoints,
-            vehicles
+            vehicles,
+            { slaHours }
           );
 
           if (llmOptimization.success && llmOptimization.optimization?.vehicle_assignments) {
             logger.info(
-              `[EnhancedLogistics] LLM suggested ${llmOptimization.optimization.strategy.vehicles_used} vehicles, utilization: ${(llmOptimization.optimization.optimization_metrics.utilization_rate * 100).toFixed(1)}%`
+              `[EnhancedLogistics] LLM suggested ${llmOptimization.optimization.strategy.vehicles_used} vehicles, utilization: ${(llmOptimization.optimization.optimization_metrics.utilization_rate * 100).toFixed(1)}%, SLA: ${llmOptimization.optimization.strategy.sla_compliance || 'unknown'}`
             );
 
             // Enhance the initial plan with LLM's vehicle assignments

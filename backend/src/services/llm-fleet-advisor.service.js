@@ -334,18 +334,20 @@ Respond ONLY with valid JSON matching this schema:
    * @param {Array} pickupPoints - Pickup locations
    * @param {Array} deliveryPoints - Delivery locations
    * @param {Array} vehicles - Available vehicles
+   * @param {Object} options - Additional options including SLA constraints
    * @returns {Promise<Object>} - LLM-optimized vehicle distribution strategy
    */
-  async optimizeMultiVehicleRoutes(pickupPoints, deliveryPoints, vehicles) {
+  async optimizeMultiVehicleRoutes(pickupPoints, deliveryPoints, vehicles, options = {}) {
     try {
       if (!this.groq) {
-        return this._getFallbackMultiVehicleStrategy(pickupPoints, deliveryPoints, vehicles);
+        return this._getFallbackMultiVehicleStrategy(pickupPoints, deliveryPoints, vehicles, options);
       }
 
       const prompt = this._buildMultiVehicleOptimizationPrompt(
         pickupPoints,
         deliveryPoints,
-        vehicles
+        vehicles,
+        options
       );
 
       const completion = await this.groq.chat.completions.create({
@@ -355,16 +357,21 @@ Respond ONLY with valid JSON matching this schema:
             role: 'system',
             content: `You are an AI route optimization expert specializing in multi-vehicle logistics.
 
-Your goal is to distribute deliveries across available vehicles to:
-1. Maximize fleet utilization (minimize idle vehicles)
-2. Balance workload fairly across all vehicles
-3. Minimize total distance and travel time
-4. Create geographically logical clusters
-5. Ensure all deliveries are assigned
+Your PRIMARY goal is to ensure ALL deliveries meet the 4-HOUR SLA DEADLINE. Secondary goals include efficiency and utilization.
+
+Priority order for optimization:
+1. **SLA COMPLIANCE (CRITICAL)**: Ensure EVERY route can be completed within 4 hours from start time
+2. **Use adequate vehicles**: Use AS MANY vehicles as needed to meet SLA (don't limit to "balanced" distribution if it violates SLA)
+3. **Geographic clustering**: Group nearby deliveries to minimize travel time
+4. **Workload balance**: Distribute fairly ONLY if SLA permits
+5. **Fleet utilization**: Minimize idle vehicles ONLY if SLA permits
 
 CRITICAL RULES:
-- Use ALL available vehicles (or as many as makes sense)
-- Each vehicle should handle 20-30% of total deliveries when balanced
+- **NEVER violate 4-hour SLA** - this is non-negotiable
+- If a balanced distribution would exceed 4 hours per route, use MORE vehicles
+- Each route MUST complete all stops within 4 hours (including pickup, travel, service time, deliveries)
+- Assume 5 minutes service time per stop, plus actual travel time
+- If uncertain about route duration, err on the side of using MORE vehicles
 - Group nearby deliveries together (geographic clustering)
 - Assign each delivery to exactly ONE vehicle
 - Match deliveries to nearest pickup point
@@ -374,7 +381,8 @@ Respond ONLY with valid JSON matching this schema:
   "strategy": {
     "num_routes": number,
     "vehicles_used": number,
-    "clustering_method": "geographic|balanced|hybrid"
+    "clustering_method": "geographic|balanced|hybrid",
+    "sla_compliance": "all_compliant|at_risk|violated"
   },
   "vehicle_assignments": [
     {
@@ -382,14 +390,18 @@ Respond ONLY with valid JSON matching this schema:
       "pickup_id": "pickup-X",
       "delivery_ids": ["del-1", "del-2", ...],
       "estimated_deliveries": number,
+      "estimated_duration_minutes": number,
       "geographic_zone": "north|south|east|west|central",
-      "reasoning": "why these deliveries go together"
+      "sla_status": "safe|tight|at_risk",
+      "reasoning": "why these deliveries go together and how SLA is met"
     }
   ],
   "optimization_metrics": {
     "utilization_rate": 0.0-1.0,
     "balance_score": 0.0-1.0,
-    "efficiency_score": 0.0-1.0
+    "efficiency_score": 0.0-1.0,
+    "sla_compliance_score": 0.0-1.0,
+    "max_route_duration_minutes": number
   },
   "recommendations": ["suggestion 1", "suggestion 2"]
 }`,
@@ -422,7 +434,7 @@ Respond ONLY with valid JSON matching this schema:
       };
     } catch (error) {
       logger.error('LLM multi-vehicle optimization failed', { error: error.message });
-      return this._getFallbackMultiVehicleStrategy(pickupPoints, deliveryPoints, vehicles);
+      return this._getFallbackMultiVehicleStrategy(pickupPoints, deliveryPoints, vehicles, options);
     }
   }
 
@@ -486,14 +498,21 @@ Respond ONLY with valid JSON matching this schema:
 
   // ==================== PROMPT BUILDERS ====================
 
-  _buildMultiVehicleOptimizationPrompt(pickupPoints, deliveryPoints, vehicles) {
+  _buildMultiVehicleOptimizationPrompt(pickupPoints, deliveryPoints, vehicles, options = {}) {
     // Calculate geographic bounds for clustering hints
     const lats = deliveryPoints.map((d) => d.lat);
     const lngs = deliveryPoints.map((d) => d.lng);
     const centerLat = (Math.max(...lats) + Math.min(...lats)) / 2;
     const centerLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
 
+    const slaHours = options.slaHours || 4;
+    const slaMinutes = slaHours * 60;
+
     return `Optimization Request:
+
+**SLA CONSTRAINT**: All routes must complete within ${slaHours} hours (${slaMinutes} minutes) from start time.
+- Service time per stop: 5 minutes
+- Available time budget per route: ${slaMinutes} minutes MAXIMUM
 
 Pickup Points (${pickupPoints.length}):
 ${pickupPoints
@@ -522,13 +541,18 @@ ${vehicles
 Geographic Center: (${centerLat.toFixed(4)}, ${centerLng.toFixed(4)})
 
 TASK: Create an optimal multi-vehicle distribution strategy that:
-1. Uses ${vehicles.length} vehicles (or as many as needed for efficiency)
-2. Distributes ${deliveryPoints.length} deliveries fairly across vehicles
-3. Groups geographically close deliveries together
-4. Assigns each delivery to the nearest appropriate pickup point
-5. Balances workload (aim for ${Math.ceil(deliveryPoints.length / vehicles.length)}-${Math.ceil(deliveryPoints.length / vehicles.length) + 2} deliveries per vehicle)
+1. **PRIMARY GOAL**: ENSURES all routes complete within ${slaMinutes} minutes (${slaHours}-hour SLA)
+2. Uses AS MANY vehicles as needed to meet SLA (available: ${vehicles.length} vehicles)
+3. Distributes ${deliveryPoints.length} deliveries across vehicles with SLA compliance
+4. Groups geographically close deliveries together to minimize travel time
+5. Assigns each delivery to the nearest appropriate pickup point
+6. Estimates route duration for each vehicle (travel time + service time)
+7. If balanced distribution risks exceeding ${slaMinutes} minutes, USE MORE VEHICLES
 
-Provide a complete vehicle assignment strategy with reasoning.`;
+**CRITICAL**: If you're unsure whether a route fits in ${slaMinutes} minutes, split it into more routes.
+Better to use more vehicles and guarantee SLA than to risk violations.
+
+Provide a complete vehicle assignment strategy with duration estimates and SLA status for each route.`;
   }
 
   _buildDriverAssignmentPrompt(order, drivers, targetStatus) {
@@ -720,10 +744,35 @@ Analyze performance and provide top 3-5 actionable recommendations for improveme
     };
   }
 
-  _getFallbackMultiVehicleStrategy(pickupPoints, deliveryPoints, vehicles) {
-    // Simple fallback: distribute deliveries evenly across vehicles
-    const numVehicles = Math.min(vehicles.length, Math.ceil(deliveryPoints.length / 5));
+  _getFallbackMultiVehicleStrategy(pickupPoints, deliveryPoints, vehicles, options = {}) {
+    // Fallback strategy with SLA consideration
+    const slaMinutes = (options.slaHours || 4) * 60;
+    const serviceTimePerStop = 5; // minutes
+    const avgTravelTimePerStop = 10; // Conservative estimate in minutes
+    const totalTimePerStop = serviceTimePerStop + avgTravelTimePerStop;
+
+    // Calculate max deliveries per vehicle to meet SLA
+    // Formula: (SLA minutes - pickup time) / time per stop
+    const maxDeliveriesPerVehicle = Math.floor((slaMinutes - serviceTimePerStop) / totalTimePerStop);
+
+    // Calculate minimum vehicles needed to meet SLA
+    const minVehiclesForSLA = Math.ceil(deliveryPoints.length / maxDeliveriesPerVehicle);
+
+    // Use the greater of: vehicles needed for SLA or a reasonable minimum
+    const numVehicles = Math.min(
+      vehicles.length,
+      Math.max(minVehiclesForSLA, Math.ceil(deliveryPoints.length / 10))
+    );
+
     const deliveriesPerVehicle = Math.ceil(deliveryPoints.length / numVehicles);
+
+    logger.info('[LLM Fallback] SLA-aware vehicle allocation', {
+      slaMinutes,
+      maxDeliveriesPerVehicle,
+      minVehiclesForSLA,
+      actualVehiclesUsed: numVehicles,
+      deliveriesPerVehicle,
+    });
 
     const assignments = [];
     for (let i = 0; i < numVehicles; i++) {
@@ -745,6 +794,9 @@ Analyze performance and provide top 3-5 actionable recommendations for improveme
       });
     }
 
+    const estimatedMaxDuration = deliveriesPerVehicle * totalTimePerStop + serviceTimePerStop;
+    const slaCompliant = estimatedMaxDuration <= slaMinutes;
+
     return {
       success: true,
       optimization: {
@@ -752,14 +804,22 @@ Analyze performance and provide top 3-5 actionable recommendations for improveme
           num_routes: numVehicles,
           vehicles_used: numVehicles,
           clustering_method: 'balanced',
+          sla_compliance: slaCompliant ? 'all_compliant' : 'at_risk',
         },
         vehicle_assignments: assignments,
         optimization_metrics: {
           utilization_rate: numVehicles / vehicles.length,
           balance_score: 0.8,
           efficiency_score: 0.7,
+          sla_compliance_score: slaCompliant ? 1.0 : 0.7,
+          max_route_duration_minutes: estimatedMaxDuration,
         },
-        recommendations: ['Enable LLM optimization for better geographic clustering'],
+        recommendations: [
+          'Enable LLM optimization for better geographic clustering',
+          slaCompliant
+            ? 'All routes estimated to meet 4-hour SLA'
+            : `Warning: Routes may exceed ${slaMinutes} minute SLA. Consider using more vehicles.`,
+        ],
       },
       model: 'fallback',
       ai_powered: false,

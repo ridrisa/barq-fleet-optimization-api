@@ -1,0 +1,60 @@
+{
+  "pickupPoints": [
+    {
+      "id": "pickup-1",
+      "name": "Warehouse A",
+      "lat": 24.7136,
+      "lng": 46.6753
+    },
+    {
+      "id": "pickup-2",
+      "name": "Warehouse B",
+      "lat": 24.7500,
+      "lng": 46.7000
+    },
+    {
+      "id": "pickup-3",
+      "name": "Warehouse C",
+      "lat": 24.6800,
+      "lng": 46.6500
+    }
+  ],
+  "deliveryPoints": [
+    {"id": "del-1", "name": "Customer 1", "lat": 24.7200, "lng": 46.6800},
+    {"id": "del-2", "name": "Customer 2", "lat": 24.7300, "lng": 46.6900},
+    {"id": "del-3", "name": "Customer 3", "lat": 24.7100, "lng": 46.6700},
+    {"id": "del-4", "name": "Customer 4", "lat": 24.7400, "lng": 46.7100},
+    {"id": "del-5", "name": "Customer 5", "lat": 24.7000, "lng": 46.6600},
+    {"id": "del-6", "name": "Customer 6", "lat": 24.7600, "lng": 46.7200},
+    {"id": "del-7", "name": "Customer 7", "lat": 24.6900, "lng": 46.6500},
+    {"id": "del-8", "name": "Customer 8", "lat": 24.7700, "lng": 46.7300},
+    {"id": "del-9", "name": "Customer 9", "lat": 24.6800, "lng": 46.6400},
+    {"id": "del-10", "name": "Customer 10", "lat": 24.7800, "lng": 46.7400},
+    {"id": "del-11", "name": "Customer 11", "lat": 24.7250, "lng": 46.6850},
+    {"id": "del-12", "name": "Customer 12", "lat": 24.7350, "lng": 46.6950},
+    {"id": "del-13", "name": "Customer 13", "lat": 24.7150, "lng": 46.6750},
+    {"id": "del-14", "name": "Customer 14", "lat": 24.7450, "lng": 46.7150},
+    {"id": "del-15", "name": "Customer 15", "lat": 24.7050, "lng": 46.6650},
+    {"id": "del-16", "name": "Customer 16", "lat": 24.7650, "lng": 46.7250},
+    {"id": "del-17", "name": "Customer 17", "lat": 24.6950, "lng": 46.6550},
+    {"id": "del-18", "name": "Customer 18", "lat": 24.7750, "lng": 46.7350},
+    {"id": "del-19", "name": "Customer 19", "lat": 24.6850, "lng": 46.6450},
+    {"id": "del-20", "name": "Customer 20", "lat": 24.7850, "lng": 46.7450},
+    {"id": "del-21", "name": "Customer 21", "lat": 24.7220, "lng": 46.6820},
+    {"id": "del-22", "name": "Customer 22", "lat": 24.7320, "lng": 46.6920},
+    {"id": "del-23", "name": "Customer 23", "lat": 24.7120, "lng": 46.6720}
+  ],
+  "fleet": {
+    "vehicles": [
+      {"id": "vehicle-1", "type": "van", "capacity": 1000},
+      {"id": "vehicle-2", "type": "van", "capacity": 1000},
+      {"id": "vehicle-3", "type": "van", "capacity": 1000},
+      {"id": "vehicle-4", "type": "van", "capacity": 1000},
+      {"id": "vehicle-5", "type": "van", "capacity": 1000}
+    ]
+  },
+  "constraints": {
+    "maxDeliveryTime": 240
+  },
+  "serviceType": "STANDARD"
+}
