@@ -77,9 +77,25 @@ class ApiClient {
       return endpoint;
     }
 
-    // If endpoint starts with /api/, add version after it
-    if (endpoint.startsWith('/api/')) {
+    // Paths that should NOT be versioned (they have their own routing)
+    const nonVersionedPaths = ['/demo/', '/health', '/version', '/metrics'];
+    const isNonVersioned = nonVersionedPaths.some(path =>
+      endpoint.includes(path) || endpoint.startsWith('/api' + path)
+    );
+
+    // If endpoint starts with /api/ but is NOT a versioned or non-versioned path
+    if (endpoint.startsWith('/api/') && !isNonVersioned) {
       return endpoint.replace('/api/', `/api/${this.version}/`);
+    }
+
+    // For non-versioned paths starting with /api/, return as is
+    if (endpoint.startsWith('/api/') && isNonVersioned) {
+      return endpoint;
+    }
+
+    // For paths without /api/, check if they should be non-versioned
+    if (isNonVersioned) {
+      return `/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
     }
 
     // Otherwise, prepend /api/version
