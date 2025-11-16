@@ -114,8 +114,8 @@ class DriverModel {
   static async getById(driverId) {
     const query = `
       SELECT d.*,
-        ST_X(d.current_location::geometry) as longitude,
-        ST_Y(d.current_location::geometry) as latitude,
+        d.current_longitude as longitude,
+        d.current_latitude as latitude,
         (d.target_deliveries - d.completed_today) as gap_from_target,
         can_accept_order(d.id) as can_accept_order,
         COUNT(DISTINCT o.id) as active_orders_count,
@@ -165,8 +165,8 @@ class DriverModel {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $3
       RETURNING *,
-        ST_X(current_location::geometry) as longitude,
-        ST_Y(current_location::geometry) as latitude
+        current_longitude as longitude,
+        current_latitude as latitude
     `;
 
     try {
@@ -222,8 +222,8 @@ class DriverModel {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $4
       RETURNING *,
-        ST_X(current_location::geometry) as longitude,
-        ST_Y(current_location::geometry) as latitude
+        current_longitude as longitude,
+        current_latitude as latitude
     `;
 
     const dropoffPoint = orderDetails.dropoff_location
@@ -309,8 +309,8 @@ class DriverModel {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $2
       RETURNING *,
-        ST_X(current_location::geometry) as longitude,
-        ST_Y(current_location::geometry) as latitude,
+        current_longitude as longitude,
+        current_latitude as latitude,
         (target_deliveries - (completed_today + 1)) as gap_from_target
     `;
 
@@ -484,12 +484,12 @@ class DriverModel {
     let query = `
       SELECT
         d.*,
-        ST_X(d.current_location::geometry) as longitude,
-        ST_Y(d.current_location::geometry) as latitude,
+        d.current_longitude as longitude,
+        d.current_latitude as latitude,
         (d.target_deliveries - d.completed_today) as gap_from_target,
         can_accept_order(d.id) as can_accept_order,
         ST_Distance(
-          d.current_location,
+          ST_MakePoint(d.current_longitude, d.current_latitude)::geography,
           ST_GeogFromText('POINT(${location.lng} ${location.lat})')
         ) / 1000 as distance_km
       FROM drivers d
@@ -519,7 +519,7 @@ class DriverModel {
     // Filter by distance
     query += `
       AND ST_DWithin(
-        d.current_location,
+        ST_MakePoint(d.current_longitude, d.current_latitude)::geography,
         ST_GeogFromText('POINT(${location.lng} ${location.lat})'),
         ${radiusKm * 1000}
       )
@@ -664,18 +664,17 @@ class DriverModel {
     const query = `
       UPDATE drivers
       SET
-        current_location = ST_GeogFromText($1),
+        current_latitude = $1,
+        current_longitude = $2,
         last_location_update = CURRENT_TIMESTAMP
-      WHERE id = $2
+      WHERE id = $3
       RETURNING *,
-        ST_X(current_location::geometry) as longitude,
-        ST_Y(current_location::geometry) as latitude
+        current_longitude as longitude,
+        current_latitude as latitude
     `;
 
-    const point = `POINT(${longitude} ${latitude})`;
-
     try {
-      const result = await db.query(query, [point, driverId]);
+      const result = await db.query(query, [latitude, longitude, driverId]);
       logger.debug(`[DriverModel] Updated location for driver ${driverId}`);
       return result.rows[0];
     } catch (error) {
@@ -731,14 +730,14 @@ class DriverModel {
         const query = `
           UPDATE drivers
           SET
-            current_location = ST_GeogFromText($1),
+            current_latitude = $1,
+            current_longitude = $2,
             last_location_update = CURRENT_TIMESTAMP
-          WHERE id = $2
+          WHERE id = $3
           RETURNING id
         `;
 
-        const point = `POINT(${longitude} ${latitude})`;
-        const result = await client.query(query, [point, driverId]);
+        const result = await client.query(query, [latitude, longitude, driverId]);
 
         if (result.rows.length > 0) {
           updated.push(driverId);
@@ -756,8 +755,8 @@ class DriverModel {
   static async getByEmployeeId(employeeId) {
     const query = `
       SELECT d.*,
-        ST_X(d.current_location::geometry) as longitude,
-        ST_Y(d.current_location::geometry) as latitude,
+        d.current_longitude as longitude,
+        d.current_latitude as latitude,
         (d.target_deliveries - d.completed_today) as gap_from_target
       FROM drivers d
       WHERE d.employee_id = $1
