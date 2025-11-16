@@ -42,15 +42,50 @@ export default function DemoDashboard() {
 
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
+  const [demoAvailable, setDemoAvailable] = useState(false);
 
-  // WebSocket connection
+  // Check if demo is available (HTTP-only, no WebSocket required)
+  React.useEffect(() => {
+    const checkDemoAvailability = async () => {
+      try {
+        const response = await apiClient.get('/demo/status');
+        if (response.success !== undefined) {
+          setDemoAvailable(true);
+          dispatch(setConnectionStatus(true));
+          // Update demo status from backend
+          if (response.data?.isRunning) {
+            dispatch(setDemoStatus(true));
+          }
+        }
+      } catch (error) {
+        console.error('Demo not available:', error);
+        setDemoAvailable(false);
+        dispatch(setConnectionStatus(false));
+      }
+    };
+
+    checkDemoAvailability();
+
+    // Poll status every 5 seconds when demo is running
+    const interval = setInterval(() => {
+      if (isRunning) {
+        checkDemoAvailability();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isRunning, dispatch]);
+
+  // WebSocket connection (optional - gracefully degrades if not available)
   useWebSocket({
     url: apiClient.getWsUrl(),
     onOpen: () => {
-      dispatch(setConnectionStatus(true));
+      // WebSocket is just a bonus - demo works without it
+      console.log('WebSocket connected (enhanced mode)');
     },
     onClose: () => {
-      dispatch(setConnectionStatus(false));
+      // Demo still works via HTTP polling
+      console.log('WebSocket disconnected (using HTTP mode)');
     },
     onMessage: (message) => {
       handleWebSocketMessage(message);
@@ -171,13 +206,33 @@ export default function DemoDashboard() {
   const startDemo = async () => {
     setIsStarting(true);
     try {
-      const httpBase = apiClient.getWsHttpBaseUrl();
-      const data = await apiClient.postAbsolute(`${httpBase}/api/demo/start`, config);
+      // Use main API URL directly
+      const data = await apiClient.post('/demo/start', config);
       if (data.success) {
         dispatch(setDemoStatus(true));
+        dispatch(
+          addEvent({
+            id: `event-${Date.now()}`,
+            type: 'system',
+            message: 'Demo started successfully',
+            timestamp: new Date().toISOString(),
+            level: 'success',
+          })
+        );
       }
+      setIsStarting(false);
     } catch (error) {
       console.error('Failed to start demo:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      dispatch(
+        addEvent({
+          id: `event-${Date.now()}`,
+          type: 'system',
+          message: `Failed to start demo: ${errorMessage}`,
+          timestamp: new Date().toISOString(),
+          level: 'error',
+        })
+      );
       setIsStarting(false);
     }
   };
@@ -185,11 +240,21 @@ export default function DemoDashboard() {
   const stopDemo = async () => {
     setIsStopping(true);
     try {
-      const httpBase = apiClient.getWsHttpBaseUrl();
-      const data = await apiClient.postAbsolute(`${httpBase}/api/demo/stop`);
+      // Use main API URL directly
+      const data = await apiClient.post('/demo/stop');
       if (data.success) {
         dispatch(setDemoStatus(false));
+        dispatch(
+          addEvent({
+            id: `event-${Date.now()}`,
+            type: 'system',
+            message: 'Demo stopped successfully',
+            timestamp: new Date().toISOString(),
+            level: 'info',
+          })
+        );
       }
+      setIsStopping(false);
     } catch (error) {
       console.error('Failed to stop demo:', error);
       setIsStopping(false);
@@ -198,9 +263,20 @@ export default function DemoDashboard() {
 
   const createOrder = async (serviceType: 'BARQ' | 'BULLET') => {
     try {
-      const httpBase = apiClient.getWsHttpBaseUrl();
-      const data = await apiClient.postAbsolute(`${httpBase}/api/demo/order`, { serviceType });
+      // Create order via main API
+      const data = await apiClient.post('/demo/order', { serviceType });
       console.log('Order created:', data);
+      if (data.success) {
+        dispatch(
+          addEvent({
+            id: `event-${Date.now()}`,
+            type: 'order',
+            message: `New ${serviceType} order created`,
+            timestamp: new Date().toISOString(),
+            level: 'info',
+          })
+        );
+      }
     } catch (error) {
       console.error('Failed to create order:', error);
     }
@@ -238,10 +314,9 @@ export default function DemoDashboard() {
 
   return (
     <div className="p-4 space-y-4">
-      {!isConnected && (
+      {!demoAvailable && (
         <div className="rounded-md border border-yellow-200 bg-yellow-50 text-yellow-800 p-3">
-          Demo backend is unavailable. Ensure the WebSocket server is deployed and
-          set <code className="px-1 py-0.5 bg-yellow-100 rounded">NEXT_PUBLIC_WS_URL</code> to its wss URL.
+          Demo backend is unavailable. The demo endpoints may not be deployed or accessible.
         </div>
       )}
       {/* Header */}
@@ -272,7 +347,7 @@ export default function DemoDashboard() {
           <div className="flex gap-4">
             <Button
               onClick={startDemo}
-              disabled={isRunning || isStarting || !isConnected}
+              disabled={isRunning || isStarting || !demoAvailable}
               className="flex items-center gap-2"
             >
               <PlayCircle className="w-4 h-4" />

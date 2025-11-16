@@ -304,4 +304,75 @@ router.post(
   })
 );
 
+/**
+ * @swagger
+ * /api/demo/order:
+ *   post:
+ *     summary: Create a demo order
+ *     description: Manually create a demo order for testing
+ *     tags: [Demo]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               serviceType:
+ *                 type: string
+ *                 enum: [BARQ, BULLET]
+ *                 default: BARQ
+ *     responses:
+ *       200:
+ *         description: Order created successfully
+ *       400:
+ *         description: Invalid service type
+ *       409:
+ *         description: Demo not running
+ */
+router.post(
+  '/order',
+  asyncHandler(async (req, res) => {
+    try {
+      const { serviceType = 'BARQ' } = req.body;
+
+      if (!['BARQ', 'BULLET'].includes(serviceType)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid service type',
+          details: 'Service type must be BARQ or BULLET',
+        });
+      }
+
+      if (!demoState.isRunning || !demoState.generator) {
+        return res.status(409).json({
+          success: false,
+          error: 'Demo not running',
+          details: 'Start the demo before creating orders',
+        });
+      }
+
+      // Generate a random order via the demo generator
+      const order = await demoState.generator.generateRandomOrder(serviceType);
+
+      logger.info('Manual demo order created', { orderId: order.id, serviceType });
+
+      res.json({
+        success: true,
+        message: 'Order created successfully',
+        data: {
+          order,
+        },
+      });
+    } catch (error) {
+      logger.error('Failed to create demo order', { error: error.message });
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create order',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      });
+    }
+  })
+);
+
 module.exports = router;
