@@ -71,6 +71,8 @@ const ensureAgentsInitialized = (req, res, next) => {
  */
 router.get(
   '/agents/status',
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.MANAGER),
   asyncHandler(async (req, res) => {
     const startTime = Date.now();
 

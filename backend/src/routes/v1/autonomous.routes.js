@@ -60,6 +60,157 @@ router.get(
 );
 
 /**
+ * POST /api/v1/autonomous/start
+ * Start autonomous operations
+ */
+router.post(
+  '/start',
+  authenticate,
+  authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    if (!autonomousInitializer) {
+      return res.status(503).json({
+        success: false,
+        message: 'Autonomous operations not initialized',
+      });
+    }
+
+    try {
+      await autonomousInitializer.start();
+
+      res.json({
+        success: true,
+        message: 'Autonomous operations started successfully',
+        data: autonomousInitializer.getStatus(),
+      });
+    } catch (error) {
+      logger.error('Failed to start autonomous operations', { error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to start autonomous operations',
+        error: error.message,
+      });
+    }
+  })
+);
+
+/**
+ * POST /api/v1/autonomous/stop
+ * Stop autonomous operations
+ */
+router.post(
+  '/stop',
+  authenticate,
+  authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN),
+  asyncHandler(async (req, res) => {
+    if (!autonomousInitializer) {
+      return res.status(503).json({
+        success: false,
+        message: 'Autonomous operations not initialized',
+      });
+    }
+
+    try {
+      await autonomousInitializer.stop();
+
+      res.json({
+        success: true,
+        message: 'Autonomous operations stopped successfully',
+        data: autonomousInitializer.getStatus(),
+      });
+    } catch (error) {
+      logger.error('Failed to stop autonomous operations', { error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to stop autonomous operations',
+        error: error.message,
+      });
+    }
+  })
+);
+
+/**
+ * GET /api/v1/autonomous/cycles
+ * Get autonomous operation cycles history
+ */
+router.get(
+  '/cycles',
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.MANAGER),
+  asyncHandler(async (req, res) => {
+    if (!autonomousInitializer) {
+      return res.status(503).json({
+        success: false,
+        message: 'Autonomous operations not initialized',
+      });
+    }
+
+    const limit = parseInt(req.query.limit) || 50;
+    const cycles = autonomousInitializer.getCycleResults(limit);
+    const stats = autonomousInitializer.getCycleStats();
+
+    res.json({
+      success: true,
+      data: {
+        cycles,
+        stats,
+        count: cycles.length,
+      },
+    });
+  })
+);
+
+/**
+ * GET /api/v1/autonomous/logs
+ * Get autonomous operations logs
+ */
+router.get(
+  '/logs',
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.MANAGER),
+  asyncHandler(async (req, res) => {
+    if (!autonomousInitializer) {
+      return res.status(503).json({
+        success: false,
+        message: 'Autonomous operations not initialized',
+      });
+    }
+
+    const limit = parseInt(req.query.limit) || 100;
+    const level = req.query.level; // filter by log level if provided
+
+    // Get recent cycles which contain logs
+    const cycles = autonomousInitializer.getCycleResults(limit);
+
+    // Extract logs from cycles
+    const logs = cycles.flatMap(cycle => {
+      const cycleLog = {
+        timestamp: cycle.timestamp,
+        type: 'cycle',
+        level: cycle.success ? 'info' : 'error',
+        message: `Cycle ${cycle.cycleNumber}: ${cycle.actionsExecuted} actions executed`,
+        data: cycle,
+      };
+
+      if (level && cycleLog.level !== level) {
+        return [];
+      }
+
+      return [cycleLog];
+    });
+
+    res.json({
+      success: true,
+      data: {
+        logs,
+        count: logs.length,
+        totalCycles: cycles.length,
+      },
+    });
+  })
+);
+
+/**
  * GET /api/autonomous/dashboard
  * Get dashboard data for AI operations monitoring
  */
