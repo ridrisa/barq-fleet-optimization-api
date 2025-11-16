@@ -200,19 +200,30 @@ class EnhancedLogisticsService {
     logger.info('[EnhancedLogistics] Using legacy optimization system with LLM enhancement');
 
     try {
+      // CRITICAL FIX: Extract vehicles BEFORE calling planning agent
+      // The planning agent needs vehicles to be available in the request
+      const vehicles = request.fleet?.vehicles || request.fleet || request.vehicles || [];
+      const pickupPoints = request.pickupPoints || [];
+      const deliveryPoints = request.deliveryPoints || [];
+
+      // Ensure vehicles are properly structured in the request for planning agent
+      // The planning agent expects either request.vehicles or request.fleet
+      const planningRequest = {
+        ...request,
+        vehicles: vehicles,  // Add vehicles array directly
+        fleet: request.fleet || { vehicles }  // Also maintain fleet structure if it exists
+      };
+
+      logger.info(`[EnhancedLogistics] Prepared request with ${vehicles.length} vehicles for planning agent`);
+
       // Step 1: Planning
-      const initialPlan = await this.planningAgent.plan(request);
+      const initialPlan = await this.planningAgent.plan(planningRequest);
 
       if (!initialPlan.routes || initialPlan.routes.length === 0) {
         throw new Error('No valid routes generated');
       }
 
       logger.info(`[EnhancedLogistics] Initial plan created with ${initialPlan.routes.length} routes`);
-
-      // Step 1.5: LLM Multi-Vehicle Optimization (if multiple vehicles available)
-      const vehicles = request.fleet?.vehicles || request.fleet || request.vehicles || [];
-      const pickupPoints = request.pickupPoints || [];
-      const deliveryPoints = request.deliveryPoints || [];
 
       // Only use LLM optimization if we have multiple vehicles and deliveries
       if (vehicles.length > 1 && deliveryPoints.length > vehicles.length) {
