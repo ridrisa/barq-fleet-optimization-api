@@ -9,16 +9,18 @@ dotenv.config();
 class LLMConfigManager {
   constructor() {
     this.models = {
-      // Default model - Qwen (DEPRECATED - qwen-qwq-32b decommissioned as of Nov 2024)
+      // Llama 3.3 70B - Currently supported production model (Nov 2024)
+      llama33: process.env.LLAMA33_MODEL || 'llama-3.3-70b-versatile',
+      // Llama 3.1 8B - Fast, lightweight model
+      llama31: process.env.LLAMA31_MODEL || 'llama-3.1-8b-instant',
+      // Legacy model names (DEPRECATED - for backwards compatibility)
       qwen: process.env.QWEN_MODEL || 'llama-3.3-70b-versatile',
-      // Default parser model - Llama 3
-      llama_parser: process.env.LLAMA_MODEL || 'llama3-70b-8192',
-      // Mixtral model for complex reasoning
-      mixtral: process.env.MIXTRAL_MODEL || 'mixtral-8x7b-32768',
+      llama_parser: process.env.LLAMA_MODEL || 'llama-3.3-70b-versatile',
+      mixtral: process.env.MIXTRAL_MODEL || 'llama-3.3-70b-versatile',
     };
 
-    // Get default model from environment or use mixtral (qwen-qwq-32b was decommissioned)
-    const defaultModel = process.env.DEFAULT_MODEL || this.models.mixtral;
+    // Default to llama-3.3-70b-versatile (currently supported production model)
+    const defaultModel = process.env.DEFAULT_MODEL || this.models.llama33;
 
     this.configurations = {
       // Planning agent configuration

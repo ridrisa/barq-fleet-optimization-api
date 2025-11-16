@@ -22,7 +22,7 @@ class LLMFleetAdvisor {
       ? new Groq({ apiKey: process.env.GROQ_API_KEY })
       : null;
 
-    this.model = process.env.GROQ_MODEL || 'mixtral-8x7b-32768';
+    this.model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
     logger.info('LLM Fleet Advisor initialized', {
       hasGroq: !!this.groq,
