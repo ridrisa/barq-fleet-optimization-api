@@ -55,6 +55,9 @@ if (sentryInstance) {
 // Set port (Cloud Run uses PORT env var, default to 8080 for production, 3002 for development)
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8080 : 3002);
 
+// Trust proxy (required for Cloud Run to properly handle X-Forwarded-* headers)
+app.set('trust proxy', true);
+
 // Add request ID generator middleware
 app.use((req, res, next) => {
   req.headers['x-request-id'] = req.headers['x-request-id'] || uuidv4();
