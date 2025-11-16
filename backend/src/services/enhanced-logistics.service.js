@@ -238,7 +238,36 @@ class EnhancedLogisticsService {
               `[EnhancedLogistics] LLM suggested ${llmOptimization.optimization.strategy.vehicles_used} vehicles, utilization: ${(llmOptimization.optimization.optimization_metrics.utilization_rate * 100).toFixed(1)}%, SLA: ${llmOptimization.optimization.strategy.sla_compliance || 'unknown'}`
             );
 
-            // Enhance the initial plan with LLM's vehicle assignments
+            // ACTUALLY USE the LLM's vehicle assignments to create routes
+            const llmRoutes = llmOptimization.optimization.vehicle_assignments.map(assignment => {
+              // Find the vehicle, pickup, and deliveries from the request data
+              const vehicle = vehicles.find(v => v.id === assignment.vehicle_id) || vehicles[0];
+              const pickup = pickupPoints.find(p => p.id === assignment.pickup_id);
+              const assignedDeliveries = deliveryPoints.filter(d =>
+                assignment.delivery_ids.includes(d.id)
+              );
+
+              // Create a route with this vehicle's assigned deliveries
+              return {
+                id: `route-${generateId()}`,
+                vehicle: vehicle,
+                pickupPoints: pickup ? [pickup] : [],
+                deliveryPoints: assignedDeliveries,
+                waypoints: [
+                  ...(pickup ? [{...pickup, type: 'pickup'}] : []),
+                  ...assignedDeliveries.map(d => ({...d, type: 'delivery'}))
+                ],
+                llm_assigned: true,
+              };
+            });
+
+            // Replace the initial plan's routes with LLM-optimized multi-vehicle routes
+            if (llmRoutes.length > 0) {
+              initialPlan.routes = llmRoutes;
+              logger.info(`[EnhancedLogistics] Created ${llmRoutes.length} routes from LLM assignments`);
+            }
+
+            // Store LLM metadata
             initialPlan.llmOptimization = llmOptimization.optimization;
             initialPlan.aiPowered = llmOptimization.ai_powered;
           }
