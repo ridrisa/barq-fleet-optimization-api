@@ -228,4 +228,65 @@ router.get(
   })
 );
 
+/**
+ * @swagger
+ * /api/optimize/{id}:
+ *   get:
+ *     summary: Get optimization details by ID
+ *     description: Retrieve complete details of a specific optimization request
+ *     tags: [Optimization]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the optimization request
+ *     responses:
+ *       200:
+ *         description: Optimization details retrieved successfully
+ *       404:
+ *         description: Optimization not found
+ */
+router.get(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Validate ID
+      if (!id || typeof id !== 'string' || id.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid optimization ID',
+          details: 'Optimization ID must be a non-empty string',
+        });
+      }
+
+      // Get the optimization result
+      const result = await logisticsService.getOptimizationResult(id);
+
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          error: `Optimization with ID ${id} not found`,
+        });
+      }
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error(`Optimization retrieval error for ${req.params.id}: ${error.message}`);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve optimization details',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        optimizationId: req.params.id,
+      });
+    }
+  })
+);
+
 module.exports = router;
