@@ -328,7 +328,208 @@ Respond ONLY with valid JSON matching this schema:
     }
   }
 
+  /**
+   * Optimize multi-vehicle route distribution using LLM
+   *
+   * @param {Array} pickupPoints - Pickup locations
+   * @param {Array} deliveryPoints - Delivery locations
+   * @param {Array} vehicles - Available vehicles
+   * @returns {Promise<Object>} - LLM-optimized vehicle distribution strategy
+   */
+  async optimizeMultiVehicleRoutes(pickupPoints, deliveryPoints, vehicles) {
+    try {
+      if (!this.groq) {
+        return this._getFallbackMultiVehicleStrategy(pickupPoints, deliveryPoints, vehicles);
+      }
+
+      const prompt = this._buildMultiVehicleOptimizationPrompt(
+        pickupPoints,
+        deliveryPoints,
+        vehicles
+      );
+
+      const completion = await this.groq.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: `You are an AI route optimization expert specializing in multi-vehicle logistics.
+
+Your goal is to distribute deliveries across available vehicles to:
+1. Maximize fleet utilization (minimize idle vehicles)
+2. Balance workload fairly across all vehicles
+3. Minimize total distance and travel time
+4. Create geographically logical clusters
+5. Ensure all deliveries are assigned
+
+CRITICAL RULES:
+- Use ALL available vehicles (or as many as makes sense)
+- Each vehicle should handle 20-30% of total deliveries when balanced
+- Group nearby deliveries together (geographic clustering)
+- Assign each delivery to exactly ONE vehicle
+- Match deliveries to nearest pickup point
+
+Respond ONLY with valid JSON matching this schema:
+{
+  "strategy": {
+    "num_routes": number,
+    "vehicles_used": number,
+    "clustering_method": "geographic|balanced|hybrid"
+  },
+  "vehicle_assignments": [
+    {
+      "vehicle_id": "vehicle-1",
+      "pickup_id": "pickup-X",
+      "delivery_ids": ["del-1", "del-2", ...],
+      "estimated_deliveries": number,
+      "geographic_zone": "north|south|east|west|central",
+      "reasoning": "why these deliveries go together"
+    }
+  ],
+  "optimization_metrics": {
+    "utilization_rate": 0.0-1.0,
+    "balance_score": 0.0-1.0,
+    "efficiency_score": 0.0-1.0
+  },
+  "recommendations": ["suggestion 1", "suggestion 2"]
+}`,
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.4,
+        max_tokens: 2000,
+        response_format: { type: 'json_object' },
+      });
+
+      const response = JSON.parse(completion.choices[0].message.content);
+
+      logger.info('LLM multi-vehicle optimization generated', {
+        num_pickups: pickupPoints.length,
+        num_deliveries: deliveryPoints.length,
+        num_vehicles: vehicles.length,
+        routes_suggested: response.strategy?.num_routes,
+        vehicles_used: response.strategy?.vehicles_used,
+      });
+
+      return {
+        success: true,
+        optimization: response,
+        model: this.model,
+        ai_powered: true,
+      };
+    } catch (error) {
+      logger.error('LLM multi-vehicle optimization failed', { error: error.message });
+      return this._getFallbackMultiVehicleStrategy(pickupPoints, deliveryPoints, vehicles);
+    }
+  }
+
+  /**
+   * Calculate ETAs for route stops with time accumulation
+   *
+   * @param {Object} route - Route with OSRM data
+   * @param {Date} startTime - Route start time
+   * @returns {Object} - Route with ETA data added to each stop
+   */
+  calculateRouteETAs(route, startTime = new Date()) {
+    try {
+      let cumulativeSeconds = 0;
+      const serviceTimeMinutes = 5; // Default service time per stop
+
+      route.stops.forEach((stop, index) => {
+        if (index === 0) {
+          // First stop (pickup) - starts immediately
+          stop.estimatedArrival = startTime.toISOString();
+          stop.arrivalTime = startTime.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+          });
+          stop.cumulativeDuration = 0;
+          stop.timeFromPreviousStop = 0;
+        } else {
+          // Get duration from OSRM leg data (if available)
+          const legDuration = route.osrm?.legs?.[index - 1]?.duration || 0;
+          const serviceTimeSeconds = serviceTimeMinutes * 60;
+
+          // Add travel time + service time from previous stop
+          cumulativeSeconds += legDuration + serviceTimeSeconds;
+
+          // Calculate arrival time
+          const arrivalTime = new Date(startTime.getTime() + cumulativeSeconds * 1000);
+
+          stop.estimatedArrival = arrivalTime.toISOString();
+          stop.arrivalTime = arrivalTime.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+          });
+          stop.cumulativeDuration = Math.round(cumulativeSeconds / 60); // minutes
+          stop.timeFromPreviousStop = Math.round((legDuration + serviceTimeSeconds) / 60);
+        }
+      });
+
+      logger.debug('ETAs calculated for route', {
+        route_id: route.id,
+        num_stops: route.stops.length,
+        total_duration: Math.round(cumulativeSeconds / 60),
+      });
+
+      return route;
+    } catch (error) {
+      logger.error('ETA calculation failed', { error: error.message });
+      return route; // Return original route if calculation fails
+    }
+  }
+
   // ==================== PROMPT BUILDERS ====================
+
+  _buildMultiVehicleOptimizationPrompt(pickupPoints, deliveryPoints, vehicles) {
+    // Calculate geographic bounds for clustering hints
+    const lats = deliveryPoints.map((d) => d.lat);
+    const lngs = deliveryPoints.map((d) => d.lng);
+    const centerLat = (Math.max(...lats) + Math.min(...lats)) / 2;
+    const centerLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
+
+    return `Optimization Request:
+
+Pickup Points (${pickupPoints.length}):
+${pickupPoints
+  .map(
+    (p, i) =>
+      `${i + 1}. ${p.id || p.name} - Location: (${p.lat}, ${p.lng})${p.address ? ` - ${p.address}` : ''}`
+  )
+  .join('\n')}
+
+Delivery Points (${deliveryPoints.length}):
+${deliveryPoints
+  .map(
+    (d, i) =>
+      `${i + 1}. ${d.id || d.name} - Location: (${d.lat}, ${d.lng})${d.address ? ` - ${d.address}` : ''}`
+  )
+  .join('\n')}
+
+Available Vehicles (${vehicles.length}):
+${vehicles
+  .map(
+    (v, i) =>
+      `${i + 1}. ${v.id} - Type: ${v.type || 'van'}, Capacity: ${v.capacity || 1000} kg`
+  )
+  .join('\n')}
+
+Geographic Center: (${centerLat.toFixed(4)}, ${centerLng.toFixed(4)})
+
+TASK: Create an optimal multi-vehicle distribution strategy that:
+1. Uses ${vehicles.length} vehicles (or as many as needed for efficiency)
+2. Distributes ${deliveryPoints.length} deliveries fairly across vehicles
+3. Groups geographically close deliveries together
+4. Assigns each delivery to the nearest appropriate pickup point
+5. Balances workload (aim for ${Math.ceil(deliveryPoints.length / vehicles.length)}-${Math.ceil(deliveryPoints.length / vehicles.length) + 2} deliveries per vehicle)
+
+Provide a complete vehicle assignment strategy with reasoning.`;
+  }
 
   _buildDriverAssignmentPrompt(order, drivers, targetStatus) {
     return `Order Details:
@@ -519,6 +720,52 @@ Analyze performance and provide top 3-5 actionable recommendations for improveme
     };
   }
 
+  _getFallbackMultiVehicleStrategy(pickupPoints, deliveryPoints, vehicles) {
+    // Simple fallback: distribute deliveries evenly across vehicles
+    const numVehicles = Math.min(vehicles.length, Math.ceil(deliveryPoints.length / 5));
+    const deliveriesPerVehicle = Math.ceil(deliveryPoints.length / numVehicles);
+
+    const assignments = [];
+    for (let i = 0; i < numVehicles; i++) {
+      const start = i * deliveriesPerVehicle;
+      const end = Math.min(start + deliveriesPerVehicle, deliveryPoints.length);
+      const vehicleDeliveries = deliveryPoints.slice(start, end);
+
+      // Find nearest pickup point for this vehicle's deliveries
+      const pickupId =
+        pickupPoints.length > 0 ? pickupPoints[i % pickupPoints.length].id : 'pickup-1';
+
+      assignments.push({
+        vehicle_id: vehicles[i].id,
+        pickup_id: pickupId,
+        delivery_ids: vehicleDeliveries.map((d) => d.id),
+        estimated_deliveries: vehicleDeliveries.length,
+        geographic_zone: 'auto-assigned',
+        reasoning: 'Evenly distributed using fallback strategy',
+      });
+    }
+
+    return {
+      success: true,
+      optimization: {
+        strategy: {
+          num_routes: numVehicles,
+          vehicles_used: numVehicles,
+          clustering_method: 'balanced',
+        },
+        vehicle_assignments: assignments,
+        optimization_metrics: {
+          utilization_rate: numVehicles / vehicles.length,
+          balance_score: 0.8,
+          efficiency_score: 0.7,
+        },
+        recommendations: ['Enable LLM optimization for better geographic clustering'],
+      },
+      model: 'fallback',
+      ai_powered: false,
+    };
+  }
+
   _getSimpleProgress(driverId, targetStatus) {
     const driver = targetStatus?.drivers?.find((d) => d.driver_id === driverId);
     if (!driver) return 0;
@@ -541,6 +788,8 @@ Analyze performance and provide top 3-5 actionable recommendations for improveme
         sla_prediction: true,
         natural_language_queries: !!this.groq,
         optimization_recommendations: true,
+        multi_vehicle_optimization: true, // NEW
+        eta_calculations: true, // NEW
       },
     };
   }
