@@ -343,6 +343,10 @@ app.use('/health', healthRoutes);
 const demoRoutes = require('./demo/demo-routes');
 app.use('/api/demo', demoRoutes);
 
+// Admin migration routes - Database migrations
+const adminMigrationsRoutes = require('./routes/admin-migrations');
+app.use('/api/admin/migrations', adminMigrationsRoutes);
+
 // 404 handler - must be before error handler
 app.use('*', notFoundHandler);
 
