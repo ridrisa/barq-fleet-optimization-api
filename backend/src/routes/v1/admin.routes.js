@@ -9,6 +9,7 @@ const { authenticate, authorize, ROLES } = require('../../middleware/auth.middle
 const { logger } = require('../../utils/logger');
 const { asyncHandler } = require('../../middleware/error.middleware');
 const AgentInitializer = require('../../services/agent-initializer');
+const reassignmentService = require('../../services/reassignment.service');
 
 /**
  * Middleware to ensure agents are initialized
@@ -778,6 +779,161 @@ router.get(
       res.status(500).json({
         success: false,
         error: error.message,
+      });
+    }
+  })
+);
+
+/**
+ * @swagger
+ * /api/admin/orders/{orderId}/reassign:
+ *   post:
+ *     summary: Manually reassign an order
+ *     description: Reassign an order to a different driver (manual override)
+ *     tags: [Admin]
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               newDriverId:
+ *                 type: string
+ *                 description: Target driver ID
+ *               reason:
+ *                 type: string
+ *                 description: Reason for reassignment
+ *     responses:
+ *       200:
+ *         description: Order reassigned successfully
+ *       400:
+ *         description: Invalid request
+ *       404:
+ *         description: Order not found
+ */
+router.post(
+  '/orders/:orderId/reassign',
+  asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+    const { newDriverId, reason } = req.body;
+
+    if (!newDriverId) {
+      return res.status(400).json({
+        success: false,
+        error: 'newDriverId is required',
+      });
+    }
+
+    logger.info('Manual order reassignment requested', {
+      orderId,
+      newDriverId,
+      reason,
+      requestedBy: req.user?.id
+    });
+
+    try {
+      const result = await reassignmentService.reassignOrder(
+        orderId,
+        newDriverId,
+        reason || 'Manual admin reassignment'
+      );
+
+      res.json({
+        success: true,
+        data: result,
+        message: 'Order reassigned successfully',
+      });
+    } catch (error) {
+      logger.error('Failed to reassign order', {
+        error: error.message,
+        orderId,
+        newDriverId
+      });
+
+      if (error.message.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          error: error.message,
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to reassign order',
+        details: error.message,
+      });
+    }
+  })
+);
+
+/**
+ * @swagger
+ * /api/admin/reassignments:
+ *   get:
+ *     summary: Get reassignment history
+ *     description: Retrieve history of all order reassignments
+ *     tags: [Admin]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *           minimum: 1
+ *           maximum: 200
+ *         description: Number of records to retrieve
+ *       - in: query
+ *         name: orderId
+ *         schema:
+ *           type: string
+ *         description: Filter by order ID
+ *     responses:
+ *       200:
+ *         description: Reassignment history retrieved successfully
+ */
+router.get(
+  '/reassignments',
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit) || 50));
+    const { orderId } = req.query;
+
+    logger.info('Getting reassignment history', { limit, orderId });
+
+    try {
+      const history = reassignmentService.getReassignmentHistory(limit);
+
+      // Filter by orderId if provided
+      const filteredHistory = orderId
+        ? history.filter(r => r.orderId === orderId)
+        : history;
+
+      res.json({
+        success: true,
+        data: {
+          reassignments: filteredHistory,
+          count: filteredHistory.length,
+          total: history.length,
+        },
+        meta: {
+          limit,
+          filter: orderId ? { orderId } : null,
+          timestamp: Date.now(),
+        },
+      });
+    } catch (error) {
+      logger.error('Failed to get reassignment history', { error: error.message });
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve reassignment history',
+        details: error.message,
       });
     }
   })

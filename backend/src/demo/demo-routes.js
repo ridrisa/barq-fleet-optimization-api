@@ -439,4 +439,155 @@ router.post(
   })
 );
 
+/**
+ * @swagger
+ * /api/demo/optimize-batch:
+ *   post:
+ *     summary: Run REAL route optimization on demo orders
+ *     description: Collect pending BULLET orders and run actual route optimization
+ *     tags: [Demo]
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               minOrders:
+ *                 type: integer
+ *                 default: 5
+ *                 description: Minimum orders to optimize
+ *               serviceType:
+ *                 type: string
+ *                 enum: [BULLET, BARQ]
+ *                 default: BULLET
+ *                 description: Service type to optimize
+ *     responses:
+ *       200:
+ *         description: Optimization completed successfully
+ *       400:
+ *         description: Not enough orders
+ */
+router.post(
+  '/optimize-batch',
+  asyncHandler(async (req, res) => {
+    try {
+      const { minOrders = 5, serviceType = 'BULLET' } = req.body;
+
+      // Import logistics service for real optimization
+      const { logisticsService } = require('../services/enhanced-logistics.service');
+
+      // Get pending orders from database
+      const pendingOrders = await demoDatabaseService.getOrders({
+        status: 'pending',
+        serviceType,
+        limit: 50,
+      });
+
+      logger.info(`Found ${pendingOrders.length} pending ${serviceType} orders for optimization`);
+
+      if (pendingOrders.length < minOrders) {
+        return res.status(400).json({
+          success: false,
+          error: 'Not enough orders',
+          details: `Need at least ${minOrders} orders, found ${pendingOrders.length}`,
+          data: {
+            pendingOrders: pendingOrders.length,
+            required: minOrders,
+          },
+        });
+      }
+
+      // Format orders for optimization API
+      const pickupPoints = [
+        {
+          id: 'demo-warehouse-central',
+          name: 'Demo Central Warehouse',
+          address: 'King Fahd Road, Central Riyadh',
+          lat: 24.7136,
+          lng: 46.6753,
+          priority: 1,
+          serviceTime: 5,
+        },
+      ];
+
+      const deliveryPoints = pendingOrders.slice(0, 20).map((order, index) => ({
+        id: order.id || `demo-delivery-${index + 1}`,
+        name: order.customer?.name || `Customer ${index + 1}`,
+        address: order.delivery?.address || 'Riyadh',
+        lat: order.delivery?.location?.lat || 24.7136 + (Math.random() * 0.1 - 0.05),
+        lng: order.delivery?.location?.lng || 46.6753 + (Math.random() * 0.1 - 0.05),
+        priority: order.priority === 'high' ? 1 : 2,
+        serviceTime: 5,
+        timeWindow: order.timeWindow || null,
+      }));
+
+      const vehicles = [
+        { id: 'demo-vehicle-1', name: 'Van 1', type: 'van', capacity: 8, lat: 24.7136, lng: 46.6753 },
+        { id: 'demo-vehicle-2', name: 'Van 2', type: 'van', capacity: 8, lat: 24.7136, lng: 46.6753 },
+        { id: 'demo-vehicle-3', name: 'Van 3', type: 'van', capacity: 8, lat: 24.7136, lng: 46.6753 },
+        { id: 'demo-vehicle-4', name: 'Van 4', type: 'van', capacity: 8, lat: 24.7136, lng: 46.6753 },
+        { id: 'demo-vehicle-5', name: 'Van 5', type: 'van', capacity: 8, lat: 24.7136, lng: 46.6753 },
+      ];
+
+      // Call REAL optimization API
+      logger.info('Calling REAL optimization API with demo data', {
+        pickups: pickupPoints.length,
+        deliveries: deliveryPoints.length,
+        vehicles: vehicles.length,
+      });
+
+      const optimizationRequest = {
+        pickupPoints,
+        deliveryPoints,
+        vehicles,
+        fleet: { vehicles },
+        serviceType,
+        context: {
+          demo: true,
+          source: 'interactive-demo',
+          slaMinutes: 240, // 4 hours for BULLET
+        },
+        preferences: {
+          optimizationLevel: 'balanced',
+          enableGroqOptimization: true,
+        },
+      };
+
+      const result = await logisticsService.processOptimizationRequest(optimizationRequest);
+
+      logger.info('Real optimization completed', {
+        success: result.success,
+        routes: result.data?.routes?.length || 0,
+      });
+
+      // Update order statuses to "optimized"
+      for (const order of pendingOrders.slice(0, deliveryPoints.length)) {
+        await demoDatabaseService.updateOrderStatus(order.id, 'optimized', {
+          optimization_id: result.requestId,
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Real route optimization completed',
+        data: {
+          ...result.data,
+          ordersOptimized: deliveryPoints.length,
+          requestId: result.requestId,
+          llmPowered: result.data?.llmOptimization ? true : false,
+          vehiclesUsed: result.data?.routes?.length || 0,
+        },
+      });
+    } catch (error) {
+      logger.error('Failed to run real optimization', { error: error.message, stack: error.stack });
+      res.status(500).json({
+        success: false,
+        error: 'Failed to optimize orders',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      });
+    }
+  })
+);
+
 module.exports = router;
