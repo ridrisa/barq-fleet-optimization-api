@@ -115,6 +115,8 @@ const schemas = {
             type: Joi.string().valid('car', 'motorcycle', 'bicycle', 'van', 'truck').optional(),
             capacity: Joi.number().min(1).optional(),
             capacity_kg: Joi.number().min(1).optional(),
+            lat: patterns.coordinates.latitude.optional(),
+            lng: patterns.coordinates.longitude.optional(),
             startLocation: Joi.object({
               latitude: patterns.coordinates.latitude.optional(),
               longitude: patterns.coordinates.longitude.optional(),
@@ -123,6 +125,25 @@ const schemas = {
         )
         .optional(),
     }).optional(),
+    // Support vehicles at root level (for multi-vehicle SLA optimization)
+    vehicles: Joi.array()
+      .items(
+        Joi.object({
+          id: Joi.string().optional(),
+          fleet_id: Joi.string().optional(),
+          name: Joi.string().optional(),
+          type: Joi.string().valid('car', 'motorcycle', 'bicycle', 'van', 'truck').optional(),
+          capacity: Joi.number().min(1).optional(),
+          capacity_kg: Joi.number().min(1).optional(),
+          lat: patterns.coordinates.latitude.optional(),
+          lng: patterns.coordinates.longitude.optional(),
+          startLocation: Joi.object({
+            latitude: patterns.coordinates.latitude.optional(),
+            longitude: patterns.coordinates.longitude.optional(),
+          }).optional(),
+        })
+      )
+      .optional(),
     options: Joi.object({
       optimizationMode: Joi.string()
         .valid('fastest', 'shortest', 'balanced', 'distance', 'time', 'priority')
