@@ -281,11 +281,14 @@ class EnhancedLogisticsService {
               }));
 
               // Create a route with this vehicle's assigned deliveries
+              // Use pickupId and deliveries format to match planning agent output
               return {
                 id: `route-${generateId()}`,
                 vehicle: vehicle,
-                pickupPoints: pickup ? [pickup] : [],
-                deliveryPoints: assignedDeliveries,
+                pickupId: pickup?.id,  // Singular ID to match planning agent format
+                pickupPoints: pickup ? [pickup] : [],  // Keep for compatibility
+                deliveries: assignedDeliveries,  // Match planning agent format
+                deliveryPoints: assignedDeliveries,  // Keep for compatibility
                 waypoints: waypoints,
                 stops: stops, // Required for optimization agent to process the route
                 llm_assigned: true,
