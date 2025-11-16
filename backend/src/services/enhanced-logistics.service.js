@@ -669,6 +669,65 @@ class EnhancedLogisticsService {
   }
 
   /**
+   * Get optimization result by request ID
+   */
+  async getOptimizationResult(requestId) {
+    try {
+      logger.info(`Getting optimization result for request: ${requestId}`);
+
+      // Get the request from database
+      const requests = db.get('requests').value() || [];
+      const request = requests.find((r) => r.id === requestId);
+
+      if (!request) {
+        logger.debug(`Request ${requestId} not found`);
+        return null;
+      }
+
+      // Get the optimization result
+      const results = db.get('results').value() || [];
+      const result = results.find((r) => r.requestId === requestId);
+
+      if (!result) {
+        logger.debug(`No result found for request ${requestId}`);
+        return null;
+      }
+
+      logger.info(`Found result for request ${requestId}`);
+
+      // Return combined request and result data
+      return {
+        request: {
+          id: request.id,
+          timestamp: request.timestamp,
+          pickupPoints: request.pickupPoints,
+          deliveryPoints: request.deliveryPoints,
+          fleet: request.fleet,
+          vehicles: request.vehicles,
+          serviceType: request.serviceType,
+          context: request.context,
+          businessRules: request.businessRules,
+          preferences: request.preferences,
+        },
+        result: {
+          success: result.success,
+          timestamp: result.timestamp,
+          time_taken: result.time_taken,
+          routes: result.data?.routes || [],
+          total_distance: result.data?.summary?.total_distance,
+          total_duration: result.data?.summary?.total_duration,
+          summary: result.data?.summary || {},
+          insights: result.data?.insights || {},
+          complete_data: result.data || {},
+        },
+      };
+    } catch (error) {
+      logger.error('Error getting optimization result', { error: error.message, requestId });
+      return null;
+    }
+  }
+
+  /**
    * Get optimization history with pagination
    */
   getOptimizationHistory(limit = 10, page = 1) {
@@ -765,6 +824,10 @@ const wrappedService = {
   getOptimizationStatus: logFunctionExecution(
     service.getOptimizationStatus.bind(service),
     'EnhancedLogisticsService.getOptimizationStatus'
+  ),
+  getOptimizationResult: logFunctionExecution(
+    service.getOptimizationResult.bind(service),
+    'EnhancedLogisticsService.getOptimizationResult'
   ),
   getOptimizationHistory: logFunctionExecution(
     service.getOptimizationHistory.bind(service),
