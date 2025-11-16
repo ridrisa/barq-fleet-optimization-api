@@ -224,8 +224,8 @@ class DemoDatabaseService {
 
       // Filter by status (case-insensitive)
       if (status) {
-        query += ` AND UPPER(status) = UPPER($${valueIndex})`;
-        values.push(status);
+        query += ` AND status = $${valueIndex}`;
+        values.push(status.toUpperCase()); // Status is stored uppercase
         valueIndex++;
       }
 
