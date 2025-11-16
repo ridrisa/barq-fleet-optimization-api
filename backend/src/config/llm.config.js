@@ -9,16 +9,16 @@ dotenv.config();
 class LLMConfigManager {
   constructor() {
     this.models = {
-      // Default model - Qwen
-      qwen: process.env.QWEN_MODEL || 'qwen-qwq-32b',
+      // Default model - Qwen (DEPRECATED - qwen-qwq-32b decommissioned as of Nov 2024)
+      qwen: process.env.QWEN_MODEL || 'llama-3.3-70b-versatile',
       // Default parser model - Llama 3
       llama_parser: process.env.LLAMA_MODEL || 'llama3-70b-8192',
       // Mixtral model for complex reasoning
       mixtral: process.env.MIXTRAL_MODEL || 'mixtral-8x7b-32768',
     };
 
-    // Get default model from environment or use qwen
-    const defaultModel = process.env.DEFAULT_MODEL || this.models.qwen;
+    // Get default model from environment or use mixtral (qwen-qwq-32b was decommissioned)
+    const defaultModel = process.env.DEFAULT_MODEL || this.models.mixtral;
 
     this.configurations = {
       // Planning agent configuration
