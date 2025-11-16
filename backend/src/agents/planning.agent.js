@@ -145,6 +145,14 @@ class PlanningAgent {
 
     // Extract vehicles from the fleet with better validation - support more formats
     let vehicles = [];
+
+    // DEBUG: Log what we're receiving
+    console.log('DEBUG: Vehicle extraction - data.fleet:', typeof data.fleet, Array.isArray(data.fleet) ? 'array' : 'not-array');
+    console.log('DEBUG: Vehicle extraction - data.vehicles:', typeof data.vehicles, Array.isArray(data.vehicles) ? `array(${data.vehicles?.length})` : 'not-array');
+    if (Array.isArray(data.vehicles) && data.vehicles.length > 0) {
+      console.log('DEBUG: First vehicle in data.vehicles:', JSON.stringify(data.vehicles[0]));
+    }
+
     if (data.fleet && Array.isArray(data.fleet.vehicles)) {
       // Format 1: fleet.vehicles array (original format)
       vehicles = data.fleet.vehicles
@@ -185,6 +193,8 @@ class PlanningAgent {
         .map((v) => this.normalizeVehicle(v));
     } else if (Array.isArray(data.vehicles)) {
       // Format 3: vehicles array
+      console.log('DEBUG: Extracting from data.vehicles array, length:', data.vehicles.length);
+      const beforeFilter = data.vehicles.length;
       vehicles = data.vehicles
         .filter(
           (v) =>
@@ -202,6 +212,7 @@ class PlanningAgent {
               (typeof v.lat === 'number' && typeof v.lng === 'number'))
         )
         .map((v) => this.normalizeVehicle(v));
+      console.log(`DEBUG: After filter: ${vehicles.length}/${beforeFilter} vehicles passed`);
     } else if (data.fleet && typeof data.fleet.count === 'number' && data.fleet.count > 0) {
       // Format 4: Simple fleet format with count, vehicleType, capacity
       console.log(`Creating ${data.fleet.count} vehicles from simple fleet format`);
