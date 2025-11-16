@@ -5,7 +5,7 @@
 
 const { v4: uuidv4 } = require('uuid');
 const { logger, logFunctionExecution } = require('../utils/logger');
-const { logisticsService } = require('../services/logistics.service');
+const { logisticsService } = require('../services/enhanced-logistics.service');
 const databaseService = require('../services/database.service');
 const { parseTimeWindow, isTimeInWindow } = require('../utils/helper');
 
