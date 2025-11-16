@@ -119,6 +119,7 @@ const corsOptions = {
     'Authorization',
     'X-Request-ID',
     'X-API-Key',
+    'X-API-Version-Preference',
     'Accept',
     'Origin',
     'Access-Control-Request-Method',
