@@ -395,6 +395,98 @@
             color: #333;
         }
 
+        /* LLM Optimization Styles */
+        .llm-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .sla-status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .sla-compliant {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .sla-at-risk {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .sla-violated {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .llm-insights-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: 2px solid #667eea;
+        }
+
+        .insight-item {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid #667eea;
+        }
+
+        .insight-label {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .insight-value {
+            color: #333;
+            font-size: 14px;
+        }
+
+        .route-colors {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .route-color-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .route-color-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+        }
+
         .loading-spinner {
             display: inline-block;
             width: 20px;
@@ -428,7 +520,9 @@
     <div class="dashboard">
         <!-- Header -->
         <div class="header">
-            <h1>🚚 AI Route Optimization Demo</h1>
+            <h1>🚚 AI Route Optimization Demo
+                <span class="llm-badge" id="llmBadge" style="display: none;">AI-Powered</span>
+            </h1>
             <div class="connection-status status-disconnected" id="connectionStatus">
                 Disconnected
             </div>
@@ -474,7 +568,7 @@
             <div class="metric-card">
                 <div class="metric-label">SLA Compliance</div>
                 <div class="metric-value" id="slaCompliance">100%</div>
-                <div class="metric-change positive">On target</div>
+                <div class="sla-status-badge sla-compliant" id="slaStatusBadge">All Compliant</div>
             </div>
             <div class="metric-card">
                 <div class="metric-label">Active Drivers</div>
@@ -493,11 +587,36 @@
             </div>
         </div>
 
+        <!-- LLM Insights Panel -->
+        <div class="llm-insights-panel" id="llmInsightsPanel" style="display: none;">
+            <h3 class="section-title">AI Optimization Insights</h3>
+            <div id="llmInsightsContent">
+                <div class="insight-item">
+                    <div class="insight-label">Vehicles Recommended</div>
+                    <div class="insight-value" id="vehiclesRecommended">-</div>
+                </div>
+                <div class="insight-item">
+                    <div class="insight-label">Fleet Utilization</div>
+                    <div class="insight-value" id="fleetUtilization">-</div>
+                </div>
+                <div class="insight-item">
+                    <div class="insight-label">Optimization Strategy</div>
+                    <div class="insight-value" id="optimizationStrategy">-</div>
+                </div>
+                <div class="insight-item">
+                    <div class="insight-label">AI Recommendations</div>
+                    <div class="insight-value" id="aiRecommendations">-</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Content -->
         <div class="main-content">
             <!-- Map -->
             <div class="map-container">
-                <h3 class="section-title">Live Fleet Map</h3>
+                <h3 class="section-title">Live Fleet Map
+                    <div class="route-colors" id="routeColors" style="display: none;"></div>
+                </h3>
                 <div id="map"></div>
             </div>
 
@@ -910,6 +1029,101 @@
                 data: `Route optimized for driver ${data.driverId.substring(0, 8)}: ${data.orderCount} orders`,
                 timestamp: new Date().toISOString()
             });
+
+            // Display LLM optimization data if available
+            if (data.llmOptimization || data.aiPowered) {
+                displayLLMOptimization(data);
+            }
+        }
+
+        // Display LLM optimization insights
+        function displayLLMOptimization(data) {
+            // Show LLM badge in header
+            const llmBadge = document.getElementById('llmBadge');
+            if (llmBadge && data.aiPowered) {
+                llmBadge.style.display = 'inline-block';
+            }
+
+            // Show insights panel if LLM optimization data exists
+            const insightsPanel = document.getElementById('llmInsightsPanel');
+            if (!insightsPanel || !data.llmOptimization) return;
+
+            insightsPanel.style.display = 'block';
+
+            const llmOpt = data.llmOptimization;
+
+            // Update vehicles recommended
+            if (llmOpt.vehicle_assignments) {
+                document.getElementById('vehiclesRecommended').textContent =
+                    `${llmOpt.vehicle_assignments.length} vehicles`;
+            }
+
+            // Update fleet utilization
+            if (llmOpt.optimization_metrics && llmOpt.optimization_metrics.utilization_rate) {
+                const utilization = (llmOpt.optimization_metrics.utilization_rate * 100).toFixed(1);
+                document.getElementById('fleetUtilization').textContent = `${utilization}%`;
+            }
+
+            // Update SLA status
+            if (llmOpt.optimization_metrics && llmOpt.optimization_metrics.sla_status) {
+                updateSLAStatus(llmOpt.optimization_metrics.sla_status);
+            }
+
+            // Update optimization strategy
+            if (llmOpt.reasoning) {
+                document.getElementById('optimizationStrategy').textContent =
+                    llmOpt.reasoning.substring(0, 200) + '...';
+            }
+
+            // Update AI recommendations
+            if (llmOpt.recommendations && llmOpt.recommendations.length > 0) {
+                document.getElementById('aiRecommendations').textContent =
+                    llmOpt.recommendations.join('. ');
+            }
+
+            // Display route colors on map
+            if (llmOpt.vehicle_assignments && llmOpt.vehicle_assignments.length > 1) {
+                displayRouteColors(llmOpt.vehicle_assignments);
+            }
+        }
+
+        // Update SLA status badge
+        function updateSLAStatus(slaStatus) {
+            const badge = document.getElementById('slaStatusBadge');
+            if (!badge) return;
+
+            // Remove existing classes
+            badge.classList.remove('sla-compliant', 'sla-at-risk', 'sla-violated');
+
+            // Apply appropriate class based on status
+            const statusLower = slaStatus.toLowerCase();
+            if (statusLower.includes('compliant') || statusLower.includes('all_compliant')) {
+                badge.classList.add('sla-compliant');
+                badge.textContent = 'All Compliant';
+            } else if (statusLower.includes('at_risk')) {
+                badge.classList.add('sla-at-risk');
+                badge.textContent = 'At Risk';
+            } else if (statusLower.includes('violated')) {
+                badge.classList.add('sla-violated');
+                badge.textContent = 'Violated';
+            }
+        }
+
+        // Display route colors legend
+        function displayRouteColors(vehicleAssignments) {
+            const container = document.getElementById('routeColors');
+            if (!container) return;
+
+            const colors = ['#667eea', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+
+            container.innerHTML = vehicleAssignments.slice(0, colors.length).map((assignment, index) => `
+                <div class="route-color-item">
+                    <div class="route-color-box" style="background: ${colors[index]};"></div>
+                    <span>Route ${index + 1} (${assignment.delivery_ids.length} deliveries)</span>
+                </div>
+            `).join('');
+
+            container.style.display = 'flex';
         }
 
         // Update metrics display
