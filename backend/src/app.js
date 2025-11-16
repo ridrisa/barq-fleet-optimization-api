@@ -185,24 +185,46 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(sanitizeRequest);
 
 // Rate limiter for API routes
+// Configurable via environment variables for testing/production
+const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000; // Default: 15 minutes
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX) || 100; // Default: 100 requests
+const RATE_LIMIT_ENABLED = process.env.RATE_LIMIT_ENABLED !== 'false'; // Default: enabled
+
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: RATE_LIMIT_MAX,
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  skip: (req) => req.path === '/admin/agents/status',
+  skip: (req) => {
+    // Skip rate limiting if disabled via env var
+    if (!RATE_LIMIT_ENABLED) return true;
+    // Always skip health checks
+    if (req.path === '/admin/agents/status') return true;
+    return false;
+  },
   handler: (req, res) => {
     logger.warn(`Rate limit exceeded for IP: ${req.ip}`, {
       requestId: req.headers['x-request-id'],
       ip: req.ip,
       path: req.originalUrl,
+      limit: RATE_LIMIT_MAX,
+      window: `${RATE_LIMIT_WINDOW_MS / 60000} minutes`,
     });
 
     return res.status(429).json({
       success: false,
       error: 'Too many requests, please try again later.',
+      limit: RATE_LIMIT_MAX,
+      window: `${RATE_LIMIT_WINDOW_MS / 60000} minutes`,
     });
   },
+});
+
+// Log rate limit configuration
+logger.info('Rate limiting configured', {
+  enabled: RATE_LIMIT_ENABLED,
+  maxRequests: RATE_LIMIT_MAX,
+  windowMinutes: RATE_LIMIT_WINDOW_MS / 60000,
 });
 
 // Apply rate limiting to API routes
