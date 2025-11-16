@@ -624,4 +624,31 @@ class EnhancedLogisticsService {
   }
 }
 
-module.exports = EnhancedLogisticsService;
+// Create singleton instance
+const service = new EnhancedLogisticsService();
+
+// Wrap methods with logging
+const wrappedService = {
+  processOptimizationRequest: logFunctionExecution(
+    service.processOptimizationRequest.bind(service),
+    'EnhancedLogisticsService.processOptimizationRequest'
+  ),
+  getOptimizationStatus: logFunctionExecution(
+    service.getOptimizationStatus.bind(service),
+    'EnhancedLogisticsService.getOptimizationStatus'
+  ),
+  getOptimizationResult: logFunctionExecution(
+    service.getOptimizationResult.bind(service),
+    'EnhancedLogisticsService.getOptimizationResult'
+  ),
+  shutdown: logFunctionExecution(
+    service.shutdown.bind(service),
+    'EnhancedLogisticsService.shutdown'
+  ),
+};
+
+// Export both the class and the wrapped instance
+module.exports = {
+  EnhancedLogisticsService,
+  logisticsService: wrappedService,
+};
