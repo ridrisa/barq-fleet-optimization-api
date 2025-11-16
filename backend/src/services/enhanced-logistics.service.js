@@ -637,10 +637,6 @@ const wrappedService = {
     service.getOptimizationStatus.bind(service),
     'EnhancedLogisticsService.getOptimizationStatus'
   ),
-  getOptimizationResult: logFunctionExecution(
-    service.getOptimizationResult.bind(service),
-    'EnhancedLogisticsService.getOptimizationResult'
-  ),
   shutdown: logFunctionExecution(
     service.shutdown.bind(service),
     'EnhancedLogisticsService.shutdown'
