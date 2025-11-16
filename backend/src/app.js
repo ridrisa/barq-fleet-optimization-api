@@ -309,6 +309,10 @@ app.get('/api/version', (req, res) => {
   });
 });
 
+// Admin migration routes - Database migrations (MUST be before /api routes to bypass auth)
+const adminMigrationsRoutes = require('./routes/admin-migrations');
+app.use('/api/admin/migrations', adminMigrationsRoutes);
+
 // API routes - All routes now handled through versioned router
 app.use('/api', apiRoutes);
 
@@ -342,10 +346,6 @@ app.use('/health', healthRoutes);
 // Demo routes - Integrated into main server
 const demoRoutes = require('./demo/demo-routes');
 app.use('/api/demo', demoRoutes);
-
-// Admin migration routes - Database migrations
-const adminMigrationsRoutes = require('./routes/admin-migrations');
-app.use('/api/admin/migrations', adminMigrationsRoutes);
 
 // 404 handler - must be before error handler
 app.use('*', notFoundHandler);
