@@ -1,0 +1,318 @@
+{
+  "scenario": "SLA-Aware Multi-Vehicle Optimization Demo",
+  "description": "Demonstrates how LLM optimizes vehicle allocation to meet 4-hour SLA deadline for all deliveries",
+  "challenge": "3 pickup points with 23 deliveries need to be completed within 4 hours. Using only 3 vehicles (1:1 with pickups) would violate SLA for many deliveries.",
+  "solution": "LLM recommends 4-5 vehicles to distribute workload and ensure all deliveries meet the 4-hour SLA",
+
+  "pickupPoints": [
+    {
+      "id": "pickup-warehouse-north",
+      "name": "North Warehouse",
+      "location": {
+        "lat": 24.7500,
+        "lng": 46.6500
+      },
+      "address": "King Fahd Road, North Riyadh",
+      "readyTime": "2024-01-15T08:00:00Z"
+    },
+    {
+      "id": "pickup-warehouse-central",
+      "name": "Central Distribution Center",
+      "location": {
+        "lat": 24.7136,
+        "lng": 46.6753
+      },
+      "address": "Olaya Street, Central Riyadh",
+      "readyTime": "2024-01-15T08:00:00Z"
+    },
+    {
+      "id": "pickup-warehouse-south",
+      "name": "South Logistics Hub",
+      "location": {
+        "lat": 24.6800,
+        "lng": 46.7000
+      },
+      "address": "Airport Road, South Riyadh",
+      "readyTime": "2024-01-15T08:00:00Z"
+    }
+  ],
+
+  "deliveryPoints": [
+    {
+      "id": "delivery-001",
+      "name": "Al Malqa Residential",
+      "location": {"lat": 24.8200, "lng": 46.6100},
+      "address": "Al Malqa District",
+      "priority": "high",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "45min"
+    },
+    {
+      "id": "delivery-002",
+      "name": "Al Nakheel Plaza",
+      "location": {"lat": 24.7900, "lng": 46.6300},
+      "address": "Al Nakheel, Northern Ring Road",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "35min"
+    },
+    {
+      "id": "delivery-003",
+      "name": "Granada Center",
+      "location": {"lat": 24.7700, "lng": 46.6600},
+      "address": "Granada District",
+      "priority": "high",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "30min"
+    },
+    {
+      "id": "delivery-004",
+      "name": "Sahara Mall",
+      "location": {"lat": 24.7400, "lng": 46.6200},
+      "address": "King Abdulaziz Road",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "25min"
+    },
+    {
+      "id": "delivery-005",
+      "name": "Diplomatic Quarter",
+      "location": {"lat": 24.6900, "lng": 46.6100},
+      "address": "Diplomatic Quarter",
+      "priority": "high",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "20min"
+    },
+    {
+      "id": "delivery-006",
+      "name": "Olaya Towers",
+      "location": {"lat": 24.7200, "lng": 46.6800},
+      "address": "Olaya Street",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "15min"
+    },
+    {
+      "id": "delivery-007",
+      "name": "Kingdom Center",
+      "location": {"lat": 24.7118, "lng": 46.6749},
+      "address": "King Fahd Road",
+      "priority": "high",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "12min"
+    },
+    {
+      "id": "delivery-008",
+      "name": "Al Faisaliah Tower",
+      "location": {"lat": 24.6908, "lng": 46.6855},
+      "address": "King Fahd Road",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "18min"
+    },
+    {
+      "id": "delivery-009",
+      "name": "Al Wurud District",
+      "location": {"lat": 24.7600, "lng": 46.7200},
+      "address": "Al Wurud, East Riyadh",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "28min"
+    },
+    {
+      "id": "delivery-010",
+      "name": "Al Yasmin Plaza",
+      "location": {"lat": 24.7800, "lng": 46.7400},
+      "address": "Al Yasmin District",
+      "priority": "high",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "35min"
+    },
+    {
+      "id": "delivery-011",
+      "name": "Panorama Mall",
+      "location": {"lat": 24.7300, "lng": 46.7100},
+      "address": "Abu Bakr Al Siddiq Road",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "22min"
+    },
+    {
+      "id": "delivery-012",
+      "name": "Riyadh Park",
+      "location": {"lat": 24.7450, "lng": 46.7300},
+      "address": "Al Imam Saud Bin Abdulaziz Road",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "26min"
+    },
+    {
+      "id": "delivery-013",
+      "name": "Al Noor Mall",
+      "location": {"lat": 24.7000, "lng": 46.7200},
+      "address": "Makkah Al Mukarramah Road",
+      "priority": "high",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "24min"
+    },
+    {
+      "id": "delivery-014",
+      "name": "Granada Mall",
+      "location": {"lat": 24.6700, "lng": 46.7100},
+      "address": "King Abdulaziz Road",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "20min"
+    },
+    {
+      "id": "delivery-015",
+      "name": "Al Hamra District",
+      "location": {"lat": 24.6500, "lng": 46.7300},
+      "address": "Al Hamra, Airport Road",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "25min"
+    },
+    {
+      "id": "delivery-016",
+      "name": "Riyadh Gallery",
+      "location": {"lat": 24.7550, "lng": 46.6400},
+      "address": "King Abdulaziz Road",
+      "priority": "high",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "28min"
+    },
+    {
+      "id": "delivery-017",
+      "name": "Al Othaim Mall",
+      "location": {"lat": 24.7250, "lng": 46.6400},
+      "address": "Khurais Road",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "22min"
+    },
+    {
+      "id": "delivery-018",
+      "name": "Al Rajhi District",
+      "location": {"lat": 24.7100, "lng": 46.6500},
+      "address": "Al Rajhi, Northern Riyadh",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "18min"
+    },
+    {
+      "id": "delivery-019",
+      "name": "Hayat Mall",
+      "location": {"lat": 24.6950, "lng": 46.6950},
+      "address": "King Abdullah Road",
+      "priority": "high",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "16min"
+    },
+    {
+      "id": "delivery-020",
+      "name": "Sahara Plaza",
+      "location": {"lat": 24.6800, "lng": 46.6850},
+      "address": "Makkah Road",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "14min"
+    },
+    {
+      "id": "delivery-021",
+      "name": "Al Akaria Plaza",
+      "location": {"lat": 24.7350, "lng": 46.6900},
+      "address": "Olaya Street",
+      "priority": "high",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "19min"
+    },
+    {
+      "id": "delivery-022",
+      "name": "Centria Mall",
+      "location": {"lat": 24.7280, "lng": 46.7050},
+      "address": "Imam Abdullah Bin Saud Road",
+      "priority": "medium",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "21min"
+    },
+    {
+      "id": "delivery-023",
+      "name": "Al Faisaliah Mall",
+      "location": {"lat": 24.7420, "lng": 46.6750},
+      "address": "King Fahd Road",
+      "priority": "high",
+      "timeWindow": {"start": "08:00", "end": "12:00"},
+      "estimatedFromPickup": "17min"
+    }
+  ],
+
+  "vehicles": [
+    {
+      "id": "vehicle-001",
+      "name": "Van A - North Fleet",
+      "type": "van",
+      "capacity": 8,
+      "currentLocation": {"lat": 24.7500, "lng": 46.6500},
+      "status": "available"
+    },
+    {
+      "id": "vehicle-002",
+      "name": "Van B - Central Fleet",
+      "type": "van",
+      "capacity": 8,
+      "currentLocation": {"lat": 24.7136, "lng": 46.6753},
+      "status": "available"
+    },
+    {
+      "id": "vehicle-003",
+      "name": "Van C - South Fleet",
+      "type": "van",
+      "capacity": 8,
+      "currentLocation": {"lat": 24.6800, "lng": 46.7000},
+      "status": "available"
+    },
+    {
+      "id": "vehicle-004",
+      "name": "Van D - Reserve Fleet",
+      "type": "van",
+      "capacity": 8,
+      "currentLocation": {"lat": 24.7136, "lng": 46.6753},
+      "status": "available"
+    },
+    {
+      "id": "vehicle-005",
+      "name": "Van E - Express Fleet",
+      "type": "van",
+      "capacity": 8,
+      "currentLocation": {"lat": 24.7136, "lng": 46.6753},
+      "status": "available"
+    }
+  ],
+
+  "businessRules": {
+    "maxDeliveryTime": "4 hours",
+    "slaDeadline": "12:00 PM (4 hours from 8:00 AM start)",
+    "priorityHandling": "High priority deliveries should be in early routes",
+    "capacityLimit": "Each vehicle can handle up to 8 deliveries",
+    "optimization": "Minimize vehicles used while ensuring SLA compliance"
+  },
+
+  "expectedResults": {
+    "without_llm": {
+      "vehicles_used": 3,
+      "description": "Only 3 vehicles (1:1 with pickups)",
+      "avg_deliveries_per_vehicle": 7.67,
+      "sla_violations": "Expected 8-12 violations due to overloaded routes",
+      "reason": "Some vehicles will have 8+ deliveries taking over 4 hours"
+    },
+    "with_llm": {
+      "vehicles_recommended": "4-5 vehicles",
+      "description": "LLM distributes 23 deliveries across 4-5 vehicles",
+      "avg_deliveries_per_vehicle": "4-6 deliveries",
+      "sla_compliance": "100% - All deliveries within 4 hours",
+      "utilization_rate": "80-90%",
+      "reasoning": "More vehicles = shorter routes = faster delivery times"
+    }
+  }
+}

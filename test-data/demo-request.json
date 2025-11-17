@@ -1,0 +1,39 @@
+{
+  "pickupPoints": [
+    {"id": "pickup-warehouse-north", "lat": 24.7500, "lng": 46.6500, "address": "King Fahd Road, North Riyadh"},
+    {"id": "pickup-warehouse-central", "lat": 24.7136, "lng": 46.6753, "address": "Olaya Street, Central Riyadh"},
+    {"id": "pickup-warehouse-south", "lat": 24.6800, "lng": 46.7000, "address": "Airport Road, South Riyadh"}
+  ],
+  "deliveryPoints": [
+    {"id": "delivery-001", "lat": 24.8200, "lng": 46.6100, "address": "Al Malqa District", "priority": 3},
+    {"id": "delivery-002", "lat": 24.7900, "lng": 46.6300, "address": "Al Nakheel", "priority": 2},
+    {"id": "delivery-003", "lat": 24.7700, "lng": 46.6600, "address": "Granada District", "priority": 3},
+    {"id": "delivery-004", "lat": 24.7400, "lng": 46.6200, "address": "King Abdulaziz Road", "priority": 2},
+    {"id": "delivery-005", "lat": 24.6900, "lng": 46.6100, "address": "Diplomatic Quarter", "priority": 3},
+    {"id": "delivery-006", "lat": 24.7200, "lng": 46.6800, "address": "Olaya Street", "priority": 2},
+    {"id": "delivery-007", "lat": 24.7118, "lng": 46.6749, "address": "King Fahd Road", "priority": 3},
+    {"id": "delivery-008", "lat": 24.6908, "lng": 46.6855, "address": "King Fahd Road", "priority": 2},
+    {"id": "delivery-009", "lat": 24.7600, "lng": 46.7200, "address": "Al Wurud", "priority": 2},
+    {"id": "delivery-010", "lat": 24.7800, "lng": 46.7400, "address": "Al Yasmin District", "priority": 3},
+    {"id": "delivery-011", "lat": 24.7300, "lng": 46.7100, "address": "Abu Bakr Al Siddiq Road", "priority": 2},
+    {"id": "delivery-012", "lat": 24.7450, "lng": 46.7300, "address": "Al Imam Saud Bin Abdulaziz", "priority": 2},
+    {"id": "delivery-013", "lat": 24.7000, "lng": 46.7200, "address": "Makkah Al Mukarramah Road", "priority": 3},
+    {"id": "delivery-014", "lat": 24.6700, "lng": 46.7100, "address": "King Abdulaziz Road", "priority": 2},
+    {"id": "delivery-015", "lat": 24.6500, "lng": 46.7300, "address": "Al Hamra", "priority": 2},
+    {"id": "delivery-016", "lat": 24.7550, "lng": 46.6400, "address": "King Abdulaziz Road", "priority": 3},
+    {"id": "delivery-017", "lat": 24.7250, "lng": 46.6400, "address": "Khurais Road", "priority": 2},
+    {"id": "delivery-018", "lat": 24.7100, "lng": 46.6500, "address": "Al Rajhi", "priority": 2},
+    {"id": "delivery-019", "lat": 24.6950, "lng": 46.6950, "address": "King Abdullah Road", "priority": 3},
+    {"id": "delivery-020", "lat": 24.6800, "lng": 46.6850, "address": "Makkah Road", "priority": 2},
+    {"id": "delivery-021", "lat": 24.7350, "lng": 46.6900, "address": "Olaya Street", "priority": 3},
+    {"id": "delivery-022", "lat": 24.7280, "lng": 46.7050, "address": "Imam Abdullah Bin Saud", "priority": 2},
+    {"id": "delivery-023", "lat": 24.7420, "lng": 46.6750, "address": "King Fahd Road", "priority": 3}
+  ],
+  "vehicles": [
+    {"id": "vehicle-001", "capacity": 8, "lat": 24.7500, "lng": 46.6500},
+    {"id": "vehicle-002", "capacity": 8, "lat": 24.7136, "lng": 46.6753},
+    {"id": "vehicle-003", "capacity": 8, "lat": 24.6800, "lng": 46.7000},
+    {"id": "vehicle-004", "capacity": 8, "lat": 24.7136, "lng": 46.6753},
+    {"id": "vehicle-005", "capacity": 8, "lat": 24.7136, "lng": 46.6753}
+  ]
+}

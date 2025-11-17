@@ -63,6 +63,38 @@ export interface OptimizationInsights {
   };
 }
 
+export interface OptimizationEngineMetadata {
+  engine?: string;
+  algorithm?: string;
+  aiModel?: string;
+  fairDistribution?: boolean;
+  capacityConstrained?: boolean;
+  multiPickupSupport?: boolean;
+  slaAware?: boolean;
+  executionTime?: number;
+  cost?: number;
+  fallback?: boolean;
+  fallbackReason?: string;
+  provider?: string;
+  vehiclesUsed?: number;
+  vehiclesAvailable?: number;
+  utilizationRate?: number;
+}
+
+export interface OptimizationEngineDecision {
+  engine: string;
+  reason: string;
+  fallback?: boolean;
+  fallbackReason?: string;
+}
+
+export interface AIInsights {
+  advisor?: string;
+  analyst?: string;
+  cost?: number;
+  provider?: string;
+}
+
 export interface OptimizationResponse {
   id: string;
   requestId: string;
@@ -75,6 +107,11 @@ export interface OptimizationResponse {
   allowedZones?: AreaDefinition[];
   restrictedAreas?: AreaDefinition[];
   error?: string | null;
+  // Engine visibility metadata
+  optimizationEngine?: string;
+  optimizationMetadata?: OptimizationEngineMetadata;
+  engineDecision?: OptimizationEngineDecision;
+  aiInsights?: AIInsights;
 }
 
 export interface OptimizationRequest {
@@ -118,6 +155,9 @@ export interface OptimizationRequest {
   };
   preferences?: {
     optimizationFocus: 'distance' | 'time' | 'balanced';
+    preferredEngine?: 'auto' | 'cvrp' | 'osrm' | 'genetic' | 'nearest_neighbor';
+    useCVRP?: boolean;
+    distributionStrategy?: 'auto' | 'single_vehicle' | 'balanced_vehicles' | 'proximity_based' | 'capacity_based';
   };
 }
 

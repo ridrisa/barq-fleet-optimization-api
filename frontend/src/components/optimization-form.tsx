@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { optimizeRoutes, OptimizationRequest } from '@/store/slices/routesSlice';
 import { useOptimizationStatus } from '@/hooks/useOptimizationStatus';
 import { OptimizationProgress } from './optimization-progress';
+import { EngineSelector } from './engine-selector';
 import {
   X,
   Truck,
@@ -27,6 +28,8 @@ interface OptimizationFormProps {
 interface ExtendedOptimizationRequest extends OptimizationRequest {
   preferences?: {
     optimizationFocus: 'distance' | 'time' | 'balanced';
+    preferredEngine?: 'auto' | 'cvrp' | 'osrm' | 'genetic' | 'nearest_neighbor';
+    useCVRP?: boolean;
     distributionStrategy?:
       | 'auto'
       | 'single_vehicle'
@@ -250,6 +253,7 @@ export function OptimizationForm({ onClose }: OptimizationFormProps) {
     },
     preferences: {
       optimizationFocus: 'balanced',
+      preferredEngine: 'auto',
       distributionStrategy: 'auto',
     },
   };
@@ -928,6 +932,26 @@ export function OptimizationForm({ onClose }: OptimizationFormProps) {
             {/* Preferences Section */}
             <div className="border-t pt-4">
               <h3 className="font-medium mb-3">Preferences</h3>
+
+              {/* Engine Selector */}
+              <div className="mb-6">
+                <EngineSelector
+                  value={formData.preferences?.preferredEngine || 'auto'}
+                  onChange={(value) => {
+                    updatePreferences('preferredEngine', value);
+                    // Set useCVRP based on engine selection
+                    if (value === 'cvrp') {
+                      updatePreferences('useCVRP', true);
+                    } else if (value === 'osrm') {
+                      updatePreferences('useCVRP', false);
+                    } else {
+                      updatePreferences('useCVRP', undefined);
+                    }
+                  }}
+                  showAdvanced={true}
+                />
+              </div>
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="bg-primary/5 p-3 rounded-lg">
                   <RadioGroup
