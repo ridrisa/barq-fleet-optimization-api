@@ -1,0 +1,23 @@
+{
+  "development": {
+    "backend": 3003,
+    "frontend": 3001,
+    "websocket": 8081,
+    "analytics": 8080,
+    "cvrp": 5001
+  },
+  "production": {
+    "backend": 8080,
+    "frontend": 3000,
+    "websocket": 8081,
+    "analytics": 8080,
+    "cvrp": 5001
+  },
+  "staging": {
+    "backend": 3003,
+    "frontend": 3001,
+    "websocket": 8081,
+    "analytics": 8080,
+    "cvrp": 5001
+  }
+}

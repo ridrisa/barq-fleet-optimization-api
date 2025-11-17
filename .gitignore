@@ -87,3 +87,8 @@ test-results*.txt
 # Temporary/test files
 a.py
 aa.py
+
+# Backend environment files
+backend/.env.development
+backend/.env.local
+backend/.env.production
