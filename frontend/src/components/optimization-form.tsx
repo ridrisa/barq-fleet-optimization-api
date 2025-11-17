@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { optimizeRoutes, OptimizationRequest } from '@/store/slices/routesSlice';
+import { useOptimizationStatus } from '@/hooks/useOptimizationStatus';
+import { OptimizationProgress } from './optimization-progress';
 import {
   X,
   Truck,
@@ -39,8 +41,34 @@ export function OptimizationForm({ onClose }: OptimizationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [optimizationRequestId, setOptimizationRequestId] = useState<string | null>(null);
   const lastSubmissionTimeRef = useRef<number>(0);
   const COOLDOWN_PERIOD_MS = 5000; // 5 seconds between submissions
+
+  // Use the optimization status hook for real-time polling
+  const {
+    status: optimizationStatus,
+    progress,
+    message: statusMessage,
+    error: statusError,
+    isPolling,
+  } = useOptimizationStatus({
+    requestId: optimizationRequestId,
+    isProcessing: isLoading,
+    onComplete: (result) => {
+      console.log('Optimization completed:', result);
+      setIsLoading(false);
+      setOptimizationRequestId(null);
+      // Close the form after successful optimization
+      setTimeout(() => onClose(), 1500);
+    },
+    onError: (error) => {
+      console.error('Optimization failed:', error);
+      setSubmitError(error);
+      setIsLoading(false);
+      setOptimizationRequestId(null);
+    },
+  });
 
   // Base optimization request - ALL LOCATIONS IN RIYADH
   const baseOptimizationRequest: ExtendedOptimizationRequest = {
@@ -323,7 +351,19 @@ export function OptimizationForm({ onClose }: OptimizationFormProps) {
       // Update the last submission time
       lastSubmissionTimeRef.current = now;
 
-      onClose();
+      // Extract request ID from result for status polling
+      if (result && result.requestId) {
+        console.log('Setting optimization request ID for polling:', result.requestId);
+        setOptimizationRequestId(result.requestId);
+        // Keep isLoading true to continue showing progress
+        // The status polling hook will handle completion
+      } else {
+        // If no request ID, just close after a delay (fallback behavior)
+        console.log('No request ID in response, closing form');
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      }
     } catch (error: any) {
       console.error('Optimization failed:', error);
 
@@ -956,26 +996,45 @@ export function OptimizationForm({ onClose }: OptimizationFormProps) {
           </div>
         </div>
 
-        <div className="p-4 border-t flex justify-end space-x-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-md border hover:bg-muted transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading || cooldownRemaining > 0}
-            className={`px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors ${
-              isLoading || cooldownRemaining > 0 ? 'opacity-70 cursor-not-allowed' : ''
-            }`}
-          >
-            {isLoading
-              ? 'Optimizing...'
-              : cooldownRemaining > 0
-                ? `Wait ${Math.ceil(cooldownRemaining / 1000)}s`
-                : 'Optimize Routes'}
-          </button>
+        <div className="p-4 border-t space-y-4">
+          {/* Progress indicator - only shown when polling */}
+          {isLoading && isPolling && (
+            <div className="border-t pt-4">
+              <OptimizationProgress
+                status={optimizationStatus}
+                progress={progress}
+                message={statusMessage}
+                error={statusError}
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-2">
+            <button
+              onClick={onClose}
+              disabled={isLoading && isPolling}
+              className={`px-4 py-2 rounded-md border hover:bg-muted transition-colors ${
+                isLoading && isPolling ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {isLoading && isPolling ? 'Processing...' : 'Cancel'}
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || cooldownRemaining > 0}
+              className={`px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors ${
+                isLoading || cooldownRemaining > 0 ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
+            >
+              {isLoading
+                ? isPolling
+                  ? 'Processing...'
+                  : 'Starting...'
+                : cooldownRemaining > 0
+                  ? `Wait ${Math.ceil(cooldownRemaining / 1000)}s`
+                  : 'Optimize Routes'}
+            </button>
+          </div>
         </div>
 
         {submitError && (
