@@ -23,8 +23,14 @@ import {
   DemandForecastCard,
   VehiclePerformanceCard,
   SLATrendChart,
+  OptimizationMetricsCard,
+  EngineUsageCard,
+  CostAnalysisCard,
+  PerformanceMetricsCard,
+  AIInsightsSummaryCard,
 } from '@/components/analytics-charts';
 import analyticsAPI from '@/lib/analytics-api';
+import axios from 'axios';
 
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -41,6 +47,13 @@ export default function AnalyticsPage() {
   const [demandForecastData, setDemandForecastData] = useState<any>(null);
   const [vehiclePerformanceData, setVehiclePerformanceData] = useState<any>(null);
 
+  // Optimization insights data
+  const [optimizationMetrics, setOptimizationMetrics] = useState<any>(null);
+  const [engineUsageData, setEngineUsageData] = useState<any>(null);
+  const [costAnalysisData, setCostAnalysisData] = useState<any>(null);
+  const [performanceData, setPerformanceData] = useState<any>(null);
+  const [aiInsightsData, setAIInsightsData] = useState<any>(null);
+
   const checkServiceHealth = async () => {
     try {
       await analyticsAPI.health();
@@ -48,6 +61,128 @@ export default function AnalyticsPage() {
     } catch (error) {
       console.error('Analytics service is offline:', error);
       setServiceStatus('offline');
+    }
+  };
+
+  const loadOptimizationInsights = async () => {
+    try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://route-opt-backend-sek7q2ajva-uc.a.run.app';
+
+      // Fetch optimization history (all records for analytics)
+      const response = await axios.get(`${API_BASE_URL}/api/optimize/history?limit=100&page=1`);
+      const optimizations = response.data.data || [];
+
+      if (optimizations.length === 0) {
+        return;
+      }
+
+      // Calculate metrics
+      const totalOptimizations = optimizations.length;
+      const completedOptimizations = optimizations.filter((o: any) => o.status === 'completed');
+      const successRate = (completedOptimizations.length / totalOptimizations) * 100;
+
+      // Calculate average cost savings
+      const totalCostSavings = completedOptimizations.reduce(
+        (sum: number, o: any) => sum + (o.metrics?.costSavings || 0),
+        0
+      );
+      const avgCostSavings = completedOptimizations.length > 0 ? totalCostSavings / completedOptimizations.length : 0;
+
+      // Calculate average execution time
+      const totalExecutionTime = completedOptimizations.reduce(
+        (sum: number, o: any) => sum + (o.optimizationMetadata?.executionTime || 0),
+        0
+      );
+      const avgExecutionTime = completedOptimizations.length > 0 ? totalExecutionTime / completedOptimizations.length : 0;
+
+      // Engine usage stats
+      const engineCounts: Record<string, number> = {};
+      completedOptimizations.forEach((o: any) => {
+        const engine = o.optimizationEngine || o.optimizationMetadata?.engine || 'unknown';
+        engineCounts[engine] = (engineCounts[engine] || 0) + 1;
+      });
+      const engineStats = Object.entries(engineCounts).map(([engine, count]) => ({ engine, count }));
+
+      // Cost analysis
+      const totalAICost = completedOptimizations.reduce(
+        (sum: number, o: any) => sum + (o.aiInsights?.cost || 0),
+        0
+      );
+      const totalEngineCost = completedOptimizations.reduce(
+        (sum: number, o: any) => sum + (o.optimizationMetadata?.cost || 0),
+        0
+      );
+      const totalCost = totalAICost + totalEngineCost;
+      const avgCostPerOptimization = completedOptimizations.length > 0 ? totalCost / completedOptimizations.length : 0;
+
+      // Performance metrics
+      const totalDistance = completedOptimizations.reduce(
+        (sum: number, o: any) => sum + (o.metrics?.totalDistance || 0),
+        0
+      );
+      const avgDistance = completedOptimizations.length > 0 ? totalDistance / completedOptimizations.length : 0;
+
+      const totalDuration = completedOptimizations.reduce(
+        (sum: number, o: any) => sum + (o.metrics?.totalDuration || 0),
+        0
+      );
+      const avgDuration = completedOptimizations.length > 0 ? totalDuration / completedOptimizations.length : 0;
+
+      const totalVehiclesUsed = completedOptimizations.reduce(
+        (sum: number, o: any) => sum + (o.metrics?.vehiclesUsed || 0),
+        0
+      );
+      const avgVehiclesUsed = completedOptimizations.length > 0 ? totalVehiclesUsed / completedOptimizations.length : 0;
+
+      const totalUtilization = completedOptimizations.reduce(
+        (sum: number, o: any) => sum + (o.optimizationMetadata?.utilizationRate || 0),
+        0
+      );
+      const avgUtilization = completedOptimizations.length > 0 ? totalUtilization / completedOptimizations.length : 0;
+
+      // AI insights summary
+      const optimizationsWithAI = completedOptimizations.filter((o: any) => o.aiInsights);
+      const totalAIInsights = optimizationsWithAI.length;
+      const avgAICost = totalAIInsights > 0 ? totalAICost / totalAIInsights : 0;
+
+      const providerCounts: Record<string, number> = {};
+      optimizationsWithAI.forEach((o: any) => {
+        const provider = o.aiInsights?.provider || 'unknown';
+        providerCounts[provider] = (providerCounts[provider] || 0) + 1;
+      });
+      const providers = Object.entries(providerCounts).map(([name, count]) => ({ name, count }));
+
+      // Set all optimization insights data
+      setOptimizationMetrics({
+        totalOptimizations,
+        successRate,
+        avgCostSavings,
+        avgExecutionTime,
+      });
+
+      setEngineUsageData({ engineStats });
+
+      setCostAnalysisData({
+        totalCost,
+        avgCostPerOptimization,
+        aiCosts: totalAICost,
+        engineCosts: totalEngineCost,
+      });
+
+      setPerformanceData({
+        avgDistance,
+        avgDuration,
+        avgVehiclesUsed,
+        avgUtilization,
+      });
+
+      setAIInsightsData({
+        totalAIInsights,
+        avgAICost,
+        providers,
+      });
+    } catch (error) {
+      console.error('Error loading optimization insights:', error);
     }
   };
 
@@ -72,6 +207,10 @@ export default function AnalyticsPage() {
       setRouteEfficiencyData(routes);
       setDemandForecastData(demand);
       setVehiclePerformanceData(vehicles);
+
+      // Load optimization insights
+      await loadOptimizationInsights();
+
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error loading analytics data:', error);
@@ -165,8 +304,12 @@ export default function AnalyticsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="optimization">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Optimization
+          </TabsTrigger>
           <TabsTrigger value="sla">
             <AlertCircle className="h-4 w-4 mr-2" />
             SLA
@@ -191,6 +334,16 @@ export default function AnalyticsPage() {
             {driverPerformanceData && <DriverPerformanceCard data={driverPerformanceData} />}
             {routeEfficiencyData && <RouteEfficiencyChart data={routeEfficiencyData} />}
             {demandForecastData && <DemandForecastCard data={demandForecastData} />}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="optimization" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {optimizationMetrics && <OptimizationMetricsCard data={optimizationMetrics} />}
+            {engineUsageData && <EngineUsageCard data={engineUsageData} />}
+            {costAnalysisData && <CostAnalysisCard data={costAnalysisData} />}
+            {performanceData && <PerformanceMetricsCard data={performanceData} />}
+            {aiInsightsData && <AIInsightsSummaryCard data={aiInsightsData} />}
           </div>
         </TabsContent>
 

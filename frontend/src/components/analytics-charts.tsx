@@ -347,3 +347,190 @@ export function SLATrendChart({ data }: { data: any }) {
     </Card>
   );
 }
+
+// Optimization Metrics Card
+export function OptimizationMetricsCard({ data }: { data: any }) {
+  const totalOptimizations = data?.totalOptimizations || 0;
+  const successRate = data?.successRate || 0;
+  const avgCostSavings = data?.avgCostSavings || 0;
+  const avgExecutionTime = data?.avgExecutionTime || 0;
+
+  return (
+    <Card className="p-6">
+      <h3 className="text-lg font-semibold mb-6">Optimization Overview</h3>
+
+      <div className="grid grid-cols-2 gap-6">
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">Total Optimizations</p>
+          <p className="text-3xl font-bold">{totalOptimizations}</p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">Success Rate</p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-3xl font-bold text-green-600">{successRate.toFixed(1)}%</p>
+            {successRate >= 95 && <CheckCircle className="h-5 w-5 text-green-600" />}
+          </div>
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">Avg Cost Savings</p>
+          <p className="text-3xl font-bold text-blue-600">${avgCostSavings.toFixed(2)}</p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">Avg Execution Time</p>
+          <p className="text-3xl font-bold">{avgExecutionTime.toFixed(2)}s</p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// Engine Usage Card
+export function EngineUsageCard({ data }: { data: any }) {
+  const engineStats = data?.engineStats || [];
+  const total = engineStats.reduce((sum: number, e: any) => sum + e.count, 0);
+
+  return (
+    <Card className="p-6">
+      <h3 className="text-lg font-semibold mb-4">Optimization Engines</h3>
+
+      <div className="space-y-3">
+        {engineStats.map((engine: any, index: number) => {
+          const percentage = total > 0 ? (engine.count / total) * 100 : 0;
+          return (
+            <div key={index}>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant={engine.engine === 'google-or-tools' ? 'default' : 'secondary'}>
+                    {engine.engine || 'Unknown'}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {engine.count} uses
+                  </span>
+                </div>
+                <span className="text-sm font-medium">{percentage.toFixed(1)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="h-2 rounded-full bg-blue-600"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+// Cost Analysis Card
+export function CostAnalysisCard({ data }: { data: any }) {
+  const totalCost = data?.totalCost || 0;
+  const avgCostPerOptimization = data?.avgCostPerOptimization || 0;
+  const aiCosts = data?.aiCosts || 0;
+  const engineCosts = data?.engineCosts || 0;
+
+  return (
+    <Card className="p-6">
+      <h3 className="text-lg font-semibold mb-6">Cost Analysis</h3>
+
+      <div className="mb-4 p-4 bg-muted rounded-lg text-center">
+        <p className="text-sm text-muted-foreground mb-1">Total Cost</p>
+        <p className="text-4xl font-bold">${totalCost.toFixed(4)}</p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <span className="text-sm">Avg Cost per Optimization</span>
+          <span className="font-bold">${avgCostPerOptimization.toFixed(4)}</span>
+        </div>
+        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <span className="text-sm">AI Insights Cost</span>
+          <span className="font-bold">${aiCosts.toFixed(4)}</span>
+        </div>
+        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <span className="text-sm">Engine Cost</span>
+          <span className="font-bold">${engineCosts.toFixed(4)}</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// Performance Metrics Card
+export function PerformanceMetricsCard({ data }: { data: any }) {
+  const avgDistance = data?.avgDistance || 0;
+  const avgDuration = data?.avgDuration || 0;
+  const avgVehiclesUsed = data?.avgVehiclesUsed || 0;
+  const avgUtilization = data?.avgUtilization || 0;
+
+  return (
+    <Card className="p-6">
+      <h3 className="text-lg font-semibold mb-6">Performance Metrics</h3>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">Avg Distance</span>
+          </div>
+          <span className="font-bold">{avgDistance.toFixed(2)} km</span>
+        </div>
+        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">Avg Duration</span>
+          </div>
+          <span className="font-bold">{(avgDuration / 60).toFixed(2)} hrs</span>
+        </div>
+        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <div className="flex items-center gap-2">
+            <Truck className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">Avg Vehicles Used</span>
+          </div>
+          <span className="font-bold">{avgVehiclesUsed.toFixed(1)}</span>
+        </div>
+        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">Avg Utilization</span>
+          </div>
+          <span className="font-bold">{avgUtilization.toFixed(1)}%</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// AI Insights Summary Card
+export function AIInsightsSummaryCard({ data }: { data: any }) {
+  const totalAIInsights = data?.totalAIInsights || 0;
+  const avgAICost = data?.avgAICost || 0;
+  const providers = data?.providers || [];
+
+  return (
+    <Card className="p-6">
+      <h3 className="text-lg font-semibold mb-4">AI Insights Summary</h3>
+
+      <div className="mb-4">
+        <div className="flex items-baseline gap-2 mb-1">
+          <span className="text-3xl font-bold">{totalAIInsights}</span>
+          <span className="text-sm text-muted-foreground">AI insights generated</span>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Avg cost: ${avgAICost.toFixed(4)} per insight
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-muted-foreground">Providers Used:</p>
+        {providers.map((provider: any, index: number) => (
+          <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+            <Badge variant="outline">{provider.name}</Badge>
+            <span className="text-sm">{provider.count} uses</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
