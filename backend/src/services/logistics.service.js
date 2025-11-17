@@ -529,6 +529,7 @@ class LogisticsService {
           completed: !!result,
         };
       })
+      .filter((item) => item.completed) // Only include completed optimizations with results
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     // Apply pagination
