@@ -510,27 +510,38 @@ class LogisticsService {
     console.log(`Found ${requests.length} requests and ${results.length} results`);
 
     // Map requests to include their results
-    const allHistory = requests
-      .map((request) => {
-        const result = results.find((r) => r.requestId === request.id);
+    const mappedHistory = requests.map((request) => {
+      const result = results.find((r) => r.requestId === request.id);
 
-        return {
-          id: request.id,
-          timestamp: request.timestamp,
-          pickupPoints: request.pickupPoints,
-          deliveryPoints: request.deliveryPoints,
-          fleet: request.fleet,
-          context: request.context,
-          success: result ? result.success : null,
-          time_taken: result ? result.time_taken : null,
-          routes: result ? result.routes : null,
-          total_distance: result ? result.total_distance : null,
-          total_duration: result ? result.total_duration : null,
-          completed: !!result,
-        };
-      })
+      return {
+        id: request.id,
+        timestamp: request.timestamp,
+        pickupPoints: request.pickupPoints,
+        deliveryPoints: request.deliveryPoints,
+        fleet: request.fleet,
+        context: request.context,
+        success: result ? result.success : null,
+        time_taken: result ? result.time_taken : null,
+        routes: result ? result.routes : null,
+        total_distance: result ? result.total_distance : null,
+        total_duration: result ? result.total_duration : null,
+        completed: !!result,
+      };
+    });
+
+    console.log(`Before filter: ${mappedHistory.length} items`);
+    console.log(
+      `Sample completed values: ${mappedHistory
+        .slice(0, 3)
+        .map((item) => item.completed)
+        .join(', ')}`
+    );
+
+    const allHistory = mappedHistory
       .filter((item) => item.completed) // Only include completed optimizations with results
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    console.log(`After filter: ${allHistory.length} items`);
 
     // Apply pagination
     const startIndex = (page - 1) * limit;
