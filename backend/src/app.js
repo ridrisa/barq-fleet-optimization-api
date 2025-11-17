@@ -52,8 +52,18 @@ if (sentryInstance) {
   app.use(Sentry.Handlers.tracingHandler());
 }
 
-// Set port (Cloud Run uses PORT env var, default to 8080 for production, 3002 for development)
-const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8080 : 3002);
+// Dynamic port configuration - stays synchronized with frontend
+// Load port configuration dynamically to ensure frontend-backend sync
+let PORT;
+try {
+  const portsConfig = require('../../config/ports.json');
+  const env = process.env.NODE_ENV || 'development';
+  const ports = portsConfig[env] || portsConfig.development;
+  PORT = process.env.PORT || ports.backend;
+} catch (error) {
+  // Fallback if config file doesn't exist
+  PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8080 : 3003);
+}
 
 // Trust proxy (required for Cloud Run to properly handle X-Forwarded-* headers)
 app.set('trust proxy', true);
@@ -516,21 +526,59 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
     // Auto-create agent system tables if they don't exist
     logger.info('Ensuring agent system tables exist...');
     try {
-      const fs = require('fs');
       const path = require('path');
-      const migrationPath = path.join(__dirname, '../migrations/20251113_create_agent_system_tables.sql');
+      const { runMigration, verifyTables } = require('./utils/migration-runner');
+      // Use the alter migration to add missing columns to existing tables
+      const migrationPath = path.join(__dirname, '../migrations/20251117_alter_agent_tables.sql');
 
-      if (fs.existsSync(migrationPath)) {
-        const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
-        await postgresService.query(migrationSQL);
-        logger.info('✅ Agent system tables verified/created successfully');
+      // Run the migration
+      const migrationResult = await runMigration(postgresService, migrationPath);
+
+      if (migrationResult.success) {
+        logger.info('✅ Agent system tables verified/created successfully', {
+          statementsExecuted: migrationResult.statementsExecuted,
+          tables: migrationResult.tables
+        });
+
+        // Verify tables exist
+        const requiredTables = ['assignment_logs', 'escalation_logs', 'dispatch_alerts', 'optimization_logs'];
+        const verification = await verifyTables(postgresService, requiredTables);
+
+        if (verification.allExist) {
+          logger.info('Database tables verified', verification.tables);
+        } else {
+          logger.warn('Some tables are missing', verification.tables);
+        }
       } else {
-        logger.warn('Agent system migration file not found, skipping auto-creation');
+        logger.warn('Migration completed with errors', {
+          executed: migrationResult.statementsExecuted,
+          errors: migrationResult.errors.length
+        });
       }
     } catch (tableError) {
-      logger.warn('Could not auto-create agent tables (may already exist)', {
+      logger.error('Could not auto-create agent tables', {
         error: tableError.message,
+        stack: tableError.stack,
+        type: tableError.constructor.name
       });
+
+      // Continue without failing - tables might already exist
+      logger.info('Checking if tables already exist...');
+      try {
+        const { verifyTables } = require('./utils/migration-runner');
+        const requiredTables = ['assignment_logs', 'escalation_logs', 'dispatch_alerts', 'optimization_logs'];
+        const verification = await verifyTables(postgresService, requiredTables);
+
+        if (verification.allExist) {
+          logger.info('✅ All required tables already exist', verification.tables);
+        } else {
+          logger.warn('⚠️ Some required tables are missing', verification.tables);
+        }
+      } catch (verifyError) {
+        logger.error('Failed to verify tables', {
+          error: verifyError.message
+        });
+      }
     }
   } catch (dbError) {
     logger.error('Failed to initialize PostgreSQL service', {
@@ -541,8 +589,18 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   }
 
   // Initialize agent system (ALWAYS - agents != autonomous operations)
-  logger.info('Initializing agent system...');
-  try {
+  // TEMPORARY: Skip agent initialization due to startup issues
+  const SKIP_AGENT_INIT = process.env.SKIP_AGENT_INIT === 'true' || true;
+
+  if (SKIP_AGENT_INIT) {
+    logger.warn('⚠️  AGENT SYSTEM INITIALIZATION SKIPPED (temporary workaround)');
+    logger.info('Server will run with basic functionality');
+    logger.info('Route optimization API available at POST /api/optimize');
+  } else {
+    logger.info('Initializing agent system...');
+  }
+
+  if (!SKIP_AGENT_INIT) try {
     const initResult = await AgentInitializer.initialize();
     logger.info('Agent system initialized successfully', initResult);
 
