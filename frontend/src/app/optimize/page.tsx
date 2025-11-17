@@ -7,9 +7,10 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { fetchLatestOptimization } from '@/store/slices/routesSlice';
-import { Loader2, AlertCircle, Info, Home } from 'lucide-react';
+import { Loader2, Info, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ErrorAlert } from '@/components/error-alert';
 import Link from 'next/link';
 
 // Define a type that matches the expected state shape
@@ -79,27 +80,29 @@ export default function OptimizePage() {
     if (error) {
       return (
         <div className="w-full">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Optimization Error</AlertTitle>
-            <AlertDescription>
-              <p className="mb-2">{error}</p>
-              <p className="text-xs mb-2">API URL: {apiUrl}</p>
-              <p className="text-xs mb-4">Make sure the backend server is running at {apiUrl}</p>
-              <div className="mt-2 flex gap-2">
-                <Button onClick={handleRetry} variant="outline" size="sm">
-                  Retry
+          <ErrorAlert
+            error={{
+              message: error,
+              response: {
+                data: { error },
+                config: { url: apiUrl }
+              }
+            }}
+            onRetry={handleRetry}
+            showDetails={true}
+          />
+          <div className="mt-4">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Need Help?</AlertTitle>
+              <AlertDescription>
+                <p className="mb-2">Make sure the backend server is running at: {apiUrl}</p>
+                <Button onClick={handleNewOptimization} variant="default" size="sm" className="mt-2">
+                  Create New Route Optimization
                 </Button>
-                <Button
-                  onClick={handleNewOptimization}
-                  variant="outline"
-                  size="sm"
-                >
-                  Create New Route
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
+              </AlertDescription>
+            </Alert>
+          </div>
         </div>
       );
     }
