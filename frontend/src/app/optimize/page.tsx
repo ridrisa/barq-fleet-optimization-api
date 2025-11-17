@@ -17,6 +17,12 @@ interface RoutesState {
   optimizationResponse: any | null;
   loading: boolean;
   error: string | null;
+  pagination: {
+    limit: number;
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+  };
 }
 
 export default function OptimizePage() {
@@ -24,10 +30,11 @@ export default function OptimizePage() {
   const dispatch = useDispatch<AppDispatch>();
 
   const routesState = useSelector((state: RootState) => state.routes as RoutesState);
-  const { loading, error, optimizationResponse } = routesState || {
+  const { loading, error, optimizationResponse, pagination } = routesState || {
     loading: false,
     error: null,
     optimizationResponse: null,
+    pagination: { limit: 10, currentPage: 1, totalPages: 1, totalItems: 0 },
   };
 
   const [apiUrl, setApiUrl] = useState('');
@@ -35,11 +42,21 @@ export default function OptimizePage() {
 
   useEffect(() => {
     setApiUrl(process.env.NEXT_PUBLIC_API_URL || 'Not configured');
-    dispatch(fetchLatestOptimization()).finally(() => setFetchAttempted(true));
-  }, [dispatch]);
+    dispatch(
+      fetchLatestOptimization({
+        limit: pagination.limit,
+        page: pagination.currentPage,
+      })
+    ).finally(() => setFetchAttempted(true));
+  }, [dispatch, pagination.limit, pagination.currentPage]);
 
   const handleRetry = () => {
-    dispatch(fetchLatestOptimization());
+    dispatch(
+      fetchLatestOptimization({
+        limit: pagination.limit,
+        page: pagination.currentPage,
+      })
+    );
   };
 
   const handleNewOptimization = () => {

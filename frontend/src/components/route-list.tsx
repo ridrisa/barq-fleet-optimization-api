@@ -5,6 +5,8 @@ import type { RootState, AppDispatch } from '@/store/store';
 import {
   setSelectedRoute,
   setSelectedPlan,
+  setPaginationSettings,
+  fetchLatestOptimization,
   OptimizationResponse,
 } from '@/store/slices/routesSlice';
 import {
@@ -19,6 +21,8 @@ import {
   Search,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { PaginationControls } from './pagination-controls';
+import { OptimizationDetails } from './optimization-details';
 
 // Define a type that matches the expected state shape
 interface RoutesState {
@@ -28,6 +32,12 @@ interface RoutesState {
   selectedPlanId: string | null;
   loading: boolean;
   error: string | null;
+  pagination: {
+    limit: number;
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+  };
 }
 
 export function RouteList() {
@@ -41,6 +51,24 @@ export function RouteList() {
   const optimizationPlans = routes?.optimizationPlans || [];
   const selectedRouteId = routes?.selectedRouteId || null;
   const selectedPlanId = routes?.selectedPlanId || null;
+  const loading = routes?.loading || false;
+  const pagination = routes?.pagination || {
+    limit: 10,
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+  };
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    dispatch(setPaginationSettings({ currentPage: page }));
+    dispatch(fetchLatestOptimization({ limit: pagination.limit, page }));
+  };
+
+  const handleLimitChange = (limit: number) => {
+    dispatch(setPaginationSettings({ limit, currentPage: 1 }));
+    dispatch(fetchLatestOptimization({ limit, page: 1 }));
+  };
 
   // Add a simple unique ID generator for plans without requestId
   const generateUniqueId = (prefix: string) => {
@@ -523,6 +551,23 @@ export function RouteList() {
                 <div className="p-2 border-t border-border bg-card">
                   {renderPlanMetrics(plan)}
 
+                  {/* Optimization Engine Details */}
+                  {(plan.optimizationEngine || plan.optimizationMetadata || plan.engineDecision) && (
+                    <div className="mt-2">
+                      <OptimizationDetails
+                        engine={plan.optimizationEngine}
+                        metadata={plan.optimizationMetadata}
+                        engineDecision={plan.engineDecision}
+                        aiInsights={plan.aiInsights}
+                        summary={{
+                          total_distance: plan.routes.reduce((sum, r) => sum + (r.distance || 0), 0),
+                          total_duration: plan.routes.reduce((sum, r) => sum + (r.duration || 0), 0),
+                          total_routes: plan.routes.length,
+                        }}
+                      />
+                    </div>
+                  )}
+
                   {/* Routes list section */}
                   {plan.routes && plan.routes.length > 0 && (
                     <div className="mt-2">
@@ -605,6 +650,19 @@ export function RouteList() {
           );
         })}
       </div>
+
+      {/* Pagination controls */}
+      {optimizationPlans.length > 0 && (
+        <PaginationControls
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          limit={pagination.limit}
+          onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
+          loading={loading}
+        />
+      )}
     </div>
   );
 }

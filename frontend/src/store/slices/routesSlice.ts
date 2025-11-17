@@ -148,6 +148,12 @@ export interface RouteState {
   error: string | null;
   mapFilters: MapFilters;
   optimizationHistoryIds: string[];
+  pagination: {
+    limit: number;
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+  };
   optimizationCache: Record<string, OptimizationResponse>;
 }
 
@@ -168,6 +174,12 @@ const _initialState: RouteState = {
   },
   optimizationHistoryIds: [],
   optimizationCache: {},
+  pagination: {
+    limit: 10,
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+  },
 };
 
 // Add generateId function at the top of the file before transformToOptimizationResponse
@@ -933,16 +945,19 @@ export const getOptimizationStatus = createAsyncThunk(
 
 export const fetchLatestOptimization = createAsyncThunk(
   'routes/fetchLatestOptimization',
-  async (_, { rejectWithValue }) => {
+  async (params: { limit?: number; page?: number } = {}, { rejectWithValue }) => {
+    const limit = params.limit || 10;
+    const page = params.page || 1;
+
     try {
       console.log(
         'Fetching latest optimization from API:',
-        `${API_BASE_URL}/api/optimize/history?limit=5&page=1`
+        `${API_BASE_URL}/api/optimize/history?limit=${limit}&page=${page}`
       );
 
       // First get the history to find the latest request
       const historyResponse = await axios.get(
-        `${API_BASE_URL}/api/optimize/history?limit=5&page=1`
+        `${API_BASE_URL}/api/optimize/history?limit=${limit}&page=${page}`
       );
 
       console.log('History response:', historyResponse.data);
@@ -1018,10 +1033,21 @@ export const fetchLatestOptimization = createAsyncThunk(
         return rejectWithValue('Failed to process any optimization plans from history');
       }
 
-      // Return both the latest response and all plans
+      // Extract pagination metadata from backend response
+      const totalPages = historyResponse.data.totalPages || 1;
+      const totalItems = historyResponse.data.totalItems || optimizationPlans.length;
+      const currentPage = historyResponse.data.currentPage || page;
+
+      // Return both the latest response and all plans with pagination
       return {
         latestOptimization: latestOptimizationResponse,
         allPlans: optimizationPlans,
+        pagination: {
+          limit,
+          currentPage,
+          totalPages,
+          totalItems,
+        },
       };
     } catch (error: any) {
       console.error('Error fetching latest optimization:', error);
@@ -1285,6 +1311,12 @@ const routesSlice = createSlice({
     },
     optimizationHistoryIds: [],
     optimizationCache: {} as Record<string, OptimizationResponse>,
+    pagination: {
+      limit: 10,
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+    },
   } as RouteState,
   reducers: {
     setSelectedRoute(state, action) {
@@ -1353,6 +1385,17 @@ const routesSlice = createSlice({
       // If enabling zones and we have a response, try to load test zones
       if (enablingZones && state.optimizationResponse) {
         // Placeholder for future logic if needed
+      }
+    },
+    setPaginationSettings(state, action) {
+      // Update pagination settings
+      if (action.payload.limit !== undefined) {
+        state.pagination.limit = action.payload.limit;
+        // Reset to page 1 when limit changes
+        state.pagination.currentPage = 1;
+      }
+      if (action.payload.currentPage !== undefined) {
+        state.pagination.currentPage = action.payload.currentPage;
       }
     },
   },
@@ -1434,6 +1477,12 @@ const routesSlice = createSlice({
         console.log(`Loaded ${state.optimizationPlans.length} plans into state`);
       }
 
+      // Update pagination metadata
+      if (action.payload && action.payload.pagination) {
+        state.pagination = action.payload.pagination;
+        console.log('Updated pagination:', state.pagination);
+      }
+
       // Reset selected route when a new optimization is loaded
       state.selectedRouteId = null;
     });
@@ -1446,7 +1495,7 @@ const routesSlice = createSlice({
 });
 
 // Export the action creators
-export const { setSelectedRoute, setSelectedPlan, toggleMapFilter, setMapFilters } =
+export const { setSelectedRoute, setSelectedPlan, toggleMapFilter, setMapFilters, setPaginationSettings } =
   routesSlice.actions;
 
 // Set up middleware for handling serializable checks
