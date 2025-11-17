@@ -20,6 +20,8 @@ const aiQueryRoutes = require('./ai-query.routes');
 const automationRoutes = require('../automation.routes');
 const fleetManagerRoutes = require('./fleet-manager.routes');
 const driverRoutes = require('./drivers.routes');
+const aiMetricsRoutes = require('./ai-metrics.routes');
+const vehiclesRoutes = require('./vehicles.routes');
 
 // Log v1 API usage
 router.use((req, res, next) => {
@@ -62,6 +64,8 @@ router.get('/', (req, res) => {
       automation: '/api/v1/automation',
       fleetManager: '/api/v1/fleet-manager',
       drivers: '/api/v1/drivers',
+      aiMetrics: '/api/v1/admin/ai',
+      vehicles: '/api/v1/vehicles',
     },
     features: [
       'Route optimization',
@@ -90,5 +94,7 @@ router.use('/ai-query', aiQueryRoutes);
 router.use('/automation', automationRoutes);
 router.use('/fleet-manager', fleetManagerRoutes);
 router.use('/drivers', driverRoutes);
+router.use('/admin/ai', aiMetricsRoutes);
+router.use('/vehicles', vehiclesRoutes);
 
 module.exports = router;
