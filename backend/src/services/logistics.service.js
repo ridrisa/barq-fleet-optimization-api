@@ -529,28 +529,14 @@ class LogisticsService {
       };
     });
 
-    console.log(`Before filter: ${mappedHistory.length} items`);
-    console.log(
-      `Sample completed values: ${mappedHistory
-        .slice(0, 3)
-        .map((item) => item.completed)
-        .join(', ')}`
-    );
-
     const allHistory = mappedHistory
       .filter((item) => item.completed) // Only include completed optimizations with results
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-    console.log(`After filter: ${allHistory.length} items`);
 
     // Apply pagination
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedHistory = allHistory.slice(startIndex, endIndex);
-
-    console.log(
-      `Returning ${paginatedHistory.length} history records (page ${page} of ${Math.ceil(allHistory.length / limit)})`
-    );
 
     return {
       items: paginatedHistory,
