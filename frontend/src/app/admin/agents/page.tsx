@@ -22,7 +22,10 @@ import {
   Filter,
   TrendingUp,
   Users,
+  Brain,
+  ArrowRight,
 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AgentMonitoringDashboard() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -303,6 +306,13 @@ export default function AgentMonitoringDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/admin/agents/ai-monitoring">
+            <button className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 flex items-center gap-2">
+              <Brain className="w-4 h-4" />
+              AI Monitoring
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </Link>
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${

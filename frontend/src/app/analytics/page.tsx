@@ -14,6 +14,7 @@ import {
   Calendar,
   MessageSquare,
   Loader2,
+  Zap,
 } from 'lucide-react';
 import { AnalyticsGPTChat } from '@/components/analytics-gpt-chat';
 import {
@@ -29,6 +30,14 @@ import {
   PerformanceMetricsCard,
   AIInsightsSummaryCard,
 } from '@/components/analytics-charts';
+import {
+  SystemHealthCard,
+  ActiveOptimizationsCard,
+  LiveMetricsCard,
+  PerformanceGaugesCard,
+  RecentActivityCard,
+} from '@/components/realtime-metrics';
+import { useRealtimeMetrics } from '@/hooks/useRealtimeMetrics';
 import analyticsAPI from '@/lib/analytics-api';
 import axios from 'axios';
 
@@ -37,6 +46,19 @@ export default function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [serviceStatus, setServiceStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+
+  // Real-time metrics hook (only enabled when on Live tab)
+  const {
+    data: realtimeData,
+    isLoading: realtimeLoading,
+    isRefreshing: realtimeRefreshing,
+    error: realtimeError,
+    refresh: refreshRealtime,
+    lastUpdated: realtimeLastUpdated,
+  } = useRealtimeMetrics({
+    refreshInterval: 5000, // 5 seconds
+    enabled: activeTab === 'live',
+  });
 
   // Data states
   const [slaRealtimeData, setSlaRealtimeData] = useState<any>(null);
@@ -304,8 +326,12 @@ export default function AnalyticsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="live">
+            <Zap className="h-4 w-4 mr-2" />
+            Live
+          </TabsTrigger>
           <TabsTrigger value="optimization">
             <TrendingUp className="h-4 w-4 mr-2" />
             Optimization
@@ -335,6 +361,90 @@ export default function AnalyticsPage() {
             {routeEfficiencyData && <RouteEfficiencyChart data={routeEfficiencyData} />}
             {demandForecastData && <DemandForecastCard data={demandForecastData} />}
           </div>
+        </TabsContent>
+
+        <TabsContent value="live" className="space-y-6">
+          {/* Live Dashboard Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Real-time Monitoring</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Live metrics updating every 5 seconds
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {realtimeRefreshing && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Refreshing...</span>
+                </div>
+              )}
+              {realtimeLastUpdated && (
+                <div className="text-sm text-muted-foreground">
+                  Updated {realtimeLastUpdated.toLocaleTimeString()}
+                </div>
+              )}
+              <Button size="sm" onClick={refreshRealtime} disabled={realtimeRefreshing}>
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${realtimeRefreshing ? 'animate-spin' : ''}`}
+                />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          {/* Loading State */}
+          {realtimeLoading && !realtimeData && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" />
+                <p className="text-lg">Loading real-time metrics...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {realtimeError && (
+            <Card className="p-6 border-red-600 bg-red-50">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-red-900">Failed to load real-time metrics</h3>
+                  <p className="text-sm text-red-800 mt-1">{realtimeError.message}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={refreshRealtime}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Real-time Dashboard */}
+          {realtimeData && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* System Health */}
+              <SystemHealthCard data={realtimeData.systemHealth} />
+
+              {/* Live Metrics */}
+              <LiveMetricsCard data={realtimeData.liveMetrics} />
+
+              {/* Active Optimizations */}
+              <ActiveOptimizationsCard data={realtimeData.activeOptimizations} />
+
+              {/* Performance Gauges */}
+              <PerformanceGaugesCard data={realtimeData.performanceGauges} />
+
+              {/* Recent Activity - Full Width */}
+              <div className="lg:col-span-2">
+                <RecentActivityCard data={realtimeData.recentActivity} />
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="optimization" className="space-y-6">

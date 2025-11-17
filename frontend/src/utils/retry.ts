@@ -97,7 +97,7 @@ export async function retryWithBackoff<T>(
 
       console.log(
         `Retry attempt ${attempt + 1}/${opts.maxRetries} after ${Math.round(delay)}ms`,
-        error.response?.status || 'Network Error'
+        (error as any).response?.status || 'Network Error'
       );
 
       // Wait before retrying

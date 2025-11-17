@@ -17,7 +17,18 @@ import {
   Trash,
   Info,
   Clock,
+  Settings,
+  Weight,
+  Timer,
+  Coffee,
+  Route,
 } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import type { AppDispatch } from '@/store/store';
 
 interface OptimizationFormProps {
@@ -36,6 +47,15 @@ interface ExtendedOptimizationRequest extends OptimizationRequest {
       | 'balanced_vehicles'
       | 'proximity_based'
       | 'capacity_based';
+  };
+  cvrpSettings?: {
+    enableTimeWindows: boolean;
+    enableCapacityConstraints: boolean;
+    enableServiceTimes: boolean;
+    enableBreakTimes: boolean;
+    enableMaxDistanceDuration: boolean;
+    defaultServiceTime?: number;
+    capacityUnit?: 'kg' | 'liters' | 'units';
   };
 }
 
@@ -256,6 +276,15 @@ export function OptimizationForm({ onClose }: OptimizationFormProps) {
       preferredEngine: 'auto',
       distributionStrategy: 'auto',
     },
+    cvrpSettings: {
+      enableTimeWindows: true,
+      enableCapacityConstraints: false,
+      enableServiceTimes: false,
+      enableBreakTimes: false,
+      enableMaxDistanceDuration: false,
+      defaultServiceTime: 5,
+      capacityUnit: 'kg',
+    },
   };
 
   // Form state
@@ -286,6 +315,65 @@ export function OptimizationForm({ onClose }: OptimizationFormProps) {
         [field]: value,
       },
     }));
+  };
+
+  // Helper function to update CVRP settings
+  const updateCVRPSettings = (field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      cvrpSettings: {
+        ...prev.cvrpSettings!,
+        [field]: value,
+      },
+    }));
+  };
+
+  // Helper function to update a specific vehicle
+  const updateVehicle = (index: number, field: string, value: any) => {
+    setFormData((prev) => {
+      const updatedVehicles = [...prev.fleet.vehicles];
+      updatedVehicles[index] = {
+        ...updatedVehicles[index],
+        [field]: value,
+      };
+      return {
+        ...prev,
+        fleet: {
+          ...prev.fleet,
+          vehicles: updatedVehicles,
+        },
+      };
+    });
+  };
+
+  // Helper function to update a specific pickup point
+  const updatePickupPoint = (index: number, field: string, value: any) => {
+    setFormData((prev) => {
+      const updatedPickups = [...prev.pickupPoints];
+      updatedPickups[index] = {
+        ...updatedPickups[index],
+        [field]: value,
+      };
+      return {
+        ...prev,
+        pickupPoints: updatedPickups,
+      };
+    });
+  };
+
+  // Helper function to update a specific delivery point
+  const updateDeliveryPoint = (index: number, field: string, value: any) => {
+    setFormData((prev) => {
+      const updatedDeliveries = [...prev.deliveryPoints];
+      updatedDeliveries[index] = {
+        ...updatedDeliveries[index],
+        [field]: value,
+      };
+      return {
+        ...prev,
+        deliveryPoints: updatedDeliveries,
+      };
+    });
   };
 
   // Add a cooldown countdown effect
@@ -1007,6 +1095,294 @@ export function OptimizationForm({ onClose }: OptimizationFormProps) {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* CVRP Advanced Settings */}
+            <div className="border-t pt-4">
+              <div className="flex items-center mb-3">
+                <Settings className="h-5 w-5 mr-2 text-primary" />
+                <h3 className="font-medium">CVRP Advanced Settings</h3>
+                <div className="ml-2 text-xs text-muted-foreground flex items-center">
+                  <Info className="h-3 w-3 mr-1" />
+                  <span>Capacitated Vehicle Routing Problem constraints</span>
+                </div>
+              </div>
+
+              <Accordion type="multiple" className="w-full">
+                {/* Time Windows Settings */}
+                <AccordionItem value="time-windows">
+                  <AccordionTrigger className="text-sm">
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-2 text-primary" />
+                      <span>Time Windows</span>
+                      {formData.cvrpSettings?.enableTimeWindows && (
+                        <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          Enabled
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      <ToggleSwitch
+                        label="Enable Time Window Constraints"
+                        value={formData.cvrpSettings?.enableTimeWindows || false}
+                        onChange={(value) => updateCVRPSettings('enableTimeWindows', value)}
+                      />
+                      {formData.cvrpSettings?.enableTimeWindows && (
+                        <div className="bg-muted/20 p-3 rounded-md space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            Time windows are configured per pickup/delivery point. Each point can have a
+                            start and end time constraint.
+                          </p>
+                          <div className="flex items-start text-xs">
+                            <Info className="h-3 w-3 mr-1 mt-0.5 text-primary" />
+                            <span>
+                              Example: Pickup points accept deliveries between 08:00-18:00, delivery points
+                              have specific time windows like 09:00-12:00.
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Vehicle Capacity Settings */}
+                <AccordionItem value="capacity">
+                  <AccordionTrigger className="text-sm">
+                    <div className="flex items-center">
+                      <Weight className="h-4 w-4 mr-2 text-primary" />
+                      <span>Vehicle Capacities</span>
+                      {formData.cvrpSettings?.enableCapacityConstraints && (
+                        <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          Enabled
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      <ToggleSwitch
+                        label="Enable Capacity Constraints"
+                        value={formData.cvrpSettings?.enableCapacityConstraints || false}
+                        onChange={(value) => updateCVRPSettings('enableCapacityConstraints', value)}
+                      />
+
+                      {formData.cvrpSettings?.enableCapacityConstraints && (
+                        <>
+                          <div className="bg-muted/20 p-3 rounded-md">
+                            <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                              Capacity Unit
+                            </label>
+                            <div className="flex gap-2">
+                              {['kg', 'liters', 'units'].map((unit) => (
+                                <button
+                                  key={unit}
+                                  onClick={() => updateCVRPSettings('capacityUnit', unit)}
+                                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                                    formData.cvrpSettings?.capacityUnit === unit
+                                      ? 'bg-primary text-primary-foreground'
+                                      : 'bg-muted hover:bg-muted/80'
+                                  }`}
+                                >
+                                  {unit.charAt(0).toUpperCase() + unit.slice(1)}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <h4 className="text-xs font-medium">Vehicle Capacities</h4>
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                              {formData.fleet.vehicles.map((vehicle, index) => (
+                                <div
+                                  key={vehicle.id}
+                                  className="flex items-center justify-between bg-muted/20 p-2 rounded"
+                                >
+                                  <span className="text-xs font-medium">{vehicle.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="number"
+                                      value={vehicle.capacity || 3000}
+                                      onChange={(e) =>
+                                        updateVehicle(index, 'capacity', parseInt(e.target.value))
+                                      }
+                                      min="0"
+                                      className="w-20 text-xs px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-primary bg-background"
+                                    />
+                                    <span className="text-xs text-muted-foreground">
+                                      {formData.cvrpSettings?.capacityUnit || 'kg'}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Service Time Settings */}
+                <AccordionItem value="service-times">
+                  <AccordionTrigger className="text-sm">
+                    <div className="flex items-center">
+                      <Timer className="h-4 w-4 mr-2 text-primary" />
+                      <span>Service Times</span>
+                      {formData.cvrpSettings?.enableServiceTimes && (
+                        <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          Enabled
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      <ToggleSwitch
+                        label="Enable Service Time Constraints"
+                        value={formData.cvrpSettings?.enableServiceTimes || false}
+                        onChange={(value) => updateCVRPSettings('enableServiceTimes', value)}
+                      />
+
+                      {formData.cvrpSettings?.enableServiceTimes && (
+                        <>
+                          <div className="bg-muted/20 p-3 rounded-md">
+                            <NumberInput
+                              label="Default Service Time (minutes)"
+                              value={formData.cvrpSettings?.defaultServiceTime || 5}
+                              onChange={(value) => updateCVRPSettings('defaultServiceTime', value)}
+                              min={1}
+                              max={60}
+                            />
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Time required at each stop for loading/unloading
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Break Times Settings */}
+                <AccordionItem value="break-times">
+                  <AccordionTrigger className="text-sm">
+                    <div className="flex items-center">
+                      <Coffee className="h-4 w-4 mr-2 text-primary" />
+                      <span>Driver Break Times</span>
+                      {formData.cvrpSettings?.enableBreakTimes && (
+                        <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          Enabled
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      <ToggleSwitch
+                        label="Enable Break Time Scheduling"
+                        value={formData.cvrpSettings?.enableBreakTimes || false}
+                        onChange={(value) => updateCVRPSettings('enableBreakTimes', value)}
+                      />
+
+                      {formData.cvrpSettings?.enableBreakTimes && (
+                        <div className="bg-muted/20 p-3 rounded-md space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            Configure mandatory break times for drivers during long routes (e.g., lunch
+                            breaks, rest periods).
+                          </p>
+                          <div className="flex items-start text-xs">
+                            <Info className="h-3 w-3 mr-1 mt-0.5 text-primary" />
+                            <span>
+                              Break times will be automatically scheduled between deliveries to comply with
+                              driver regulations.
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Max Distance/Duration Settings */}
+                <AccordionItem value="max-constraints">
+                  <AccordionTrigger className="text-sm">
+                    <div className="flex items-center">
+                      <Route className="h-4 w-4 mr-2 text-primary" />
+                      <span>Max Distance & Duration</span>
+                      {formData.cvrpSettings?.enableMaxDistanceDuration && (
+                        <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          Enabled
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      <ToggleSwitch
+                        label="Enable Max Distance/Duration Constraints"
+                        value={formData.cvrpSettings?.enableMaxDistanceDuration || false}
+                        onChange={(value) => updateCVRPSettings('enableMaxDistanceDuration', value)}
+                      />
+
+                      {formData.cvrpSettings?.enableMaxDistanceDuration && (
+                        <div className="space-y-3">
+                          <div className="bg-muted/20 p-3 rounded-md space-y-3">
+                            <div>
+                              <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                                Max Distance per Vehicle (km)
+                              </label>
+                              <input
+                                type="number"
+                                value={(formData.fleet.vehicles[0]?.maxDistance || 100000) / 1000}
+                                onChange={(e) => {
+                                  const meters = parseFloat(e.target.value) * 1000;
+                                  formData.fleet.vehicles.forEach((_, index) => {
+                                    updateVehicle(index, 'maxDistance', meters);
+                                  });
+                                }}
+                                min="1"
+                                max="500"
+                                className="w-full text-sm px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-primary bg-background"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                                Max Duration per Vehicle (hours)
+                              </label>
+                              <input
+                                type="number"
+                                value={(formData.fleet.vehicles[0]?.maxDuration || 28800) / 3600}
+                                onChange={(e) => {
+                                  const seconds = parseFloat(e.target.value) * 3600;
+                                  formData.fleet.vehicles.forEach((_, index) => {
+                                    updateVehicle(index, 'maxDuration', seconds);
+                                  });
+                                }}
+                                min="1"
+                                max="24"
+                                step="0.5"
+                                className="w-full text-sm px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-primary bg-background"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-start text-xs bg-muted/20 p-2 rounded">
+                            <Info className="h-3 w-3 mr-1 mt-0.5 text-primary" />
+                            <span>
+                              Constraints apply to all vehicles. Routes exceeding these limits will be
+                              flagged or rejected.
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
 
             {/* Additional Notes */}

@@ -122,6 +122,7 @@ export interface OptimizationRequest {
     address?: string;
     timeWindow?: TimeWindow;
     priority?: number;
+    serviceTime?: number; // CVRP: Time required at pickup (minutes)
   }[];
   deliveryPoints: {
     id: string;
@@ -131,6 +132,8 @@ export interface OptimizationRequest {
     timeWindow?: TimeWindow;
     priority?: number;
     pickupId?: string;
+    serviceTime?: number; // CVRP: Time required at delivery (minutes)
+    demand?: number; // CVRP: Package weight/volume demand
   }[];
   fleet: {
     vehicles: {
@@ -139,10 +142,12 @@ export interface OptimizationRequest {
       type: string;
       startLocation: Location;
       endLocation?: Location;
-      capacity?: number;
-      maxDistance?: number;
-      maxDuration?: number;
-      breakTimes?: TimeWindow[];
+      capacity?: number; // CVRP: Max weight/volume capacity
+      maxDistance?: number; // CVRP: Max distance per vehicle (meters)
+      maxDuration?: number; // CVRP: Max duration per vehicle (seconds)
+      breakTimes?: TimeWindow[]; // CVRP: Driver break schedules
+      costPerKm?: number; // CVRP: Cost per kilometer
+      costPerHour?: number; // CVRP: Cost per hour
     }[];
   };
   businessRules?: {
@@ -158,6 +163,15 @@ export interface OptimizationRequest {
     preferredEngine?: 'auto' | 'cvrp' | 'osrm' | 'genetic' | 'nearest_neighbor';
     useCVRP?: boolean;
     distributionStrategy?: 'auto' | 'single_vehicle' | 'balanced_vehicles' | 'proximity_based' | 'capacity_based';
+  };
+  cvrpSettings?: {
+    enableTimeWindows: boolean;
+    enableCapacityConstraints: boolean;
+    enableServiceTimes: boolean;
+    enableBreakTimes: boolean;
+    enableMaxDistanceDuration: boolean;
+    defaultServiceTime?: number; // Default service time in minutes
+    capacityUnit?: 'kg' | 'liters' | 'units'; // Unit for capacity measurements
   };
 }
 
