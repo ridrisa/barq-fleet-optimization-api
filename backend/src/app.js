@@ -382,10 +382,6 @@ const gracefulShutdown = async (signal) => {
         logger.info('WebSocket server closed');
       });
     }
-    if (demoWebSocketServer) {
-      await demoWebSocketServer.stopDemo();
-      logger.info('Demo WebSocket server shutdown complete');
-    }
   } catch (error) {
     logger.error('Error shutting down WebSocket server', { error: error.message });
   }
@@ -473,27 +469,58 @@ let demoWebSocketServer = null;
 const initializeWebSocket = (httpServer) => {
   try {
     const WebSocket = require('ws');
-    const DemoWebSocketServer = require('./demo/websocket-server');
 
     // Create WebSocket server that shares the HTTP server
+    // ONLY handle WebSocket connections at /ws path
     wss = new WebSocket.Server({
-      server: httpServer,
-      path: '/ws' // WebSocket endpoint at /ws
+      noServer: true  // Don't auto-handle upgrade, we'll do it manually
     });
 
-    // Initialize demo WebSocket functionality
-    demoWebSocketServer = new DemoWebSocketServer(PORT);
-    // Share the HTTP server and WebSocket server
-    demoWebSocketServer.server = httpServer;
-    demoWebSocketServer.wss = wss;
+    // Manually handle upgrade ONLY for /ws path
+    httpServer.on('upgrade', (request, socket, head) => {
+      // Only handle WebSocket upgrades for /ws path
+      if (request.url === '/ws' || request.url.startsWith('/ws?')) {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+          wss.emit('connection', ws, request);
+        });
+      } else {
+        // For any other path, destroy the socket
+        socket.destroy();
+      }
+    });
 
     // Set up WebSocket connection handler
     wss.on('connection', (ws, req) => {
-      demoWebSocketServer.handleNewConnection(ws, req);
+      logger.debug('New WebSocket connection established');
+
+      ws.on('message', (message) => {
+        try {
+          const data = JSON.parse(message.toString());
+          logger.debug('WebSocket message received', { type: data.type });
+
+          // Echo back for testing
+          ws.send(JSON.stringify({
+            type: 'echo',
+            data: data,
+            timestamp: new Date().toISOString()
+          }));
+        } catch (error) {
+          logger.error('Error processing WebSocket message', { error: error.message });
+        }
+      });
+
+      ws.on('close', () => {
+        logger.debug('WebSocket connection closed');
+      });
+
+      ws.on('error', (error) => {
+        logger.error('WebSocket error', { error: error.message });
+      });
     });
 
     logger.info(`WebSocket server initialized on port ${PORT} at /ws`);
     logger.info(`WebSocket server is Cloud Run compatible (shared port)`);
+    logger.info('Regular HTTP requests will NOT be affected by WebSocket');
 
     return true;
   } catch (error) {
@@ -589,18 +616,9 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   }
 
   // Initialize agent system (ALWAYS - agents != autonomous operations)
-  // TEMPORARY: Skip agent initialization due to startup issues
-  const SKIP_AGENT_INIT = process.env.SKIP_AGENT_INIT === 'true' || true;
+  logger.info('Initializing agent system...');
 
-  if (SKIP_AGENT_INIT) {
-    logger.warn('⚠️  AGENT SYSTEM INITIALIZATION SKIPPED (temporary workaround)');
-    logger.info('Server will run with basic functionality');
-    logger.info('Route optimization API available at POST /api/optimize');
-  } else {
-    logger.info('Initializing agent system...');
-  }
-
-  if (!SKIP_AGENT_INIT) try {
+  try {
     const initResult = await AgentInitializer.initialize();
     logger.info('Agent system initialized successfully', initResult);
 
