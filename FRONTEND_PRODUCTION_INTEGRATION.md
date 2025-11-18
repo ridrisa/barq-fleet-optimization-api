@@ -283,6 +283,94 @@ python3 demand_forecaster.py --forecast_type daily --horizon 7
 
 ---
 
+## 9. 🔬 Analytics Lab (`/analytics-lab`) **NEW!**
+
+### Data Source:
+- **Backend API**: `/api/v1/analytics-lab/*`
+- **Service**: `python-analytics.service.js` → Executes Python scripts
+- **Python Scripts**: `gpt-fleet-optimizer/` directory
+
+### Production Integration:
+✅ **FULLY INTEGRATED** (created today)
+
+**Features:**
+- **Interactive UI** for running Python analytics scripts
+- **Real-time job status** monitoring
+- **Job history** tracking
+- **Results visualization** with JSON display
+
+**Four Analytics Modules:**
+
+1. **Route Efficiency Analyzer** (`route_analyzer.py`)
+   - Analysis types: efficiency, bottlenecks, ABC/Pareto
+   - Date range: 1-365 days
+   - Hub filtering available
+   - Min deliveries threshold
+
+2. **Fleet Performance Analyzer** (`fleet_performance.py`)
+   - Analysis types: driver, vehicle, cohort
+   - Metrics: delivery_rate, efficiency, productivity
+   - Periods: daily, weekly, monthly
+   - Individual driver/vehicle filtering
+
+3. **Demand Forecaster** (`demand_forecaster.py`)
+   - Forecast types: hourly, daily, resource
+   - Horizon: 1-90 days
+   - Hub-specific forecasts
+   - Resource requirement predictions
+
+4. **SLA Analytics** (`sla_analytics.py`)
+   - Analysis types: compliance, performance, trends
+   - Date range: 1-365 days
+   - Hub filtering available
+   - Real-time SLA monitoring
+
+**Backend API Endpoints:**
+```typescript
+POST /api/v1/analytics-lab/run/route-analysis
+POST /api/v1/analytics-lab/run/fleet-performance
+POST /api/v1/analytics-lab/run/demand-forecast
+POST /api/v1/analytics-lab/run/sla-analysis
+GET  /api/v1/analytics-lab/job/:jobId
+GET  /api/v1/analytics-lab/jobs/history
+GET  /api/v1/analytics-lab/jobs/running
+GET  /api/v1/analytics-lab/dashboard
+GET  /api/v1/analytics-lab/environment
+```
+
+**Dashboard Metrics:**
+- Running jobs count
+- Total jobs executed
+- Success rate
+- Average duration
+- Recent job history
+
+**How It Works:**
+1. User fills in parameters in the UI
+2. Frontend sends POST request to backend API
+3. Backend spawns Python script with parameters
+4. Job runs asynchronously (non-blocking)
+5. Frontend polls for status every 2 seconds
+6. Results displayed when completed
+
+**Example Usage:**
+```bash
+# From UI at http://localhost:3000/analytics-lab
+# Or via API:
+curl -X POST http://localhost:3002/api/v1/analytics-lab/run/route-analysis \
+  -H "Content-Type: application/json" \
+  -d '{
+    "analysis_type": "efficiency",
+    "date_range": 30,
+    "min_deliveries": 10
+  }'
+
+# Check job status:
+curl http://localhost:3002/api/v1/analytics-lab/job/job_1234567890_abc123def
+```
+
+---
+
 ## Architecture Summary
 
 ```
@@ -397,6 +485,7 @@ curl http://localhost:3003/api/v1/fleet-manager/production/at-risk | jq
 5. **Autonomous Operations**: ✅ Shows agent activities on production
 6. **AI Agents Management**: ✅ Monitors agents processing production data
 7. **Fleet Manager**: ✅ Full production dashboard
+8. **Analytics Lab**: ✅ **NEW!** Interactive Python analytics execution
 
 ### 3. Check Server Logs:
 ```

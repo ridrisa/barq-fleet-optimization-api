@@ -13,7 +13,8 @@ import {
   Zap,
   Users,
   Target,
-  Brain
+  Brain,
+  Flask
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -78,6 +79,13 @@ export function WelcomePage() {
       description: 'AI-powered driver target tracking, SLA compliance monitoring, and intelligent order assignment. Ensure all drivers meet targets and all orders delivered within 1-4 hours.',
       status: 'active',
       href: '/fleet-manager'
+    },
+    {
+      icon: <Flask className="h-8 w-8" />,
+      title: 'Analytics Lab',
+      description: 'Run Python analytics scripts on 2.8M+ production orders. Route efficiency, fleet performance, demand forecasting, and SLA analytics with real-time results.',
+      status: 'active',
+      href: '/analytics-lab'
     }
   ];
 

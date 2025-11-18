@@ -29,6 +29,7 @@ const apiRoutes = require('./routes');
 const healthRoutes = require('./routes/v1/health.routes');
 const autonomousRoutes = require('./routes/v1/autonomous.routes');
 const barqProductionRoutes = require('./routes/v1/barq-production.routes');
+const analyticsLabRoutes = require('./routes/v1/analytics-lab.routes');
 const swaggerConfig = require('./api/swagger');
 const AgentInitializer = require('./services/agent-initializer');
 const autonomousInitializer = require('./services/autonomous-initializer');
@@ -353,6 +354,9 @@ app.use('/api/v1/automation', automationRoutes);
 
 // BarqFleet Production Database routes
 app.use('/api/v1/barq-production', barqProductionRoutes);
+
+// Analytics Lab routes - Python analytics execution
+app.use('/api/v1/analytics-lab', analyticsLabRoutes);
 
 // Health route (not versioned - system endpoint)
 app.use('/health', healthRoutes);
