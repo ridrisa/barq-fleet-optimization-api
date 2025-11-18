@@ -18,8 +18,8 @@ class AutonomousInitializer {
     this.cycleResults = [];
     this.maxCycleResults = 100; // Keep last 100 cycle results
     this.config = {
-      cycleIntervalMs: 300000, // Run cycle every 5 minutes (300 seconds)
-      enableContinuousOperation: false, // DISABLED by default - can block event loop
+      cycleIntervalMs: 60000, // Run cycle every 1 minute (60 seconds) - now using production data
+      enableContinuousOperation: true, // ENABLED - now integrated with real data
       enableLearning: true,
       useWorkerThread: false, // Worker thread mode (in development - not fully functional yet)
     };

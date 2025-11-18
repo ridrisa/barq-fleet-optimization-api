@@ -28,6 +28,7 @@ const { sanitizeRequest } = require('./middleware/validation.middleware');
 const apiRoutes = require('./routes');
 const healthRoutes = require('./routes/v1/health.routes');
 const autonomousRoutes = require('./routes/v1/autonomous.routes');
+const barqProductionRoutes = require('./routes/v1/barq-production.routes');
 const swaggerConfig = require('./api/swagger');
 const AgentInitializer = require('./services/agent-initializer');
 const autonomousInitializer = require('./services/autonomous-initializer');
@@ -349,6 +350,9 @@ app.get('/', (req, res) => {
 
 // Automation routes (Phase 4)
 app.use('/api/v1/automation', automationRoutes);
+
+// BarqFleet Production Database routes
+app.use('/api/v1/barq-production', barqProductionRoutes);
 
 // Health route (not versioned - system endpoint)
 app.use('/health', healthRoutes);
@@ -702,9 +706,9 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
           logger.info('  GET  /api/v1/automation/status-all - Get engine status');
           logger.info('  GET  /api/v1/automation/dashboard - Get dashboard data');
 
-          // Optionally auto-start engines (default: manual start required)
+          // Auto-start engines by default (now integrated with production data)
           const startResult = await automationInitializer.startAll({
-            autoStart: process.env.AUTO_START_AUTOMATION === 'true',
+            autoStart: true, // Changed to true to enable automation by default
           });
 
           if (startResult.autoStart === false) {

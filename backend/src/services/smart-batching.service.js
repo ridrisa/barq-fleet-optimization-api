@@ -17,6 +17,7 @@ const masterOrchestrator = require('../agents/master-orchestrator.agent');
 const routeOptimizationAgent = require('../agents/route-optimization.agent');
 const orderAssignmentAgent = require('../agents/order-assignment.agent');
 const hybridOptimization = require('./hybrid-optimization.service');
+const barqProductionDB = require('./barqfleet-production.service');
 
 class SmartBatchingEngine {
   constructor() {
@@ -111,49 +112,137 @@ class SmartBatchingEngine {
 
   /**
    * Get orders eligible for batching
+   * Now fetching from BarqFleet production database
    */
   async getEligibleOrders() {
-    const result = await db.query(`
-      SELECT
-        o.id,
-        o.order_number,
-        o.service_type,
-        o.priority,
-        o.pickup_latitude,
-        o.pickup_longitude,
-        o.pickup_address,
-        o.dropoff_latitude,
-        o.dropoff_longitude,
-        o.dropoff_address,
-        o.sla_deadline,
-        o.created_at,
-        o.package_details,
-        o.delivery_fee,
-        EXTRACT(EPOCH FROM (o.sla_deadline - NOW())) / 60 AS minutes_to_sla,
+    try {
+      // Fetch pending orders from production
+      const productionOrders = await barqProductionDB.getPendingOrders(null, 100);
 
-        -- Customer info
-        c.name AS customer_name,
-        c.phone AS customer_phone
+      // Transform and filter for batching eligibility
+      const eligibleOrders = productionOrders
+        .map((order) => {
+          // Parse destination JSON if it's a string
+          const destination =
+            typeof order.destination === 'string' ? JSON.parse(order.destination) : order.destination;
+          const origin = typeof order.origin === 'string' ? JSON.parse(order.origin) : order.origin;
+          const customerDetails =
+            typeof order.customer_details === 'string'
+              ? JSON.parse(order.customer_details)
+              : order.customer_details;
 
-      FROM orders o
-      JOIN customers c ON c.id = o.customer_id
-      WHERE o.status = 'pending'
-        AND o.driver_id IS NULL
+          // Calculate SLA deadline and minutes remaining
+          const slaDeadline = order.delivery_finish
+            ? new Date(order.delivery_finish)
+            : new Date(new Date(order.created_at).getTime() + 2 * 60 * 60 * 1000);
+          const minutesToSLA = (slaDeadline - new Date()) / 60000;
 
-        -- Only batch non-express orders (BULLET has more time)
-        AND o.service_type = 'BULLET'
+          // Skip if coordinates are missing
+          if (
+            !origin?.latitude &&
+            !origin?.lat &&
+            !destination?.latitude &&
+            !destination?.lat
+          ) {
+            return null;
+          }
 
-        -- Created in last 15 minutes
-        AND o.created_at > NOW() - INTERVAL '15 minutes'
+          return {
+            id: order.id,
+            order_number: order.tracking_no,
+            service_type: order.payment_type === 'COD' ? 'BULLET' : 'EXPRESS', // Map to service types
+            priority: order.order_status === 'ready_for_delivery' ? 2 : 1,
+            pickup_latitude: origin?.latitude || origin?.lat,
+            pickup_longitude: origin?.longitude || origin?.lng || origin?.lon,
+            pickup_address: origin?.address || customerDetails?.address,
+            dropoff_latitude: destination?.latitude || destination?.lat,
+            dropoff_longitude: destination?.longitude || destination?.lng || destination?.lon,
+            dropoff_address: destination?.address || customerDetails?.address,
+            sla_deadline: slaDeadline,
+            created_at: order.created_at,
+            package_details: order.products,
+            delivery_fee: order.delivery_fee,
+            minutes_to_sla: minutesToSLA,
+            customer_name: customerDetails?.name || customerDetails?.customer_name,
+            customer_phone: customerDetails?.phone || customerDetails?.mobile,
+            tracking_no: order.tracking_no,
+          };
+        })
+        .filter((order) => {
+          if (!order) return false;
 
-        -- Not urgent (at least 1 hour until SLA)
-        AND o.sla_deadline > NOW() + INTERVAL '1 hour'
+          // Only include orders that:
+          // 1. Have valid coordinates
+          if (!order.pickup_latitude || !order.dropoff_latitude) return false;
 
-      ORDER BY o.created_at ASC
-      LIMIT 50
-    `);
+          // 2. Are non-express (BULLET type = COD orders)
+          // if (order.service_type !== 'BULLET') return false; // Too restrictive, commenting out
 
-    return result.rows;
+          // 3. Created recently (last 30 minutes - more flexible than 15)
+          const orderAge = (new Date() - new Date(order.created_at)) / 60000;
+          if (orderAge > 30) return false;
+
+          // 4. Not urgent (at least 30 minutes until SLA - more flexible than 1 hour)
+          if (order.minutes_to_sla < 30) return false;
+
+          return true;
+        });
+
+      // Sort by creation time
+      eligibleOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+      // Limit to 50
+      const limitedOrders = eligibleOrders.slice(0, 50);
+
+      logger.info(
+        `Fetched ${limitedOrders.length} eligible orders for batching from production (${productionOrders.length} total pending)`
+      );
+
+      return limitedOrders;
+    } catch (error) {
+      logger.error('Failed to fetch eligible orders from production:', error);
+      // Fallback to local database if production fails
+      const result = await db.query(`
+        SELECT
+          o.id,
+          o.order_number,
+          o.service_type,
+          o.priority,
+          o.pickup_latitude,
+          o.pickup_longitude,
+          o.pickup_address,
+          o.dropoff_latitude,
+          o.dropoff_longitude,
+          o.dropoff_address,
+          o.sla_deadline,
+          o.created_at,
+          o.package_details,
+          o.delivery_fee,
+          EXTRACT(EPOCH FROM (o.sla_deadline - NOW())) / 60 AS minutes_to_sla,
+
+          -- Customer info
+          c.name AS customer_name,
+          c.phone AS customer_phone
+
+        FROM orders o
+        JOIN customers c ON c.id = o.customer_id
+        WHERE o.status = 'pending'
+          AND o.driver_id IS NULL
+
+          -- Only batch non-express orders (BULLET has more time)
+          AND o.service_type = 'BULLET'
+
+          -- Created in last 15 minutes
+          AND o.created_at > NOW() - INTERVAL '15 minutes'
+
+          -- Not urgent (at least 1 hour until SLA)
+          AND o.sla_deadline > NOW() + INTERVAL '1 hour'
+
+        ORDER BY o.created_at ASC
+        LIMIT 50
+      `);
+      return result.rows;
+    }
   }
 
   /**

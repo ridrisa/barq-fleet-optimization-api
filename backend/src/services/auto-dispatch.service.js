@@ -9,6 +9,7 @@ const { logger } = require('../utils/logger');
 const redis = require('../config/redis.config');
 const OrderModel = require('../models/order.model');
 const DriverModel = require('../models/driver.model');
+const barqProductionDB = require('./barqfleet-production.service');
 
 class AutoDispatchEngine {
   constructor() {
@@ -74,33 +75,86 @@ class AutoDispatchEngine {
 
   /**
    * Get unassigned orders that need drivers
+   * Now fetching from BarqFleet production database
    */
   async getUnassignedOrders() {
-    const result = await db.query(`
-      SELECT
-        o.id,
-        o.order_number,
-        o.tracking_number,
-        o.service_type,
-        o.priority,
-        o.pickup_latitude,
-        o.pickup_longitude,
-        o.dropoff_latitude,
-        o.dropoff_longitude,
-        o.sla_deadline,
-        o.created_at,
-        EXTRACT(EPOCH FROM (o.sla_deadline - NOW())) / 60 AS minutes_to_sla
-      FROM orders o
-      WHERE o.status = 'PENDING'
-        AND o.driver_id IS NULL
-        AND o.created_at > NOW() - INTERVAL '2 hours'
-      ORDER BY
-        o.priority DESC,
-        o.sla_deadline ASC
-      LIMIT 50
-    `);
+    try {
+      // Fetch pending orders from production database
+      const productionOrders = await barqProductionDB.getPendingOrders(null, 50);
 
-    return result.rows;
+      // Transform production data to expected format
+      const transformedOrders = productionOrders.map((order) => {
+        // Parse destination JSON if it's a string
+        const destination = typeof order.destination === 'string' ? JSON.parse(order.destination) : order.destination;
+        const origin = typeof order.origin === 'string' ? JSON.parse(order.origin) : order.origin;
+
+        // Calculate minutes to SLA (use delivery_finish or estimate 2 hours from creation)
+        const slaDeadline = order.delivery_finish
+          ? new Date(order.delivery_finish)
+          : new Date(new Date(order.created_at).getTime() + 2 * 60 * 60 * 1000);
+        const minutesToSLA = (slaDeadline - new Date()) / 60000;
+
+        return {
+          id: order.id,
+          order_number: order.tracking_no,
+          tracking_number: order.tracking_no,
+          service_type: order.payment_type || 'COD',
+          priority: order.order_status === 'ready_for_delivery' ? 2 : 1,
+          pickup_latitude: origin?.latitude || origin?.lat,
+          pickup_longitude: origin?.longitude || origin?.lng || origin?.lon,
+          dropoff_latitude: destination?.latitude || destination?.lat,
+          dropoff_longitude: destination?.longitude || destination?.lng || destination?.lon,
+          sla_deadline: slaDeadline,
+          created_at: order.created_at,
+          minutes_to_sla: minutesToSLA,
+          merchant_name: order.merchant_name,
+          hub_code: order.hub_code,
+          grand_total: order.grand_total,
+        };
+      });
+
+      // Filter out orders without valid coordinates
+      const validOrders = transformedOrders.filter(
+        (order) =>
+          order.pickup_latitude &&
+          order.pickup_longitude &&
+          order.dropoff_latitude &&
+          order.dropoff_longitude
+      );
+
+      logger.info(
+        `Fetched ${validOrders.length} valid unassigned orders from production (${productionOrders.length} total)`
+      );
+
+      return validOrders;
+    } catch (error) {
+      logger.error('Failed to fetch unassigned orders from production:', error);
+      // Fallback to local database if production fails
+      const result = await db.query(`
+        SELECT
+          o.id,
+          o.order_number,
+          o.tracking_number,
+          o.service_type,
+          o.priority,
+          o.pickup_latitude,
+          o.pickup_longitude,
+          o.dropoff_latitude,
+          o.dropoff_longitude,
+          o.sla_deadline,
+          o.created_at,
+          EXTRACT(EPOCH FROM (o.sla_deadline - NOW())) / 60 AS minutes_to_sla
+        FROM orders o
+        WHERE o.status = 'PENDING'
+          AND o.driver_id IS NULL
+          AND o.created_at > NOW() - INTERVAL '2 hours'
+        ORDER BY
+          o.priority DESC,
+          o.sla_deadline ASC
+        LIMIT 50
+      `);
+      return result.rows;
+    }
   }
 
   /**
@@ -184,98 +238,177 @@ class AutoDispatchEngine {
 
   /**
    * Find drivers eligible for this order
+   * Now fetching from BarqFleet production database
    */
   async findEligibleDrivers(order) {
-    const result = await db.query(
-      `
-      SELECT
-        d.id,
-        d.name,
-        d.phone,
-        d.vehicle_type,
-        d.vehicle_number,
-        d.current_latitude,
-        d.current_longitude,
-        d.status,
-        d.shift_start,
-        d.shift_end,
+    try {
+      // Fetch available couriers from production database
+      const productionCouriers = await barqProductionDB.getAvailableCouriers(null, 100);
 
-        -- Current load
-        (
-          SELECT COUNT(*)
-          FROM orders o2
-          WHERE o2.driver_id = d.id
-            AND o2.status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
-        ) AS active_orders,
+      // Calculate distance using Haversine formula
+      const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371; // Earth's radius in km
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLon = ((lon2 - lon1) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos((lat1 * Math.PI) / 180) *
+            Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+      };
 
-        -- Distance to pickup (km)
-        ST_Distance(
-          ST_MakePoint(d.current_longitude, d.current_latitude)::geography,
-          ST_MakePoint($2, $3)::geography
-        ) / 1000 AS distance_to_pickup,
+      // Transform and filter couriers
+      const eligibleDrivers = productionCouriers
+        .map((courier) => {
+          // Skip if no location data
+          if (!courier.latitude || !courier.longitude) return null;
 
-        -- Driver performance metrics
-        dp.total_deliveries,
-        dp.on_time_deliveries,
-        dp.sla_compliance_rate,
-        dp.average_rating,
-        dp.total_distance_km,
+          // Calculate distance to pickup
+          const distanceToPickup = calculateDistance(
+            courier.latitude,
+            courier.longitude,
+            order.pickup_latitude,
+            order.pickup_longitude
+          );
 
-        -- Zone experience
-        (
-          SELECT COUNT(*)
-          FROM orders o3
-          WHERE o3.driver_id = d.id
-            AND o3.status = 'DELIVERED'
-            AND ST_DWithin(
-              ST_MakePoint(o3.dropoff_longitude, o3.dropoff_latitude)::geography,
-              ST_MakePoint($4, $5)::geography,
-              5000
-            )
-        ) AS deliveries_in_zone
+          // Skip if too far (>20km)
+          if (distanceToPickup > 20) return null;
 
-      FROM drivers d
-      LEFT JOIN driver_performance dp ON dp.driver_id = d.id
-      WHERE d.status = 'AVAILABLE'
-        AND d.is_active = true
-        AND d.current_latitude IS NOT NULL
-        AND d.current_longitude IS NOT NULL
+          // Transform to expected driver format
+          return {
+            id: courier.id,
+            name: `${courier.first_name || ''} ${courier.last_name || ''}`.trim() || `Courier ${courier.id}`,
+            phone: courier.mobile || courier.mobile_number,
+            vehicle_type: courier.vehicle_type || 'bike',
+            vehicle_number: null,
+            current_latitude: courier.latitude,
+            current_longitude: courier.longitude,
+            status: courier.is_online && !courier.is_busy ? 'AVAILABLE' : 'BUSY',
+            shift_start: null,
+            shift_end: null,
+            active_orders: courier.is_busy ? 1 : 0, // Estimate based on is_busy flag
+            distance_to_pickup: distanceToPickup,
+            // Performance metrics - use defaults for new drivers
+            total_deliveries: 50, // Default estimate
+            on_time_deliveries: 45, // 90% compliance estimate
+            sla_compliance_rate: 0.9,
+            average_rating: courier.trust_level || 4.0,
+            total_distance_km: 500,
+            deliveries_in_zone: 10, // Moderate zone experience
+            courier_type: courier.courier_type,
+            hub_id: courier.hub_id,
+            trust_level: courier.trust_level,
+          };
+        })
+        .filter((driver) => driver !== null); // Remove nulls
 
-        -- Within reasonable distance (20km)
-        AND ST_Distance(
-          ST_MakePoint(d.current_longitude, d.current_latitude)::geography,
-          ST_MakePoint($2, $3)::geography
-        ) <= 20000
+      // Sort by distance to pickup
+      eligibleDrivers.sort((a, b) => a.distance_to_pickup - b.distance_to_pickup);
 
-        -- Not overloaded
-        AND (
-          SELECT COUNT(*)
-          FROM orders o2
-          WHERE o2.driver_id = d.id
-            AND o2.status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
-        ) < $6
+      // Limit to top 20
+      const topDrivers = eligibleDrivers.slice(0, 20);
 
-        -- Vehicle type matches if specified
-        AND (
-          $7::VARCHAR IS NULL OR
-          d.vehicle_type = $7
-        )
+      logger.info(
+        `Found ${topDrivers.length} eligible drivers from production (${productionCouriers.length} total couriers)`
+      );
 
-      ORDER BY distance_to_pickup ASC
-      LIMIT 20
-    `,
-      [
-        order.id,
-        order.pickup_longitude,
-        order.pickup_latitude,
-        order.dropoff_longitude,
-        order.dropoff_latitude,
-        5, // Max orders per driver
-        order.vehicle_type_required || null,
-      ]
-    );
+      return topDrivers;
+    } catch (error) {
+      logger.error('Failed to fetch eligible drivers from production:', error);
+      // Fallback to local database if production fails
+      const result = await db.query(
+        `
+        SELECT
+          d.id,
+          d.name,
+          d.phone,
+          d.vehicle_type,
+          d.vehicle_number,
+          d.current_latitude,
+          d.current_longitude,
+          d.status,
+          d.shift_start,
+          d.shift_end,
 
-    return result.rows;
+          -- Current load
+          (
+            SELECT COUNT(*)
+            FROM orders o2
+            WHERE o2.driver_id = d.id
+              AND o2.status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
+          ) AS active_orders,
+
+          -- Distance to pickup (km)
+          ST_Distance(
+            ST_MakePoint(d.current_longitude, d.current_latitude)::geography,
+            ST_MakePoint($2, $3)::geography
+          ) / 1000 AS distance_to_pickup,
+
+          -- Driver performance metrics
+          dp.total_deliveries,
+          dp.on_time_deliveries,
+          dp.sla_compliance_rate,
+          dp.average_rating,
+          dp.total_distance_km,
+
+          -- Zone experience
+          (
+            SELECT COUNT(*)
+            FROM orders o3
+            WHERE o3.driver_id = d.id
+              AND o3.status = 'DELIVERED'
+              AND ST_DWithin(
+                ST_MakePoint(o3.dropoff_longitude, o3.dropoff_latitude)::geography,
+                ST_MakePoint($4, $5)::geography,
+                5000
+              )
+          ) AS deliveries_in_zone
+
+        FROM drivers d
+        LEFT JOIN driver_performance dp ON dp.driver_id = d.id
+        WHERE d.status = 'AVAILABLE'
+          AND d.is_active = true
+          AND d.current_latitude IS NOT NULL
+          AND d.current_longitude IS NOT NULL
+
+          -- Within reasonable distance (20km)
+          AND ST_Distance(
+            ST_MakePoint(d.current_longitude, d.current_latitude)::geography,
+            ST_MakePoint($2, $3)::geography
+          ) <= 20000
+
+          -- Not overloaded
+          AND (
+            SELECT COUNT(*)
+            FROM orders o2
+            WHERE o2.driver_id = d.id
+              AND o2.status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
+          ) < $6
+
+          -- Vehicle type matches if specified
+          AND (
+            $7::VARCHAR IS NULL OR
+            d.vehicle_type = $7
+          )
+
+        ORDER BY distance_to_pickup ASC
+        LIMIT 20
+      `,
+        [
+          order.id,
+          order.pickup_longitude,
+          order.pickup_latitude,
+          order.dropoff_longitude,
+          order.dropoff_latitude,
+          5, // Max orders per driver
+          order.vehicle_type_required || null,
+        ]
+      );
+      return result.rows;
+    }
   }
 
   /**

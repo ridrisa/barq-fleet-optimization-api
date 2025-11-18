@@ -9,6 +9,7 @@ const { logger } = require('../utils/logger');
 const redis = require('../config/redis.config');
 const OrderModel = require('../models/order.model');
 const osrmService = require('./osrm.service');
+const barqProductionDB = require('./barqfleet-production.service');
 
 class DynamicRouteOptimizer {
   constructor() {
@@ -90,45 +91,88 @@ class DynamicRouteOptimizer {
 
   /**
    * Get all active drivers with pending deliveries
+   * Now fetching from BarqFleet production database
    */
   async getActiveDrivers() {
-    const result = await db.query(`
-      SELECT DISTINCT
-        d.id,
-        d.name,
-        d.current_latitude,
-        d.current_longitude,
-        d.last_location_update,
+    try {
+      // Fetch active shipments from production (assigned but not completed)
+      const activeShipments = await barqProductionDB.getActiveShipments(100);
 
-        -- Count of remaining stops
-        (
-          SELECT COUNT(*)
-          FROM orders o
-          WHERE o.driver_id = d.id
-            AND o.status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
-        ) AS remaining_stops,
+      // Transform shipments to driver format
+      const activeDrivers = await Promise.all(
+        activeShipments
+          .filter((shipment) => shipment.courier_id) // Only shipments with assigned couriers
+          .map(async (shipment) => {
+            return {
+              id: shipment.courier_id,
+              name: `${shipment.courier_first_name || ''} ${shipment.courier_last_name || ''}`.trim() || `Courier ${shipment.courier_id}`,
+              current_latitude: shipment.latitude,
+              current_longitude: shipment.longitude,
+              last_location_update: shipment.updated_at,
+              remaining_stops: shipment.order_count || 1,
+              // Route info - using shipment data as proxy
+              route_id: shipment.id,
+              total_distance_km: shipment.total_distance || 0,
+              total_duration_minutes: null, // Not available in production schema
+              optimized_at: shipment.updated_at,
+              route_sequence: null, // Not available in production schema
+              shipment_id: shipment.id,
+              hub_code: shipment.hub_code,
+              courier_mobile: shipment.courier_mobile,
+            };
+          })
+      );
 
-        -- Current route info
-        dr.id AS route_id,
-        dr.total_distance_km,
-        dr.total_duration_minutes,
-        dr.optimized_at,
-        dr.route_sequence
+      // Filter out drivers without location data
+      const validDrivers = activeDrivers.filter(
+        (driver) => driver.current_latitude && driver.current_longitude
+      );
 
-      FROM drivers d
-      LEFT JOIN driver_routes dr ON dr.driver_id = d.id AND dr.status = 'active'
-      WHERE d.status = 'BUSY'
-        AND d.current_latitude IS NOT NULL
-        AND d.current_longitude IS NOT NULL
-        AND EXISTS (
-          SELECT 1
-          FROM orders o
-          WHERE o.driver_id = d.id
-            AND o.status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
-        )
-    `);
+      logger.info(
+        `Fetched ${validDrivers.length} active drivers from production (${activeShipments.length} active shipments)`
+      );
 
-    return result.rows;
+      return validDrivers;
+    } catch (error) {
+      logger.error('Failed to fetch active drivers from production:', error);
+      // Fallback to local database if production fails
+      const result = await db.query(`
+        SELECT DISTINCT
+          d.id,
+          d.name,
+          d.current_latitude,
+          d.current_longitude,
+          d.last_location_update,
+
+          -- Count of remaining stops
+          (
+            SELECT COUNT(*)
+            FROM orders o
+            WHERE o.driver_id = d.id
+              AND o.status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
+          ) AS remaining_stops,
+
+          -- Current route info
+          dr.id AS route_id,
+          dr.total_distance_km,
+          dr.total_duration_minutes,
+          dr.optimized_at,
+          dr.route_sequence
+
+        FROM drivers d
+        LEFT JOIN driver_routes dr ON dr.driver_id = d.id AND dr.status = 'active'
+        WHERE d.status = 'BUSY'
+          AND d.current_latitude IS NOT NULL
+          AND d.current_longitude IS NOT NULL
+          AND EXISTS (
+            SELECT 1
+            FROM orders o
+            WHERE o.driver_id = d.id
+              AND o.status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
+          )
+      `);
+      return result.rows;
+    }
   }
 
   /**
@@ -190,71 +234,150 @@ class DynamicRouteOptimizer {
 
   /**
    * Get remaining stops for driver
+   * Now fetching from BarqFleet production database
    */
   async getRemainingStops(driverId) {
-    const result = await db.query(
-      `
-      SELECT
-        o.id,
-        o.order_number,
-        o.tracking_number,
-        o.status,
-        o.priority,
-        o.sla_deadline,
+    try {
+      // First, find active shipments for this courier
+      const shipments = await barqProductionDB.getShipments({
+        courier_id: driverId,
+        is_assigned: true,
+        is_completed: false,
+      });
 
-        -- Pickup location (if not picked up yet)
-        CASE
-          WHEN o.status = 'ASSIGNED' THEN o.pickup_latitude
-          ELSE NULL
-        END AS pickup_latitude,
-        CASE
-          WHEN o.status = 'ASSIGNED' THEN o.pickup_longitude
-          ELSE NULL
-        END AS pickup_longitude,
-        CASE
-          WHEN o.status = 'ASSIGNED' THEN o.pickup_address
-          ELSE NULL
-        END AS pickup_address,
+      if (shipments.length === 0) {
+        logger.info(`No active shipments for courier ${driverId}`);
+        return [];
+      }
 
-        -- Delivery location
-        o.dropoff_latitude,
-        o.dropoff_longitude,
-        o.dropoff_address,
+      // Get orders for all shipments
+      const allStops = [];
+      for (const shipment of shipments) {
+        const orders = await barqProductionDB.getOrders({
+          shipment_id: shipment.id,
+          limit: 100,
+        });
 
-        -- Time windows
-        o.delivery_time_window_start,
-        o.delivery_time_window_end,
+        // Transform orders to stops
+        const stops = orders.map((order) => {
+          // Parse destination JSON if it's a string
+          const destination =
+            typeof order.destination === 'string' ? JSON.parse(order.destination) : order.destination;
+          const origin = typeof order.origin === 'string' ? JSON.parse(order.origin) : order.origin;
 
-        -- Current sequence position
-        dr.sequence_position
+          // Determine if this is a pickup or delivery based on order status
+          const isPickup = order.order_status === 'merchant_confirmed' || order.order_status === 'processing';
 
-      FROM orders o
-      LEFT JOIN driver_route_stops dr ON dr.order_id = o.id
-      WHERE o.driver_id = $1
-        AND o.status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
-      ORDER BY
-        o.priority DESC,
-        o.sla_deadline ASC,
-        dr.sequence_position ASC NULLS LAST
-    `,
-      [driverId]
-    );
+          return {
+            orderId: order.id,
+            type: isPickup ? 'PICKUP' : 'DELIVERY',
+            location: {
+              lat: isPickup ? origin?.latitude || origin?.lat : destination?.latitude || destination?.lat,
+              lng: isPickup
+                ? origin?.longitude || origin?.lng || origin?.lon
+                : destination?.longitude || destination?.lng || destination?.lon,
+              address: isPickup
+                ? origin?.address || order.customer_details?.address
+                : destination?.address || order.customer_details?.address,
+            },
+            priority: order.order_status === 'ready_for_delivery' ? 2 : 1,
+            slaDeadline: order.delivery_finish || order.delivery_start,
+            timeWindow: {
+              start: order.delivery_start,
+              end: order.delivery_finish,
+            },
+            tracking_number: order.tracking_no,
+            order_status: order.order_status,
+          };
+        });
 
-    return result.rows.map((row) => ({
-      orderId: row.id,
-      type: row.pickup_latitude ? 'PICKUP' : 'DELIVERY',
-      location: {
-        lat: row.pickup_latitude || row.dropoff_latitude,
-        lng: row.pickup_longitude || row.dropoff_longitude,
-        address: row.pickup_address || row.dropoff_address,
-      },
-      priority: row.priority,
-      slaDeadline: row.sla_deadline,
-      timeWindow: {
-        start: row.delivery_time_window_start,
-        end: row.delivery_time_window_end,
-      },
-    }));
+        allStops.push(...stops);
+      }
+
+      // Filter out stops without valid coordinates
+      const validStops = allStops.filter((stop) => stop.location.lat && stop.location.lng);
+
+      // Sort by priority and SLA deadline
+      validStops.sort((a, b) => {
+        if (a.priority !== b.priority) {
+          return b.priority - a.priority; // Higher priority first
+        }
+        if (a.slaDeadline && b.slaDeadline) {
+          return new Date(a.slaDeadline) - new Date(b.slaDeadline);
+        }
+        return 0;
+      });
+
+      logger.info(`Found ${validStops.length} valid stops for courier ${driverId} from production`);
+
+      return validStops;
+    } catch (error) {
+      logger.error('Failed to fetch remaining stops from production:', error);
+      // Fallback to local database if production fails
+      const result = await db.query(
+        `
+        SELECT
+          o.id,
+          o.order_number,
+          o.tracking_number,
+          o.status,
+          o.priority,
+          o.sla_deadline,
+
+          -- Pickup location (if not picked up yet)
+          CASE
+            WHEN o.status = 'ASSIGNED' THEN o.pickup_latitude
+            ELSE NULL
+          END AS pickup_latitude,
+          CASE
+            WHEN o.status = 'ASSIGNED' THEN o.pickup_longitude
+            ELSE NULL
+          END AS pickup_longitude,
+          CASE
+            WHEN o.status = 'ASSIGNED' THEN o.pickup_address
+            ELSE NULL
+          END AS pickup_address,
+
+          -- Delivery location
+          o.dropoff_latitude,
+          o.dropoff_longitude,
+          o.dropoff_address,
+
+          -- Time windows
+          o.delivery_time_window_start,
+          o.delivery_time_window_end,
+
+          -- Current sequence position
+          dr.sequence_position
+
+        FROM orders o
+        LEFT JOIN driver_route_stops dr ON dr.order_id = o.id
+        WHERE o.driver_id = $1
+          AND o.status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
+        ORDER BY
+          o.priority DESC,
+          o.sla_deadline ASC,
+          dr.sequence_position ASC NULLS LAST
+      `,
+        [driverId]
+      );
+
+      return result.rows.map((row) => ({
+        orderId: row.id,
+        type: row.pickup_latitude ? 'PICKUP' : 'DELIVERY',
+        location: {
+          lat: row.pickup_latitude || row.dropoff_latitude,
+          lng: row.pickup_longitude || row.dropoff_longitude,
+          address: row.pickup_address || row.dropoff_address,
+        },
+        priority: row.priority,
+        slaDeadline: row.sla_deadline,
+        timeWindow: {
+          start: row.delivery_time_window_start,
+          end: row.delivery_time_window_end,
+        },
+      }));
+    }
   }
 
   /**

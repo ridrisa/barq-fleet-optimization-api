@@ -18,6 +18,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ProductionStatistics } from '@/components/production-statistics';
 
 interface Feature {
   icon: React.ReactNode;
@@ -168,6 +169,11 @@ export function WelcomePage() {
       </div>
 
       <div className="container mx-auto px-4 py-16">
+
+        {/* Production Statistics */}
+        <div className="mb-16">
+          <ProductionStatistics />
+        </div>
 
         {/* Features Grid */}
         <div className="mb-16">
