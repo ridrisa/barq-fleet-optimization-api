@@ -842,8 +842,6 @@ const wrappedService = {
   ),
 };
 
-// Export both the class and the wrapped instance
-module.exports = {
-  EnhancedLogisticsService,
-  logisticsService: wrappedService,
-};
+// Export the class as the default export and expose the wrapped instance for other consumers
+module.exports = EnhancedLogisticsService;
+module.exports.logisticsService = wrappedService;

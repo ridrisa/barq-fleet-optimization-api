@@ -1,5 +1,4223 @@
 {
-  "requests": [],
+  "requests": [
+    {
+      "id": "e0c8d450-9c3d-4200-9e75-4396fb90db42",
+      "timestamp": "2025-11-18T02:15:49.430Z",
+      "status": "completed",
+      "serviceType": "STANDARD",
+      "pickupPoints": [
+        {
+          "id": "pickup1",
+          "name": "Main Warehouse",
+          "lat": 40.7128,
+          "lng": -74.006,
+          "priority": 5,
+          "serviceTime": 5
+        }
+      ],
+      "deliveryPoints": [
+        {
+          "id": "delivery1",
+          "name": "Customer 1",
+          "lat": 40.758,
+          "lng": -73.9855,
+          "priority": 1,
+          "timeWindow": {
+            "start": "2025-11-18T09:00:00.000Z",
+            "end": "2025-11-18T12:00:00.000Z"
+          },
+          "serviceTime": 5
+        },
+        {
+          "id": "delivery2",
+          "name": "Customer 2",
+          "lat": 40.7489,
+          "lng": -73.968,
+          "priority": 2,
+          "timeWindow": {
+            "start": "2025-11-18T10:00:00.000Z",
+            "end": "2025-11-18T14:00:00.000Z"
+          },
+          "serviceTime": 5
+        }
+      ],
+      "fleet": {
+        "vehicles": [
+          {
+            "id": "vehicle1",
+            "type": "van",
+            "capacity": 100
+          }
+        ],
+        "vehicleType": "car",
+        "count": 1
+      },
+      "requestId": "e0c8d450-9c3d-4200-9e75-4396fb90db42",
+      "updatedAt": "2025-11-18T02:15:50.656Z",
+      "result": {
+        "routes": [
+          {
+            "id": "route-va74z7qz",
+            "vehicle": {
+              "id": "default-vehicle-mi3xyytc-y3ato4",
+              "name": "Default Vehicle",
+              "type": "TRUCK",
+              "capacity": 3000
+            },
+            "waypoints": [
+              {
+                "id": "pickup1",
+                "name": "Main Warehouse",
+                "type": "pickup",
+                "location": {
+                  "lat": 40.7128,
+                  "lng": -74.006
+                },
+                "priority": 1
+              },
+              {
+                "id": "delivery2",
+                "name": "Customer 2",
+                "type": "delivery",
+                "location": {
+                  "lat": 40.7489,
+                  "lng": -73.968
+                },
+                "timeWindow": "09:00-17:00",
+                "priority": 2,
+                "customer": "Customer 2"
+              },
+              {
+                "id": "delivery1",
+                "name": "Customer 1",
+                "type": "delivery",
+                "location": {
+                  "lat": 40.758,
+                  "lng": -73.9855
+                },
+                "timeWindow": "09:00-17:00",
+                "priority": 1,
+                "customer": "Customer 1"
+              }
+            ],
+            "stops": [
+              {
+                "id": "pickup1",
+                "name": "Main Warehouse",
+                "type": "pickup",
+                "location": {
+                  "latitude": 40.7128,
+                  "longitude": -74.006
+                },
+                "address": ""
+              },
+              {
+                "id": "delivery-skkpa0au",
+                "name": "Customer 2",
+                "type": "delivery",
+                "location": {
+                  "latitude": 40.7489,
+                  "longitude": -73.968
+                },
+                "address": "",
+                "timeWindow": "09:00-17:00"
+              },
+              {
+                "id": "delivery-o6rtktar",
+                "name": "Customer 1",
+                "type": "delivery",
+                "location": {
+                  "latitude": 40.758,
+                  "longitude": -73.9855
+                },
+                "address": "",
+                "timeWindow": "09:00-17:00"
+              }
+            ],
+            "pickupId": "pickup1",
+            "deliveries": [
+              {
+                "order_id": "delivery2",
+                "customer_name": "Unknown Customer",
+                "load_kg": 0
+              },
+              {
+                "order_id": "delivery1",
+                "customer_name": "Unknown Customer",
+                "load_kg": 0
+              }
+            ],
+            "load_kg": 0,
+            "distance": 13.57,
+            "duration": 20,
+            "geometry": "}qnwFdfubMBJBLJt@@HB@B?@ALEAOASC]?ECOAOAGAQAI@G?G@GBGBGDI@AHQZk@b@s@@C@ABEDIj@aAr@mAHMFKT_@v@uArAiBHKZe@^e@^k@RWEGIGEEIc@AIAG?I?K@I?G@IBGBIBGj@s@\\c@FGFEFGFCHCHClAWHCHCHEFEFGFGFKFIDKBKBIBK@M@M?K?I?K?IAKAMCICKCI]}@EMGMEMEMCMEOEOEQEQCOEQMw@GYEYCQCSCSASCUEk@[eEC[CW_@eECYQ{BEw@_ByRGu@Es@Gw@Eq@yAkWEy@Ew@C{@Cy@E}A]yKKkDA[C[C[C[EYEYEYI[GYIYIYKWKWKUMWMSMWOSOQOSOOQQQOQMQMSMSKSK{OuG_A]eEcBg@Sg@Oi@Oi@Oi@Ki@Mi@Ik@Ii@Go@GoAKcKm@{@K}@GWASCUCSEUESGUGQGSIUISKQISKe@WaE{BiDiBeB}@g@Wg@Sg@Si@QSGUGSEUESCUCyE_@{@GUAU?U@U@UBUBSDUFSFSHSHSJSLQLSNOLQPOPUXaAnAEDW^YZ[XQNQLQJQLUJUHUHSFUDSDwTpDWDUBU@U@U?_@AMAWCQEWESGWGSKUKQKw@i@e@[}DiCg@[g@Wg@Si@Oi@Oe@M_ASeASi@Kq@IoBW_D_@y@KcAYk@Qg@Ui@We@Y{BoAu@c@e@[g@[a@[e@]c@]IIa@_@q@o@[a@WWmBuBu@q@aF{DoMcKyE}DuFcFiAcAm@c@s@g@i@a@uDaDQOQQOQQSQWQWkAwAk@o@m@o@o@k@s@i@y@m@{EoDcEkCaB_@EAUI[`AOb@IXMGOMsA{@KGMIqBqANYb@qAR{@BIBE@CDC@?B?B?B?DBDD`@j@b@r@\\d@XZRPRNj@`@j@Jh@`@ZR|DdCdDfC\\XVTj@h@j@f@t@p@h@h@z@|@`@f@d@l@JPLNLRJJZ^PPPNxAhAzClCd@`@`@^fBfBhE|DjQ~MxC~BZTTb@JJLJp@h@h@b@NPRXBB\\ZbEfEEJADq@tBc@vAIXKIa@WaAo@MIIGg@[a@?a@WECGEKGQMo@_@a@S]QgAs@SOECIEGIQWKKOQGIIIGEIGIGCCCEEKOKSM{AaAMIKIkAu@YSKGK^mBbGaA~CKXK\\qCxISl@K\\KXqBnGGRGPmAxDCHADKZITUr@u@~BENEJ_ArCGPITqBtGIVKVa@pAoCrIq@tBUt@IXKGaBiAMIKGeBiAKGKZm@nBmDpKGTLJ~AdALHNH\\T`An@FD",
+            "osrm": {
+              "distance": 13569.1,
+              "duration": 1211.3,
+              "geometry": "}qnwFdfubMBJBLJt@@HB@B?@ALEAOASC]?ECOAOAGAQAI@G?G@GBGBGDI@AHQZk@b@s@@C@ABEDIj@aAr@mAHMFKT_@v@uArAiBHKZe@^e@^k@RWEGIGEEIc@AIAG?I?K@I?G@IBGBIBGj@s@\\c@FGFEFGFCHCHClAWHCHCHEFEFGFGFKFIDKBKBIBK@M@M?K?I?K?IAKAMCICKCI]}@EMGMEMEMCMEOEOEQEQCOEQMw@GYEYCQCSCSASCUEk@[eEC[CW_@eECYQ{BEw@_ByRGu@Es@Gw@Eq@yAkWEy@Ew@C{@Cy@E}A]yKKkDA[C[C[C[EYEYEYI[GYIYIYKWKWKUMWMSMWOSOQOSOOQQQOQMQMSMSKSK{OuG_A]eEcBg@Sg@Oi@Oi@Oi@Ki@Mi@Ik@Ii@Go@GoAKcKm@{@K}@GWASCUCSEUESGUGQGSIUISKQISKe@WaE{BiDiBeB}@g@Wg@Sg@Si@QSGUGSEUESCUCyE_@{@GUAU?U@U@UBUBSDUFSFSHSHSJSLQLSNOLQPOPUXaAnAEDW^YZ[XQNQLQJQLUJUHUHSFUDSDwTpDWDUBU@U@U?_@AMAWCQEWESGWGSKUKQKw@i@e@[}DiCg@[g@Wg@Si@Oi@Oe@M_ASeASi@Kq@IoBW_D_@y@KcAYk@Qg@Ui@We@Y{BoAu@c@e@[g@[a@[e@]c@]IIa@_@q@o@[a@WWmBuBu@q@aF{DoMcKyE}DuFcFiAcAm@c@s@g@i@a@uDaDQOQQOQQSQWQWkAwAk@o@m@o@o@k@s@i@y@m@{EoDcEkCaB_@EAUI[`AOb@IXMGOMsA{@KGMIqBqANYb@qAR{@BIBE@CDC@?B?B?B?DBDD`@j@b@r@\\d@XZRPRNj@`@j@Jh@`@ZR|DdCdDfC\\XVTj@h@j@f@t@p@h@h@z@|@`@f@d@l@JPLNLRJJZ^PPPNxAhAzClCd@`@`@^fBfBhE|DjQ~MxC~BZTTb@JJLJp@h@h@b@NPRXBB\\ZbEfEEJADq@tBc@vAIXKIa@WaAo@MIIGg@[a@?a@WECGEKGQMo@_@a@S]QgAs@SOECIEGIQWKKOQGIIIGEIGIGCCCEEKOKSM{AaAMIKIkAu@YSKGK^mBbGaA~CKXK\\qCxISl@K\\KXqBnGGRGPmAxDCHADKZITUr@u@~BENEJ_ArCGPITqBtGIVKVa@pAoCrIq@tBUt@IXKGaBiAMIKGeBiAKGKZm@nBmDpKGTLJ~AdALHNH\\T`An@FD",
+              "legs": [
+                {
+                  "steps": [
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "entry": [
+                            true
+                          ],
+                          "bearings": [
+                            246
+                          ],
+                          "location": [
+                            -74.005625,
+                            40.712153
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "}qnwFdfubMBJ",
+                      "maneuver": {
+                        "bearing_after": 246,
+                        "bearing_before": 0,
+                        "location": [
+                          -74.005625,
+                          40.712153
+                        ],
+                        "modifier": "right",
+                        "type": "depart"
+                      },
+                      "name": "Centre Street",
+                      "mode": "driving",
+                      "weight": 0.9,
+                      "duration": 0.9,
+                      "distance": 6.3
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 2,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            60,
+                            75,
+                            255,
+                            345
+                          ],
+                          "location": [
+                            -74.005693,
+                            40.71213
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "yqnwFpfubMBLJt@@H",
+                      "maneuver": {
+                        "bearing_after": 251,
+                        "bearing_before": 246,
+                        "location": [
+                          -74.005693,
+                          40.71213
+                        ],
+                        "modifier": "straight",
+                        "type": "turn"
+                      },
+                      "name": "Park Row",
+                      "mode": "driving",
+                      "weight": 11.5,
+                      "duration": 11.5,
+                      "distance": 34.5
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "left"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "straight"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "none"
+                              ]
+                            }
+                          ],
+                          "out": 1,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            75,
+                            165,
+                            255
+                          ],
+                          "location": [
+                            -74.006082,
+                            40.712036
+                          ]
+                        },
+                        {
+                          "out": 1,
+                          "in": 4,
+                          "entry": [
+                            true,
+                            true,
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            75,
+                            150,
+                            255,
+                            345
+                          ],
+                          "location": [
+                            -74.006047,
+                            40.711916
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "gqnwF~hubMB@B?@ALEAOASC]?ECOAOAGAQAI@G?G@GBGBGDI@AHQZk@",
+                      "maneuver": {
+                        "bearing_after": 167,
+                        "bearing_before": 251,
+                        "location": [
+                          -74.006082,
+                          40.712036
+                        ],
+                        "modifier": "uturn",
+                        "type": "continue"
+                      },
+                      "destinations": "FDR Drive",
+                      "name": "Park Row",
+                      "mode": "driving",
+                      "weight": 25.6,
+                      "duration": 25.6,
+                      "distance": 133.1
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 1,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            105,
+                            135,
+                            315
+                          ],
+                          "location": [
+                            -74.004776,
+                            40.711727
+                          ]
+                        },
+                        {
+                          "out": 1,
+                          "in": 3,
+                          "entry": [
+                            false,
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            15,
+                            135,
+                            195,
+                            315
+                          ],
+                          "location": [
+                            -74.003616,
+                            40.71095
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            135,
+                            225,
+                            315
+                          ],
+                          "location": [
+                            -74.003402,
+                            40.710804
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "ionwFz`ubMb@s@@C@ABEDIj@aAr@mAHMFKT_@v@uArAiBHKZe@^e@^k@RW",
+                      "maneuver": {
+                        "bearing_after": 132,
+                        "bearing_before": 129,
+                        "location": [
+                          -74.004776,
+                          40.711727
+                        ],
+                        "modifier": "straight",
+                        "type": "new name"
+                      },
+                      "destinations": "FDR Drive",
+                      "name": "Frankfort Street",
+                      "mode": "driving",
+                      "weight": 60.8,
+                      "duration": 60.8,
+                      "distance": 362.3
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "left"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "none"
+                              ]
+                            }
+                          ],
+                          "out": 0,
+                          "in": 4,
+                          "entry": [
+                            true,
+                            false,
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            135,
+                            165,
+                            225,
+                            315
+                          ],
+                          "location": [
+                            -74.001657,
+                            40.709492
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "ianwFjmtbMEGIGEE",
+                      "maneuver": {
+                        "bearing_after": 35,
+                        "bearing_before": 135,
+                        "location": [
+                          -74.001657,
+                          40.709492
+                        ],
+                        "modifier": "left",
+                        "type": "turn"
+                      },
+                      "name": "Pearl Street",
+                      "mode": "driving",
+                      "weight": 4.2,
+                      "duration": 4.2,
+                      "distance": 15.5
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 1,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            75,
+                            210,
+                            315
+                          ],
+                          "location": [
+                            -74.001548,
+                            40.709604
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            135,
+                            285,
+                            315
+                          ],
+                          "location": [
+                            -74.000903,
+                            40.70959
+                          ]
+                        },
+                        {
+                          "out": 1,
+                          "in": 2,
+                          "entry": [
+                            false,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            0,
+                            135,
+                            345
+                          ],
+                          "location": [
+                            -74.000169,
+                            40.708574
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "_bnwFtltbMIc@AIAG?I?K@I?G@IBGBIBGj@s@\\c@FGFEFGFCHCHClAWHCHCHEFEFGFGFKFIDKBKBIBK@M@M?K?I?K?IAKAMCICKCI]}@EMGMEMEMCMEOEOEQEQCOEQMw@GYEYCQCSCSASCUEk@[eEC[CW_@eECYQ{B",
+                      "maneuver": {
+                        "bearing_after": 71,
+                        "bearing_before": 35,
+                        "location": [
+                          -74.001548,
+                          40.709604
+                        ],
+                        "modifier": "slight right",
+                        "type": "on ramp"
+                      },
+                      "destinations": "FDR Drive North",
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 103.9,
+                      "duration": 103.9,
+                      "distance": 795.7
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            75,
+                            255,
+                            270
+                          ],
+                          "location": [
+                            -73.99358,
+                            40.709366
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            90,
+                            255,
+                            270
+                          ],
+                          "location": [
+                            -73.981493,
+                            40.71075
+                          ]
+                        },
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "slight right"
+                              ]
+                            }
+                          ],
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            15,
+                            30,
+                            195
+                          ],
+                          "location": [
+                            -73.976196,
+                            40.715234
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            6,
+                            180,
+                            186
+                          ],
+                          "location": [
+                            -73.974554,
+                            40.721296
+                          ]
+                        },
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "straight",
+                                "slight right"
+                              ]
+                            }
+                          ],
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            0,
+                            15,
+                            180
+                          ],
+                          "location": [
+                            -73.971679,
+                            40.728
+                          ]
+                        },
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "straight",
+                                "slight right"
+                              ]
+                            }
+                          ],
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            45,
+                            210
+                          ],
+                          "location": [
+                            -73.974345,
+                            40.737367
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            15,
+                            180,
+                            195
+                          ],
+                          "location": [
+                            -73.972931,
+                            40.739717
+                          ]
+                        },
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "straight",
+                                "slight right"
+                              ]
+                            }
+                          ],
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            45,
+                            210
+                          ],
+                          "location": [
+                            -73.971301,
+                            40.744279
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            45,
+                            195,
+                            225
+                          ],
+                          "location": [
+                            -73.969657,
+                            40.746207
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            210,
+                            225
+                          ],
+                          "location": [
+                            -73.963333,
+                            40.753404
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "maneuver": {
+                        "bearing_after": 78,
+                        "bearing_before": 78,
+                        "location": [
+                          -73.99358,
+                          40.709366
+                        ],
+                        "modifier": "slight left",
+                        "type": "merge"
+                      },
+                      "geometry": "q`nwFzzrbMEw@_ByRGu@Es@Gw@Eq@yAkWEy@Ew@C{@Cy@E}A]yKKkDA[C[C[C[EYEYEYI[GYIYIYKWKWKUMWMSMWOSOQOSOOQQQOQMQMSMSKSK{OuG_A]eEcBg@Sg@Oi@Oi@Oi@Ki@Mi@Ik@Ii@Go@GoAKcKm@{@K}@GWASCUCSEUESGUGQGSIUISKQISKe@WaE{BiDiBeB}@g@Wg@Sg@Si@QSGUGSEUESCUCyE_@{@GUAU?U@U@UBUBSDUFSFSHSHSJSLQLSNOLQPOPUXaAnAEDW^YZ[XQNQLQJQLUJUHUHSFUDSDwTpDWDUBU@U@U?_@AMAWCQEWESGWGSKUKQKw@i@e@[}DiCg@[g@Wg@Si@Oi@Oe@M_ASeASi@Kq@IoBW_D_@y@KcAYk@Qg@Ui@We@Y{BoAu@c@e@[g@[a@[e@]c@]IIa@_@q@o@[a@WWmBuBu@q@aF{DoMcKyE}DuFcFiAcAm@c@s@g@i@a@uDaDQOQQOQQSQWQWkAwAk@o@m@o@o@k@s@i@y@m@{EoDcEkC",
+                      "ref": "FDR",
+                      "name": "FDR Drive",
+                      "mode": "driving",
+                      "weight": 499.7,
+                      "duration": 499.7,
+                      "distance": 7150.8
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "slight left"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "none"
+                              ]
+                            }
+                          ],
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            15,
+                            30,
+                            210
+                          ],
+                          "location": [
+                            -73.958387,
+                            40.759012
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "yvwwF|~kbMaB_@EAUI",
+                      "maneuver": {
+                        "bearing_after": 12,
+                        "bearing_before": 28,
+                        "location": [
+                          -73.958387,
+                          40.759012
+                        ],
+                        "modifier": "slight left",
+                        "type": "off ramp"
+                      },
+                      "exits": "12",
+                      "destinations": "NY 25 East: East 61st Street, Ed Koch Queensboro Bridge",
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 9.2,
+                      "duration": 9.2,
+                      "distance": 72.3
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "left"
+                              ]
+                            }
+                          ],
+                          "out": 3,
+                          "in": 1,
+                          "entry": [
+                            false,
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            195,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.958169,
+                            40.759641
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "wzwwFp}kbM[`AOb@IX",
+                      "maneuver": {
+                        "bearing_after": 298,
+                        "bearing_before": 14,
+                        "location": [
+                          -73.958169,
+                          40.759641
+                        ],
+                        "modifier": "left",
+                        "type": "turn"
+                      },
+                      "name": "East 61st Street",
+                      "mode": "driving",
+                      "weight": 11,
+                      "duration": 11,
+                      "distance": 62.1
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "lanes": [
+                            {
+                              "valid": false,
+                              "indications": [
+                                "left"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "straight",
+                                "left"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "straight",
+                                "right"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "right"
+                              ]
+                            }
+                          ],
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.958811,
+                            40.759914
+                          ]
+                        },
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "straight"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "straight",
+                                "right"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "right"
+                              ]
+                            }
+                          ],
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.958359,
+                            40.760539
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "m|wwFpalbMMGOMsA{@KGMIqBqA",
+                      "maneuver": {
+                        "bearing_after": 28,
+                        "bearing_before": 299,
+                        "location": [
+                          -73.958811,
+                          40.759914
+                        ],
+                        "modifier": "right",
+                        "type": "turn"
+                      },
+                      "name": "York Avenue",
+                      "mode": "driving",
+                      "weight": 18,
+                      "duration": 18,
+                      "distance": 160.4
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 2,
+                          "in": 3,
+                          "entry": [
+                            true,
+                            false,
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            135,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.957902,
+                            40.761182
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "kdxwFz{kbMNYb@qA",
+                      "maneuver": {
+                        "bearing_after": 129,
+                        "bearing_before": 28,
+                        "location": [
+                          -73.957902,
+                          40.761182
+                        ],
+                        "modifier": "right",
+                        "type": "turn"
+                      },
+                      "name": "East 63rd Street",
+                      "mode": "driving",
+                      "weight": 6.1,
+                      "duration": 6.1,
+                      "distance": 54.3
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            114,
+                            124,
+                            299
+                          ],
+                          "location": [
+                            -73.957359,
+                            40.760924
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "wbxwFnxkbMR{@BIBE@CDC@?B?B?B?DBDD`@j@b@r@\\d@XZRPRNj@`@j@J",
+                      "maneuver": {
+                        "bearing_after": 113,
+                        "bearing_before": 118,
+                        "location": [
+                          -73.957359,
+                          40.760924
+                        ],
+                        "modifier": "straight",
+                        "type": "on ramp"
+                      },
+                      "destinations": "FDR Drive South, Battery Park",
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 43.7,
+                      "duration": 43.7,
+                      "distance": 234.5
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 2,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            15,
+                            30,
+                            210
+                          ],
+                          "location": [
+                            -73.958201,
+                            40.759343
+                          ]
+                        },
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "slight right"
+                              ]
+                            }
+                          ],
+                          "out": 1,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            45,
+                            225,
+                            240
+                          ],
+                          "location": [
+                            -73.961999,
+                            40.755104
+                          ]
+                        },
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "slight right"
+                              ]
+                            }
+                          ],
+                          "out": 1,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            210,
+                            225
+                          ],
+                          "location": [
+                            -73.963735,
+                            40.753194
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "maneuver": {
+                        "bearing_after": 208,
+                        "bearing_before": 191,
+                        "location": [
+                          -73.958201,
+                          40.759343
+                        ],
+                        "modifier": "slight left",
+                        "type": "merge"
+                      },
+                      "geometry": "{xwwFv}kbMh@`@ZR|DdCdDfC\\XVTj@h@j@f@t@p@h@h@z@|@`@f@d@l@JPLNLRJJZ^PPPNxAhAzClCd@`@`@^fBfBhE|DjQ~M",
+                      "ref": "FDR",
+                      "name": "FDR Drive",
+                      "mode": "driving",
+                      "weight": 99.7,
+                      "duration": 99.7,
+                      "distance": 1425.3
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "in": 0,
+                          "entry": [
+                            true
+                          ],
+                          "bearings": [
+                            32
+                          ],
+                          "location": [
+                            -73.967614,
+                            40.748719
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "maneuver": {
+                        "bearing_after": 0,
+                        "bearing_before": 212,
+                        "location": [
+                          -73.967614,
+                          40.748719
+                        ],
+                        "modifier": "right",
+                        "type": "arrive"
+                      },
+                      "geometry": "ovuwFpxmbM",
+                      "ref": "FDR",
+                      "name": "FDR Drive",
+                      "mode": "driving",
+                      "weight": 0,
+                      "duration": 0,
+                      "distance": 0
+                    }
+                  ],
+                  "weight": 894.3,
+                  "summary": "FDR Drive",
+                  "duration": 894.3,
+                  "distance": 10507.1
+                },
+                {
+                  "steps": [
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "entry": [
+                            true
+                          ],
+                          "bearings": [
+                            212
+                          ],
+                          "location": [
+                            -73.967614,
+                            40.748719
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "maneuver": {
+                        "bearing_after": 212,
+                        "bearing_before": 0,
+                        "location": [
+                          -73.967614,
+                          40.748719
+                        ],
+                        "modifier": "right",
+                        "type": "depart"
+                      },
+                      "geometry": "ovuwFpxmbMxC~BZT",
+                      "ref": "FDR",
+                      "name": "FDR Drive",
+                      "mode": "driving",
+                      "weight": 8.3,
+                      "duration": 8.3,
+                      "distance": 118.6
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "lanes": [
+                            {
+                              "valid": false,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "slight right"
+                              ]
+                            }
+                          ],
+                          "out": 2,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            210,
+                            225
+                          ],
+                          "location": [
+                            -73.968357,
+                            40.747813
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "ypuwFf}mbMTb@JJLJp@h@h@b@NPRX",
+                      "maneuver": {
+                        "bearing_after": 229,
+                        "bearing_before": 210,
+                        "location": [
+                          -73.968357,
+                          40.747813
+                        ],
+                        "modifier": "slight right",
+                        "type": "off ramp"
+                      },
+                      "exits": "8",
+                      "destinations": "I 495: East 34th Street, Midtown Tunnel",
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 10.1,
+                      "duration": 10.1,
+                      "distance": 125.8
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 2,
+                          "in": 1,
+                          "entry": [
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            45,
+                            210
+                          ],
+                          "location": [
+                            -73.969273,
+                            40.74693
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "ikuwF|bnbMBB\\ZbEfE",
+                      "maneuver": {
+                        "bearing_after": 215,
+                        "bearing_before": 226,
+                        "location": [
+                          -73.969273,
+                          40.74693
+                        ],
+                        "modifier": "straight",
+                        "type": "turn"
+                      },
+                      "name": "FDR Drive",
+                      "mode": "driving",
+                      "weight": 10.1,
+                      "duration": 10.1,
+                      "distance": 160.8
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 2,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            45,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.970433,
+                            40.745783
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "cduwFdjnbMEJADq@tBc@vAIX",
+                      "maneuver": {
+                        "bearing_after": 298,
+                        "bearing_before": 217,
+                        "location": [
+                          -73.970433,
+                          40.745783
+                        ],
+                        "modifier": "right",
+                        "type": "turn"
+                      },
+                      "name": "East 38th Street",
+                      "mode": "driving",
+                      "weight": 21.3,
+                      "duration": 21.3,
+                      "distance": 119.6
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.971675,
+                            40.7463
+                          ]
+                        },
+                        {
+                          "lanes": [
+                            {
+                              "valid": false,
+                              "indications": [
+                                "left"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "straight"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "straight"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "straight"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            }
+                          ],
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.971217,
+                            40.746929
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "kguwF~qnbMKIa@WaAo@MIIGg@[",
+                      "maneuver": {
+                        "bearing_after": 28,
+                        "bearing_before": 298,
+                        "location": [
+                          -73.971675,
+                          40.7463
+                        ],
+                        "modifier": "right",
+                        "type": "turn"
+                      },
+                      "name": "1st Avenue",
+                      "mode": "driving",
+                      "weight": 14.5,
+                      "duration": 14.5,
+                      "distance": 111.8
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            0,
+                            30,
+                            210
+                          ],
+                          "location": [
+                            -73.971039,
+                            40.747183
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.97087,
+                            40.747591
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            45,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.969971,
+                            40.748884
+                          ]
+                        },
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "straight"
+                              ]
+                            }
+                          ],
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            29,
+                            203,
+                            215
+                          ],
+                          "location": [
+                            -73.969384,
+                            40.749406
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.968869,
+                            40.750117
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "{luwF~mnbMa@?a@WECGEKGQMo@_@a@S]QgAs@SOECIEGIQWKKOQGIIIGEIGIGCCCEEKOKSM{AaAMIKIkAu@YSKG",
+                      "maneuver": {
+                        "bearing_after": 0,
+                        "bearing_before": 26,
+                        "location": [
+                          -73.971039,
+                          40.747183
+                        ],
+                        "modifier": "slight left",
+                        "type": "continue"
+                      },
+                      "name": "1st Avenue",
+                      "mode": "driving",
+                      "weight": 58.3,
+                      "duration": 58.3,
+                      "distance": 458.8
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "straight",
+                                "left"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "straight"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "straight"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "none"
+                              ]
+                            }
+                          ],
+                          "out": 3,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            105,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.96841,
+                            40.750751
+                          ]
+                        },
+                        {
+                          "out": 3,
+                          "in": 1,
+                          "entry": [
+                            false,
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.970804,
+                            40.751748
+                          ]
+                        },
+                        {
+                          "lanes": [
+                            {
+                              "valid": true,
+                              "indications": [
+                                "none"
+                              ]
+                            },
+                            {
+                              "valid": false,
+                              "indications": [
+                                "right"
+                              ]
+                            }
+                          ],
+                          "out": 3,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.973063,
+                            40.752704
+                          ]
+                        },
+                        {
+                          "out": 3,
+                          "in": 1,
+                          "entry": [
+                            false,
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.974648,
+                            40.753367
+                          ]
+                        },
+                        {
+                          "out": 3,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.976975,
+                            40.754351
+                          ]
+                        },
+                        {
+                          "out": 3,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.977867,
+                            40.754735
+                          ]
+                        },
+                        {
+                          "out": 3,
+                          "in": 1,
+                          "entry": [
+                            false,
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.97949,
+                            40.755413
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "ecvwFp}mbMK^mBbGaA~CKXK\\qCxISl@K\\KXqBnGGRGPmAxDCHADKZITUr@u@~BENEJ_ArCGPITqBtGIVKVa@pAoCrIq@tBUt@IX",
+                      "maneuver": {
+                        "bearing_after": 298,
+                        "bearing_before": 28,
+                        "location": [
+                          -73.96841,
+                          40.750751
+                        ],
+                        "modifier": "left",
+                        "type": "turn"
+                      },
+                      "name": "East 45th Street",
+                      "mode": "driving",
+                      "weight": 117.6,
+                      "duration": 117.6,
+                      "distance": 1380.1
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "lanes": [
+                            {
+                              "valid": false,
+                              "indications": [
+                                "straight"
+                              ]
+                            },
+                            {
+                              "valid": true,
+                              "indications": [
+                                "right"
+                              ]
+                            }
+                          ],
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.982712,
+                            40.756771
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.982254,
+                            40.75739
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "yhwwF|vpbMKGaBiAMIKGeBiAKG",
+                      "maneuver": {
+                        "bearing_after": 28,
+                        "bearing_before": 298,
+                        "location": [
+                          -73.982712,
+                          40.756771
+                        ],
+                        "modifier": "right",
+                        "type": "turn"
+                      },
+                      "name": "6th Avenue",
+                      "mode": "driving",
+                      "weight": 19.6,
+                      "duration": 19.6,
+                      "distance": 158.3
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 3,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.981798,
+                            40.758016
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "spwwFfqpbMKZm@nBmDpKGT",
+                      "maneuver": {
+                        "bearing_after": 298,
+                        "bearing_before": 28,
+                        "location": [
+                          -73.981798,
+                          40.758016
+                        ],
+                        "modifier": "left",
+                        "type": "turn"
+                      },
+                      "name": "West 47th Street",
+                      "mode": "driving",
+                      "weight": 38,
+                      "duration": 38,
+                      "distance": 273.3
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 2,
+                          "in": 1,
+                          "entry": [
+                            false,
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.984619,
+                            40.759223
+                          ]
+                        },
+                        {
+                          "out": 2,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            false,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            120,
+                            210,
+                            300
+                          ],
+                          "location": [
+                            -73.98508,
+                            40.758597
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "cxwwFzbqbMLJ~AdALHNH\\T`An@FD",
+                      "maneuver": {
+                        "bearing_after": 208,
+                        "bearing_before": 298,
+                        "location": [
+                          -73.984619,
+                          40.759223
+                        ],
+                        "modifier": "left",
+                        "type": "turn"
+                      },
+                      "name": "7th Avenue",
+                      "mode": "driving",
+                      "weight": 19.2,
+                      "duration": 19.2,
+                      "distance": 154.9
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "in": 0,
+                          "entry": [
+                            true
+                          ],
+                          "bearings": [
+                            28
+                          ],
+                          "location": [
+                            -73.985506,
+                            40.758002
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "opwwFlhqbM",
+                      "maneuver": {
+                        "bearing_after": 0,
+                        "bearing_before": 208,
+                        "location": [
+                          -73.985506,
+                          40.758002
+                        ],
+                        "type": "arrive"
+                      },
+                      "name": "7th Avenue",
+                      "mode": "driving",
+                      "weight": 0,
+                      "duration": 0,
+                      "distance": 0
+                    }
+                  ],
+                  "weight": 317,
+                  "summary": "1st Avenue, East 45th Street",
+                  "duration": 317,
+                  "distance": 3062
+                }
+              ],
+              "alternatives": []
+            },
+            "metrics": {
+              "efficiency": 0.85,
+              "utilization": 1,
+              "serviceQuality": 0.9,
+              "stopDensity": 0.2210759027266028
+            },
+            "vehicleName": "Default Vehicle"
+          }
+        ],
+        "summary": {
+          "total_routes": 1,
+          "total_distance": 13.57,
+          "total_duration": 20,
+          "total_deliveries": 2,
+          "total_load": 0,
+          "routingStats": {
+            "totalClusters": 1,
+            "averagePointsPerCluster": "2.00",
+            "alternativeRoutesGenerated": 0
+          },
+          "engineMetrics": {
+            "engineVersion": "1.0.0",
+            "profileUsed": "driving",
+            "computationTime": 2.3
+          }
+        },
+        "requestId": "e0c8d450-9c3d-4200-9e75-4396fb90db42",
+        "timestamp": "2025-11-18T02:15:50.654Z",
+        "insights": [
+          "**Logistics Optimization Plan Summary**\n\n* **Routes:** 1\n* **Deliveries:** 2\n* **Total Distance:** 13.6 km\n* **Total Duration:** 20 minutes\n\nThis plan optimizes a single route with 2 deliveries, covering a total distance of 13.6 km in just 20 minutes."
+        ]
+      }
+    }
+  ],
   "optimizations": [],
-  "metrics": []
+  "metrics": [],
+  "results": [
+    {
+      "requestId": "e0c8d450-9c3d-4200-9e75-4396fb90db42",
+      "timestamp": "2025-11-18T02:15:50.654Z",
+      "routes": [
+        {
+          "id": "route-va74z7qz",
+          "vehicle": {
+            "id": "default-vehicle-mi3xyytc-y3ato4",
+            "name": "Default Vehicle",
+            "type": "TRUCK",
+            "capacity": 3000
+          },
+          "waypoints": [
+            {
+              "id": "pickup1",
+              "name": "Main Warehouse",
+              "type": "pickup",
+              "location": {
+                "lat": 40.7128,
+                "lng": -74.006
+              },
+              "priority": 1
+            },
+            {
+              "id": "delivery2",
+              "name": "Customer 2",
+              "type": "delivery",
+              "location": {
+                "lat": 40.7489,
+                "lng": -73.968
+              },
+              "timeWindow": "09:00-17:00",
+              "priority": 2,
+              "customer": "Customer 2"
+            },
+            {
+              "id": "delivery1",
+              "name": "Customer 1",
+              "type": "delivery",
+              "location": {
+                "lat": 40.758,
+                "lng": -73.9855
+              },
+              "timeWindow": "09:00-17:00",
+              "priority": 1,
+              "customer": "Customer 1"
+            }
+          ],
+          "stops": [
+            {
+              "id": "pickup1",
+              "name": "Main Warehouse",
+              "type": "pickup",
+              "location": {
+                "latitude": 40.7128,
+                "longitude": -74.006
+              },
+              "address": ""
+            },
+            {
+              "id": "delivery-skkpa0au",
+              "name": "Customer 2",
+              "type": "delivery",
+              "location": {
+                "latitude": 40.7489,
+                "longitude": -73.968
+              },
+              "address": "",
+              "timeWindow": "09:00-17:00"
+            },
+            {
+              "id": "delivery-o6rtktar",
+              "name": "Customer 1",
+              "type": "delivery",
+              "location": {
+                "latitude": 40.758,
+                "longitude": -73.9855
+              },
+              "address": "",
+              "timeWindow": "09:00-17:00"
+            }
+          ],
+          "pickupId": "pickup1",
+          "deliveries": [
+            {
+              "order_id": "delivery2",
+              "customer_name": "Unknown Customer",
+              "load_kg": 0
+            },
+            {
+              "order_id": "delivery1",
+              "customer_name": "Unknown Customer",
+              "load_kg": 0
+            }
+          ],
+          "load_kg": 0,
+          "distance": 13.57,
+          "duration": 20,
+          "geometry": "}qnwFdfubMBJBLJt@@HB@B?@ALEAOASC]?ECOAOAGAQAI@G?G@GBGBGDI@AHQZk@b@s@@C@ABEDIj@aAr@mAHMFKT_@v@uArAiBHKZe@^e@^k@RWEGIGEEIc@AIAG?I?K@I?G@IBGBIBGj@s@\\c@FGFEFGFCHCHClAWHCHCHEFEFGFGFKFIDKBKBIBK@M@M?K?I?K?IAKAMCICKCI]}@EMGMEMEMCMEOEOEQEQCOEQMw@GYEYCQCSCSASCUEk@[eEC[CW_@eECYQ{BEw@_ByRGu@Es@Gw@Eq@yAkWEy@Ew@C{@Cy@E}A]yKKkDA[C[C[C[EYEYEYI[GYIYIYKWKWKUMWMSMWOSOQOSOOQQQOQMQMSMSKSK{OuG_A]eEcBg@Sg@Oi@Oi@Oi@Ki@Mi@Ik@Ii@Go@GoAKcKm@{@K}@GWASCUCSEUESGUGQGSIUISKQISKe@WaE{BiDiBeB}@g@Wg@Sg@Si@QSGUGSEUESCUCyE_@{@GUAU?U@U@UBUBSDUFSFSHSHSJSLQLSNOLQPOPUXaAnAEDW^YZ[XQNQLQJQLUJUHUHSFUDSDwTpDWDUBU@U@U?_@AMAWCQEWESGWGSKUKQKw@i@e@[}DiCg@[g@Wg@Si@Oi@Oe@M_ASeASi@Kq@IoBW_D_@y@KcAYk@Qg@Ui@We@Y{BoAu@c@e@[g@[a@[e@]c@]IIa@_@q@o@[a@WWmBuBu@q@aF{DoMcKyE}DuFcFiAcAm@c@s@g@i@a@uDaDQOQQOQQSQWQWkAwAk@o@m@o@o@k@s@i@y@m@{EoDcEkCaB_@EAUI[`AOb@IXMGOMsA{@KGMIqBqANYb@qAR{@BIBE@CDC@?B?B?B?DBDD`@j@b@r@\\d@XZRPRNj@`@j@Jh@`@ZR|DdCdDfC\\XVTj@h@j@f@t@p@h@h@z@|@`@f@d@l@JPLNLRJJZ^PPPNxAhAzClCd@`@`@^fBfBhE|DjQ~MxC~BZTTb@JJLJp@h@h@b@NPRXBB\\ZbEfEEJADq@tBc@vAIXKIa@WaAo@MIIGg@[a@?a@WECGEKGQMo@_@a@S]QgAs@SOECIEGIQWKKOQGIIIGEIGIGCCCEEKOKSM{AaAMIKIkAu@YSKGK^mBbGaA~CKXK\\qCxISl@K\\KXqBnGGRGPmAxDCHADKZITUr@u@~BENEJ_ArCGPITqBtGIVKVa@pAoCrIq@tBUt@IXKGaBiAMIKGeBiAKGKZm@nBmDpKGTLJ~AdALHNH\\T`An@FD",
+          "osrm": {
+            "distance": 13569.1,
+            "duration": 1211.3,
+            "geometry": "}qnwFdfubMBJBLJt@@HB@B?@ALEAOASC]?ECOAOAGAQAI@G?G@GBGBGDI@AHQZk@b@s@@C@ABEDIj@aAr@mAHMFKT_@v@uArAiBHKZe@^e@^k@RWEGIGEEIc@AIAG?I?K@I?G@IBGBIBGj@s@\\c@FGFEFGFCHCHClAWHCHCHEFEFGFGFKFIDKBKBIBK@M@M?K?I?K?IAKAMCICKCI]}@EMGMEMEMCMEOEOEQEQCOEQMw@GYEYCQCSCSASCUEk@[eEC[CW_@eECYQ{BEw@_ByRGu@Es@Gw@Eq@yAkWEy@Ew@C{@Cy@E}A]yKKkDA[C[C[C[EYEYEYI[GYIYIYKWKWKUMWMSMWOSOQOSOOQQQOQMQMSMSKSK{OuG_A]eEcBg@Sg@Oi@Oi@Oi@Ki@Mi@Ik@Ii@Go@GoAKcKm@{@K}@GWASCUCSEUESGUGQGSIUISKQISKe@WaE{BiDiBeB}@g@Wg@Sg@Si@QSGUGSEUESCUCyE_@{@GUAU?U@U@UBUBSDUFSFSHSHSJSLQLSNOLQPOPUXaAnAEDW^YZ[XQNQLQJQLUJUHUHSFUDSDwTpDWDUBU@U@U?_@AMAWCQEWESGWGSKUKQKw@i@e@[}DiCg@[g@Wg@Si@Oi@Oe@M_ASeASi@Kq@IoBW_D_@y@KcAYk@Qg@Ui@We@Y{BoAu@c@e@[g@[a@[e@]c@]IIa@_@q@o@[a@WWmBuBu@q@aF{DoMcKyE}DuFcFiAcAm@c@s@g@i@a@uDaDQOQQOQQSQWQWkAwAk@o@m@o@o@k@s@i@y@m@{EoDcEkCaB_@EAUI[`AOb@IXMGOMsA{@KGMIqBqANYb@qAR{@BIBE@CDC@?B?B?B?DBDD`@j@b@r@\\d@XZRPRNj@`@j@Jh@`@ZR|DdCdDfC\\XVTj@h@j@f@t@p@h@h@z@|@`@f@d@l@JPLNLRJJZ^PPPNxAhAzClCd@`@`@^fBfBhE|DjQ~MxC~BZTTb@JJLJp@h@h@b@NPRXBB\\ZbEfEEJADq@tBc@vAIXKIa@WaAo@MIIGg@[a@?a@WECGEKGQMo@_@a@S]QgAs@SOECIEGIQWKKOQGIIIGEIGIGCCCEEKOKSM{AaAMIKIkAu@YSKGK^mBbGaA~CKXK\\qCxISl@K\\KXqBnGGRGPmAxDCHADKZITUr@u@~BENEJ_ArCGPITqBtGIVKVa@pAoCrIq@tBUt@IXKGaBiAMIKGeBiAKGKZm@nBmDpKGTLJ~AdALHNH\\T`An@FD",
+            "legs": [
+              {
+                "steps": [
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "entry": [
+                          true
+                        ],
+                        "bearings": [
+                          246
+                        ],
+                        "location": [
+                          -74.005625,
+                          40.712153
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "}qnwFdfubMBJ",
+                    "maneuver": {
+                      "bearing_after": 246,
+                      "bearing_before": 0,
+                      "location": [
+                        -74.005625,
+                        40.712153
+                      ],
+                      "modifier": "right",
+                      "type": "depart"
+                    },
+                    "name": "Centre Street",
+                    "mode": "driving",
+                    "weight": 0.9,
+                    "duration": 0.9,
+                    "distance": 6.3
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 2,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          60,
+                          75,
+                          255,
+                          345
+                        ],
+                        "location": [
+                          -74.005693,
+                          40.71213
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "yqnwFpfubMBLJt@@H",
+                    "maneuver": {
+                      "bearing_after": 251,
+                      "bearing_before": 246,
+                      "location": [
+                        -74.005693,
+                        40.71213
+                      ],
+                      "modifier": "straight",
+                      "type": "turn"
+                    },
+                    "name": "Park Row",
+                    "mode": "driving",
+                    "weight": 11.5,
+                    "duration": 11.5,
+                    "distance": 34.5
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "left"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "straight"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "none"
+                            ]
+                          }
+                        ],
+                        "out": 1,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          75,
+                          165,
+                          255
+                        ],
+                        "location": [
+                          -74.006082,
+                          40.712036
+                        ]
+                      },
+                      {
+                        "out": 1,
+                        "in": 4,
+                        "entry": [
+                          true,
+                          true,
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          75,
+                          150,
+                          255,
+                          345
+                        ],
+                        "location": [
+                          -74.006047,
+                          40.711916
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "gqnwF~hubMB@B?@ALEAOASC]?ECOAOAGAQAI@G?G@GBGBGDI@AHQZk@",
+                    "maneuver": {
+                      "bearing_after": 167,
+                      "bearing_before": 251,
+                      "location": [
+                        -74.006082,
+                        40.712036
+                      ],
+                      "modifier": "uturn",
+                      "type": "continue"
+                    },
+                    "destinations": "FDR Drive",
+                    "name": "Park Row",
+                    "mode": "driving",
+                    "weight": 25.6,
+                    "duration": 25.6,
+                    "distance": 133.1
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 1,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          105,
+                          135,
+                          315
+                        ],
+                        "location": [
+                          -74.004776,
+                          40.711727
+                        ]
+                      },
+                      {
+                        "out": 1,
+                        "in": 3,
+                        "entry": [
+                          false,
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          15,
+                          135,
+                          195,
+                          315
+                        ],
+                        "location": [
+                          -74.003616,
+                          40.71095
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          135,
+                          225,
+                          315
+                        ],
+                        "location": [
+                          -74.003402,
+                          40.710804
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "ionwFz`ubMb@s@@C@ABEDIj@aAr@mAHMFKT_@v@uArAiBHKZe@^e@^k@RW",
+                    "maneuver": {
+                      "bearing_after": 132,
+                      "bearing_before": 129,
+                      "location": [
+                        -74.004776,
+                        40.711727
+                      ],
+                      "modifier": "straight",
+                      "type": "new name"
+                    },
+                    "destinations": "FDR Drive",
+                    "name": "Frankfort Street",
+                    "mode": "driving",
+                    "weight": 60.8,
+                    "duration": 60.8,
+                    "distance": 362.3
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "left"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "none"
+                            ]
+                          }
+                        ],
+                        "out": 0,
+                        "in": 4,
+                        "entry": [
+                          true,
+                          false,
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          135,
+                          165,
+                          225,
+                          315
+                        ],
+                        "location": [
+                          -74.001657,
+                          40.709492
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "ianwFjmtbMEGIGEE",
+                    "maneuver": {
+                      "bearing_after": 35,
+                      "bearing_before": 135,
+                      "location": [
+                        -74.001657,
+                        40.709492
+                      ],
+                      "modifier": "left",
+                      "type": "turn"
+                    },
+                    "name": "Pearl Street",
+                    "mode": "driving",
+                    "weight": 4.2,
+                    "duration": 4.2,
+                    "distance": 15.5
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 1,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          75,
+                          210,
+                          315
+                        ],
+                        "location": [
+                          -74.001548,
+                          40.709604
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          135,
+                          285,
+                          315
+                        ],
+                        "location": [
+                          -74.000903,
+                          40.70959
+                        ]
+                      },
+                      {
+                        "out": 1,
+                        "in": 2,
+                        "entry": [
+                          false,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          0,
+                          135,
+                          345
+                        ],
+                        "location": [
+                          -74.000169,
+                          40.708574
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "_bnwFtltbMIc@AIAG?I?K@I?G@IBGBIBGj@s@\\c@FGFEFGFCHCHClAWHCHCHEFEFGFGFKFIDKBKBIBK@M@M?K?I?K?IAKAMCICKCI]}@EMGMEMEMCMEOEOEQEQCOEQMw@GYEYCQCSCSASCUEk@[eEC[CW_@eECYQ{B",
+                    "maneuver": {
+                      "bearing_after": 71,
+                      "bearing_before": 35,
+                      "location": [
+                        -74.001548,
+                        40.709604
+                      ],
+                      "modifier": "slight right",
+                      "type": "on ramp"
+                    },
+                    "destinations": "FDR Drive North",
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 103.9,
+                    "duration": 103.9,
+                    "distance": 795.7
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          75,
+                          255,
+                          270
+                        ],
+                        "location": [
+                          -73.99358,
+                          40.709366
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          90,
+                          255,
+                          270
+                        ],
+                        "location": [
+                          -73.981493,
+                          40.71075
+                        ]
+                      },
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "slight right"
+                            ]
+                          }
+                        ],
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          15,
+                          30,
+                          195
+                        ],
+                        "location": [
+                          -73.976196,
+                          40.715234
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          6,
+                          180,
+                          186
+                        ],
+                        "location": [
+                          -73.974554,
+                          40.721296
+                        ]
+                      },
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "straight",
+                              "slight right"
+                            ]
+                          }
+                        ],
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          0,
+                          15,
+                          180
+                        ],
+                        "location": [
+                          -73.971679,
+                          40.728
+                        ]
+                      },
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "straight",
+                              "slight right"
+                            ]
+                          }
+                        ],
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          45,
+                          210
+                        ],
+                        "location": [
+                          -73.974345,
+                          40.737367
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          15,
+                          180,
+                          195
+                        ],
+                        "location": [
+                          -73.972931,
+                          40.739717
+                        ]
+                      },
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "straight",
+                              "slight right"
+                            ]
+                          }
+                        ],
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          45,
+                          210
+                        ],
+                        "location": [
+                          -73.971301,
+                          40.744279
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          45,
+                          195,
+                          225
+                        ],
+                        "location": [
+                          -73.969657,
+                          40.746207
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          210,
+                          225
+                        ],
+                        "location": [
+                          -73.963333,
+                          40.753404
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "maneuver": {
+                      "bearing_after": 78,
+                      "bearing_before": 78,
+                      "location": [
+                        -73.99358,
+                        40.709366
+                      ],
+                      "modifier": "slight left",
+                      "type": "merge"
+                    },
+                    "geometry": "q`nwFzzrbMEw@_ByRGu@Es@Gw@Eq@yAkWEy@Ew@C{@Cy@E}A]yKKkDA[C[C[C[EYEYEYI[GYIYIYKWKWKUMWMSMWOSOQOSOOQQQOQMQMSMSKSK{OuG_A]eEcBg@Sg@Oi@Oi@Oi@Ki@Mi@Ik@Ii@Go@GoAKcKm@{@K}@GWASCUCSEUESGUGQGSIUISKQISKe@WaE{BiDiBeB}@g@Wg@Sg@Si@QSGUGSEUESCUCyE_@{@GUAU?U@U@UBUBSDUFSFSHSHSJSLQLSNOLQPOPUXaAnAEDW^YZ[XQNQLQJQLUJUHUHSFUDSDwTpDWDUBU@U@U?_@AMAWCQEWESGWGSKUKQKw@i@e@[}DiCg@[g@Wg@Si@Oi@Oe@M_ASeASi@Kq@IoBW_D_@y@KcAYk@Qg@Ui@We@Y{BoAu@c@e@[g@[a@[e@]c@]IIa@_@q@o@[a@WWmBuBu@q@aF{DoMcKyE}DuFcFiAcAm@c@s@g@i@a@uDaDQOQQOQQSQWQWkAwAk@o@m@o@o@k@s@i@y@m@{EoDcEkC",
+                    "ref": "FDR",
+                    "name": "FDR Drive",
+                    "mode": "driving",
+                    "weight": 499.7,
+                    "duration": 499.7,
+                    "distance": 7150.8
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "slight left"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "none"
+                            ]
+                          }
+                        ],
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          15,
+                          30,
+                          210
+                        ],
+                        "location": [
+                          -73.958387,
+                          40.759012
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "yvwwF|~kbMaB_@EAUI",
+                    "maneuver": {
+                      "bearing_after": 12,
+                      "bearing_before": 28,
+                      "location": [
+                        -73.958387,
+                        40.759012
+                      ],
+                      "modifier": "slight left",
+                      "type": "off ramp"
+                    },
+                    "exits": "12",
+                    "destinations": "NY 25 East: East 61st Street, Ed Koch Queensboro Bridge",
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 9.2,
+                    "duration": 9.2,
+                    "distance": 72.3
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "left"
+                            ]
+                          }
+                        ],
+                        "out": 3,
+                        "in": 1,
+                        "entry": [
+                          false,
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          195,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.958169,
+                          40.759641
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "wzwwFp}kbM[`AOb@IX",
+                    "maneuver": {
+                      "bearing_after": 298,
+                      "bearing_before": 14,
+                      "location": [
+                        -73.958169,
+                        40.759641
+                      ],
+                      "modifier": "left",
+                      "type": "turn"
+                    },
+                    "name": "East 61st Street",
+                    "mode": "driving",
+                    "weight": 11,
+                    "duration": 11,
+                    "distance": 62.1
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "lanes": [
+                          {
+                            "valid": false,
+                            "indications": [
+                              "left"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "straight",
+                              "left"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "straight",
+                              "right"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "right"
+                            ]
+                          }
+                        ],
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.958811,
+                          40.759914
+                        ]
+                      },
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "straight"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "straight",
+                              "right"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "right"
+                            ]
+                          }
+                        ],
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.958359,
+                          40.760539
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "m|wwFpalbMMGOMsA{@KGMIqBqA",
+                    "maneuver": {
+                      "bearing_after": 28,
+                      "bearing_before": 299,
+                      "location": [
+                        -73.958811,
+                        40.759914
+                      ],
+                      "modifier": "right",
+                      "type": "turn"
+                    },
+                    "name": "York Avenue",
+                    "mode": "driving",
+                    "weight": 18,
+                    "duration": 18,
+                    "distance": 160.4
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 2,
+                        "in": 3,
+                        "entry": [
+                          true,
+                          false,
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          135,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.957902,
+                          40.761182
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "kdxwFz{kbMNYb@qA",
+                    "maneuver": {
+                      "bearing_after": 129,
+                      "bearing_before": 28,
+                      "location": [
+                        -73.957902,
+                        40.761182
+                      ],
+                      "modifier": "right",
+                      "type": "turn"
+                    },
+                    "name": "East 63rd Street",
+                    "mode": "driving",
+                    "weight": 6.1,
+                    "duration": 6.1,
+                    "distance": 54.3
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          114,
+                          124,
+                          299
+                        ],
+                        "location": [
+                          -73.957359,
+                          40.760924
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "wbxwFnxkbMR{@BIBE@CDC@?B?B?B?DBDD`@j@b@r@\\d@XZRPRNj@`@j@J",
+                    "maneuver": {
+                      "bearing_after": 113,
+                      "bearing_before": 118,
+                      "location": [
+                        -73.957359,
+                        40.760924
+                      ],
+                      "modifier": "straight",
+                      "type": "on ramp"
+                    },
+                    "destinations": "FDR Drive South, Battery Park",
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 43.7,
+                    "duration": 43.7,
+                    "distance": 234.5
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 2,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          15,
+                          30,
+                          210
+                        ],
+                        "location": [
+                          -73.958201,
+                          40.759343
+                        ]
+                      },
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "slight right"
+                            ]
+                          }
+                        ],
+                        "out": 1,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          45,
+                          225,
+                          240
+                        ],
+                        "location": [
+                          -73.961999,
+                          40.755104
+                        ]
+                      },
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "slight right"
+                            ]
+                          }
+                        ],
+                        "out": 1,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          210,
+                          225
+                        ],
+                        "location": [
+                          -73.963735,
+                          40.753194
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "maneuver": {
+                      "bearing_after": 208,
+                      "bearing_before": 191,
+                      "location": [
+                        -73.958201,
+                        40.759343
+                      ],
+                      "modifier": "slight left",
+                      "type": "merge"
+                    },
+                    "geometry": "{xwwFv}kbMh@`@ZR|DdCdDfC\\XVTj@h@j@f@t@p@h@h@z@|@`@f@d@l@JPLNLRJJZ^PPPNxAhAzClCd@`@`@^fBfBhE|DjQ~M",
+                    "ref": "FDR",
+                    "name": "FDR Drive",
+                    "mode": "driving",
+                    "weight": 99.7,
+                    "duration": 99.7,
+                    "distance": 1425.3
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "in": 0,
+                        "entry": [
+                          true
+                        ],
+                        "bearings": [
+                          32
+                        ],
+                        "location": [
+                          -73.967614,
+                          40.748719
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "maneuver": {
+                      "bearing_after": 0,
+                      "bearing_before": 212,
+                      "location": [
+                        -73.967614,
+                        40.748719
+                      ],
+                      "modifier": "right",
+                      "type": "arrive"
+                    },
+                    "geometry": "ovuwFpxmbM",
+                    "ref": "FDR",
+                    "name": "FDR Drive",
+                    "mode": "driving",
+                    "weight": 0,
+                    "duration": 0,
+                    "distance": 0
+                  }
+                ],
+                "weight": 894.3,
+                "summary": "FDR Drive",
+                "duration": 894.3,
+                "distance": 10507.1
+              },
+              {
+                "steps": [
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "entry": [
+                          true
+                        ],
+                        "bearings": [
+                          212
+                        ],
+                        "location": [
+                          -73.967614,
+                          40.748719
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "maneuver": {
+                      "bearing_after": 212,
+                      "bearing_before": 0,
+                      "location": [
+                        -73.967614,
+                        40.748719
+                      ],
+                      "modifier": "right",
+                      "type": "depart"
+                    },
+                    "geometry": "ovuwFpxmbMxC~BZT",
+                    "ref": "FDR",
+                    "name": "FDR Drive",
+                    "mode": "driving",
+                    "weight": 8.3,
+                    "duration": 8.3,
+                    "distance": 118.6
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "lanes": [
+                          {
+                            "valid": false,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "slight right"
+                            ]
+                          }
+                        ],
+                        "out": 2,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          210,
+                          225
+                        ],
+                        "location": [
+                          -73.968357,
+                          40.747813
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "ypuwFf}mbMTb@JJLJp@h@h@b@NPRX",
+                    "maneuver": {
+                      "bearing_after": 229,
+                      "bearing_before": 210,
+                      "location": [
+                        -73.968357,
+                        40.747813
+                      ],
+                      "modifier": "slight right",
+                      "type": "off ramp"
+                    },
+                    "exits": "8",
+                    "destinations": "I 495: East 34th Street, Midtown Tunnel",
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 10.1,
+                    "duration": 10.1,
+                    "distance": 125.8
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 2,
+                        "in": 1,
+                        "entry": [
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          45,
+                          210
+                        ],
+                        "location": [
+                          -73.969273,
+                          40.74693
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "ikuwF|bnbMBB\\ZbEfE",
+                    "maneuver": {
+                      "bearing_after": 215,
+                      "bearing_before": 226,
+                      "location": [
+                        -73.969273,
+                        40.74693
+                      ],
+                      "modifier": "straight",
+                      "type": "turn"
+                    },
+                    "name": "FDR Drive",
+                    "mode": "driving",
+                    "weight": 10.1,
+                    "duration": 10.1,
+                    "distance": 160.8
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 2,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          45,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.970433,
+                          40.745783
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "cduwFdjnbMEJADq@tBc@vAIX",
+                    "maneuver": {
+                      "bearing_after": 298,
+                      "bearing_before": 217,
+                      "location": [
+                        -73.970433,
+                        40.745783
+                      ],
+                      "modifier": "right",
+                      "type": "turn"
+                    },
+                    "name": "East 38th Street",
+                    "mode": "driving",
+                    "weight": 21.3,
+                    "duration": 21.3,
+                    "distance": 119.6
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.971675,
+                          40.7463
+                        ]
+                      },
+                      {
+                        "lanes": [
+                          {
+                            "valid": false,
+                            "indications": [
+                              "left"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "straight"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "straight"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "straight"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          }
+                        ],
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.971217,
+                          40.746929
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "kguwF~qnbMKIa@WaAo@MIIGg@[",
+                    "maneuver": {
+                      "bearing_after": 28,
+                      "bearing_before": 298,
+                      "location": [
+                        -73.971675,
+                        40.7463
+                      ],
+                      "modifier": "right",
+                      "type": "turn"
+                    },
+                    "name": "1st Avenue",
+                    "mode": "driving",
+                    "weight": 14.5,
+                    "duration": 14.5,
+                    "distance": 111.8
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          0,
+                          30,
+                          210
+                        ],
+                        "location": [
+                          -73.971039,
+                          40.747183
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.97087,
+                          40.747591
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          45,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.969971,
+                          40.748884
+                        ]
+                      },
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "straight"
+                            ]
+                          }
+                        ],
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          29,
+                          203,
+                          215
+                        ],
+                        "location": [
+                          -73.969384,
+                          40.749406
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.968869,
+                          40.750117
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "{luwF~mnbMa@?a@WECGEKGQMo@_@a@S]QgAs@SOECIEGIQWKKOQGIIIGEIGIGCCCEEKOKSM{AaAMIKIkAu@YSKG",
+                    "maneuver": {
+                      "bearing_after": 0,
+                      "bearing_before": 26,
+                      "location": [
+                        -73.971039,
+                        40.747183
+                      ],
+                      "modifier": "slight left",
+                      "type": "continue"
+                    },
+                    "name": "1st Avenue",
+                    "mode": "driving",
+                    "weight": 58.3,
+                    "duration": 58.3,
+                    "distance": 458.8
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "straight",
+                              "left"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "straight"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "straight"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "none"
+                            ]
+                          }
+                        ],
+                        "out": 3,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          105,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.96841,
+                          40.750751
+                        ]
+                      },
+                      {
+                        "out": 3,
+                        "in": 1,
+                        "entry": [
+                          false,
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.970804,
+                          40.751748
+                        ]
+                      },
+                      {
+                        "lanes": [
+                          {
+                            "valid": true,
+                            "indications": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "valid": false,
+                            "indications": [
+                              "right"
+                            ]
+                          }
+                        ],
+                        "out": 3,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.973063,
+                          40.752704
+                        ]
+                      },
+                      {
+                        "out": 3,
+                        "in": 1,
+                        "entry": [
+                          false,
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.974648,
+                          40.753367
+                        ]
+                      },
+                      {
+                        "out": 3,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.976975,
+                          40.754351
+                        ]
+                      },
+                      {
+                        "out": 3,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.977867,
+                          40.754735
+                        ]
+                      },
+                      {
+                        "out": 3,
+                        "in": 1,
+                        "entry": [
+                          false,
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.97949,
+                          40.755413
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "ecvwFp}mbMK^mBbGaA~CKXK\\qCxISl@K\\KXqBnGGRGPmAxDCHADKZITUr@u@~BENEJ_ArCGPITqBtGIVKVa@pAoCrIq@tBUt@IX",
+                    "maneuver": {
+                      "bearing_after": 298,
+                      "bearing_before": 28,
+                      "location": [
+                        -73.96841,
+                        40.750751
+                      ],
+                      "modifier": "left",
+                      "type": "turn"
+                    },
+                    "name": "East 45th Street",
+                    "mode": "driving",
+                    "weight": 117.6,
+                    "duration": 117.6,
+                    "distance": 1380.1
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "lanes": [
+                          {
+                            "valid": false,
+                            "indications": [
+                              "straight"
+                            ]
+                          },
+                          {
+                            "valid": true,
+                            "indications": [
+                              "right"
+                            ]
+                          }
+                        ],
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.982712,
+                          40.756771
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.982254,
+                          40.75739
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "yhwwF|vpbMKGaBiAMIKGeBiAKG",
+                    "maneuver": {
+                      "bearing_after": 28,
+                      "bearing_before": 298,
+                      "location": [
+                        -73.982712,
+                        40.756771
+                      ],
+                      "modifier": "right",
+                      "type": "turn"
+                    },
+                    "name": "6th Avenue",
+                    "mode": "driving",
+                    "weight": 19.6,
+                    "duration": 19.6,
+                    "distance": 158.3
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 3,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.981798,
+                          40.758016
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "spwwFfqpbMKZm@nBmDpKGT",
+                    "maneuver": {
+                      "bearing_after": 298,
+                      "bearing_before": 28,
+                      "location": [
+                        -73.981798,
+                        40.758016
+                      ],
+                      "modifier": "left",
+                      "type": "turn"
+                    },
+                    "name": "West 47th Street",
+                    "mode": "driving",
+                    "weight": 38,
+                    "duration": 38,
+                    "distance": 273.3
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 2,
+                        "in": 1,
+                        "entry": [
+                          false,
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.984619,
+                          40.759223
+                        ]
+                      },
+                      {
+                        "out": 2,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          false,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          120,
+                          210,
+                          300
+                        ],
+                        "location": [
+                          -73.98508,
+                          40.758597
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "cxwwFzbqbMLJ~AdALHNH\\T`An@FD",
+                    "maneuver": {
+                      "bearing_after": 208,
+                      "bearing_before": 298,
+                      "location": [
+                        -73.984619,
+                        40.759223
+                      ],
+                      "modifier": "left",
+                      "type": "turn"
+                    },
+                    "name": "7th Avenue",
+                    "mode": "driving",
+                    "weight": 19.2,
+                    "duration": 19.2,
+                    "distance": 154.9
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "in": 0,
+                        "entry": [
+                          true
+                        ],
+                        "bearings": [
+                          28
+                        ],
+                        "location": [
+                          -73.985506,
+                          40.758002
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "opwwFlhqbM",
+                    "maneuver": {
+                      "bearing_after": 0,
+                      "bearing_before": 208,
+                      "location": [
+                        -73.985506,
+                        40.758002
+                      ],
+                      "type": "arrive"
+                    },
+                    "name": "7th Avenue",
+                    "mode": "driving",
+                    "weight": 0,
+                    "duration": 0,
+                    "distance": 0
+                  }
+                ],
+                "weight": 317,
+                "summary": "1st Avenue, East 45th Street",
+                "duration": 317,
+                "distance": 3062
+              }
+            ],
+            "alternatives": []
+          },
+          "metrics": {
+            "efficiency": 0.85,
+            "utilization": 1,
+            "serviceQuality": 0.9,
+            "stopDensity": 0.2210759027266028
+          },
+          "vehicleName": "Default Vehicle"
+        }
+      ],
+      "summary": {
+        "total_routes": 1,
+        "total_distance": 13.57,
+        "total_duration": 20,
+        "total_deliveries": 2,
+        "total_load": 0,
+        "routingStats": {
+          "totalClusters": 1,
+          "averagePointsPerCluster": "2.00",
+          "alternativeRoutesGenerated": 0
+        },
+        "engineMetrics": {
+          "engineVersion": "1.0.0",
+          "profileUsed": "driving",
+          "computationTime": 2.3
+        }
+      },
+      "insights": [
+        "**Logistics Optimization Plan Summary**\n\n* **Routes:** 1\n* **Deliveries:** 2\n* **Total Distance:** 13.6 km\n* **Total Duration:** 20 minutes\n\nThis plan optimizes a single route with 2 deliveries, covering a total distance of 13.6 km in just 20 minutes."
+      ]
+    }
+  ]
 }

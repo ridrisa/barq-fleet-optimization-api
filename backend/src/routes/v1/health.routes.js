@@ -179,7 +179,7 @@ router.get(
       healthData.checks.websocket = {
         healthy: true,
         endpoint: '/ws',
-        port: process.env.PORT || 3002,
+        port: process.env.PORT || 3003,
         message: 'WebSocket server integrated with HTTP server (Cloud Run compatible)',
       };
     } catch (error) {
