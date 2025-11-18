@@ -13,7 +13,9 @@
 
 const db = require('../database');
 const { logger } = require('../utils/logger');
-const OrderModel = require('../models/order.model');
+// HYBRID MODE: Read from production PostgreSQL, Write to local database
+const OrderModel = require('../models/order.model'); // For WRITE operations
+const barqProductionDB = require('./barqfleet-production.service'); // For READ operations
 const slaMonitorAgent = require('../agents/sla-monitor.agent');
 const emergencyEscalationAgent = require('../agents/emergency-escalation.agent');
 const orderRecoveryAgent = require('../agents/order-recovery.agent');
@@ -744,18 +746,37 @@ class AutonomousEscalationEngine {
 
   /**
    * Reassign order to new driver
+   * HYBRID MODE: Read from production, write to local database
    */
   async reassignOrder(orderId, newDriverId, reason) {
-    const order = await OrderModel.findById(orderId);
+    // Fetch order from production database
+    const orders = await barqProductionDB.getOrders({ id: orderId, limit: 1 });
+    const order = orders && orders.length > 0 ? orders[0] : null;
 
-    if (newDriverId === 'auto') {
-      // Auto-find driver
-      await autoDispatch.assignOrder(orderId);
-    } else {
-      await OrderModel.assignDriver(orderId, newDriverId);
+    if (!order) {
+      logger.warn(`Order ${orderId} not found in production database`);
+      return;
     }
 
-    logger.info(`✅ Reassigned order ${order.tracking_number}, reason: ${reason}`);
+    if (newDriverId === 'auto') {
+      // Auto-find driver using auto-dispatch
+      await autoDispatch.assignOrder(orderId);
+    } else {
+      // Write reassignment to local database
+      try {
+        await OrderModel.assignDriver(orderId, newDriverId);
+        logger.info(`✅ Reassigned order ${order.tracking_no} to courier ${newDriverId} in local database`, {
+          order_id: orderId,
+          tracking_no: order.tracking_no,
+          new_courier_id: newDriverId,
+          reason: reason
+        });
+      } catch (writeError) {
+        logger.error(`Failed to write reassignment to local database:`, writeError);
+      }
+    }
+
+    logger.info(`✅ Reassigned order ${order.tracking_no}, reason: ${reason}`);
   }
 
   /**

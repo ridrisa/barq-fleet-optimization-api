@@ -675,8 +675,14 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
       }
     } // Close else block for autonomous operations
 
-    // Initialize Phase 4 Automation Engines
-    logger.info('Initializing Phase 4 automation engines...');
+    // Initialize Phase 4 Automation Engines only if not disabled
+    if (process.env.DISABLE_AUTOMATION === 'true') {
+      logger.warn('⚠️  AUTOMATION ENGINES DISABLED - APIs available but engines not running');
+      logger.info('Automation endpoints available at /api/v1/automation/* (will return stopped status)');
+      // Initialize routes with null engines to prevent 503 errors
+      automationRoutes.initializeEngines(null);
+    } else {
+      logger.info('Initializing Phase 4 automation engines...');
       try {
         const automationResult = await automationInitializer.initialize(
           AgentInitializer.getAgentManager(),
@@ -732,6 +738,7 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
         logger.warn('Server will continue with limited automation functionality');
         logger.info('Agent APIs still available via /api/v1/agents/*');
       }
+    } // Close else block for automation engines
   } catch (error) {
     logger.error('Failed to initialize agent system', { error: error.message });
     logger.warn('Server will continue without agent functionality');

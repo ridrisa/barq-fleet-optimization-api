@@ -7,9 +7,10 @@
 const db = require('../database');
 const { logger } = require('../utils/logger');
 const redis = require('../config/redis.config');
-const OrderModel = require('../models/order.model');
-const DriverModel = require('../models/driver.model');
-const barqProductionDB = require('./barqfleet-production.service');
+// HYBRID MODE: Read from production PostgreSQL, Write to local database
+const OrderModel = require('../models/order.model'); // For WRITE operations (assignments, updates)
+const DriverModel = require('../models/driver.model'); // For WRITE operations
+const barqProductionDB = require('./barqfleet-production.service'); // For READ operations
 
 class AutoDispatchEngine {
   constructor() {
@@ -159,11 +160,21 @@ class AutoDispatchEngine {
 
   /**
    * Main assignment logic for an order
+   * PRODUCTION MODE: Fetches from BarqFleet production database
    */
   async assignOrder(orderId) {
-    const order = await OrderModel.findById(orderId);
+    // Fetch order from production database
+    const orders = await barqProductionDB.getOrders({ id: orderId, limit: 1 });
+    const order = orders && orders.length > 0 ? orders[0] : null;
 
-    if (!order || order.driver_id) {
+    if (!order) {
+      logger.warn(`Order ${orderId} not found in production database`);
+      return null;
+    }
+
+    // Check if already assigned (has courier_id)
+    if (order.courier_id) {
+      logger.debug(`Order ${orderId} already assigned to courier ${order.courier_id}`);
       return null; // Already assigned
     }
 
@@ -206,12 +217,25 @@ class AutoDispatchEngine {
       const accepted = await this.offerToDriver(scored.driver.id, orderId, this.offerTimeout);
 
       if (accepted) {
-        logger.info(`✅ Driver ${scored.driver.name} accepted order ${order.tracking_number}`);
+        logger.info(`✅ Driver ${scored.driver.name} accepted order ${order.tracking_no}`);
 
-        // Update order
-        await OrderModel.assignDriver(orderId, scored.driver.id);
+        // HYBRID MODE: Write assignment to local database
+        try {
+          await OrderModel.assignDriver(orderId, scored.driver.id);
+          logger.info(`📝 Assigned order ${orderId} to courier ${scored.driver.id} in local database`, {
+            order_id: orderId,
+            tracking_no: order.tracking_no,
+            courier_id: scored.driver.id,
+            courier_name: scored.driver.name,
+            score: scored.totalScore,
+            assignment_type: 'AUTO_ASSIGNED'
+          });
+        } catch (writeError) {
+          logger.error(`Failed to write assignment to local database:`, writeError);
+          // Continue even if local write fails
+        }
 
-        // Optimize driver's route
+        // Optimize driver's route (if applicable)
         await this.optimizeDriverRoute(scored.driver.id);
 
         // Log assignment
@@ -225,11 +249,28 @@ class AutoDispatchEngine {
 
     // No driver accepted - fallback to force assignment
     logger.warn(
-      `No driver accepted order ${order.tracking_number}, force-assigning to best driver`
+      `No driver accepted order ${order.tracking_no}, force-assigning to best driver`
     );
 
     const bestDriver = scoredDrivers[0].driver;
-    await OrderModel.assignDriver(orderId, bestDriver.id);
+
+    // HYBRID MODE: Write force assignment to local database
+    try {
+      await OrderModel.assignDriver(orderId, bestDriver.id);
+      logger.warn(`📝 FORCE ASSIGNED order ${orderId} to courier ${bestDriver.id} in local database`, {
+        order_id: orderId,
+        tracking_no: order.tracking_no,
+        courier_id: bestDriver.id,
+        courier_name: bestDriver.name,
+        score: scoredDrivers[0].totalScore,
+        assignment_type: 'FORCE_ASSIGNED',
+        reason: 'no_driver_accepted'
+      });
+    } catch (writeError) {
+      logger.error(`Failed to write force assignment to local database:`, writeError);
+      // Continue even if local write fails
+    }
+
     await this.optimizeDriverRoute(bestDriver.id);
     await this.logAssignment(orderId, bestDriver.id, 'FORCE_ASSIGNED', scoredDrivers[0]);
 
@@ -568,10 +609,20 @@ class AutoDispatchEngine {
 
   /**
    * Send offer notification to driver
+   * PRODUCTION MODE: Fetches from BarqFleet production database
    */
   async sendOfferNotification(driverId, orderId) {
-    const order = await OrderModel.findById(orderId);
-    const driver = await DriverModel.findById(driverId);
+    // Fetch from production database
+    const orders = await barqProductionDB.getOrders({ id: orderId, limit: 1 });
+    const order = orders && orders.length > 0 ? orders[0] : null;
+
+    const couriers = await barqProductionDB.getCouriers({ id: driverId, limit: 1 });
+    const driver = couriers && couriers.length > 0 ? couriers[0] : null;
+
+    if (!order || !driver) {
+      logger.warn(`Cannot send notification: Order ${orderId} or Driver ${driverId} not found`);
+      return;
+    }
 
     // Send via FCM/APNS
     const notification = {
