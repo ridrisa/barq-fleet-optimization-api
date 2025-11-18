@@ -71,7 +71,7 @@ router.get('/statistics', async (req, res) => {
 router.get('/hubs', async (req, res) => {
   try {
     const filters = {
-      is_active: req.query.is_active === 'true',
+      is_active: req.query.is_active !== undefined ? req.query.is_active === 'true' : undefined,
       city_id: req.query.city_id ? parseInt(req.query.city_id) : undefined,
       limit: req.query.limit ? parseInt(req.query.limit) : 100,
     };

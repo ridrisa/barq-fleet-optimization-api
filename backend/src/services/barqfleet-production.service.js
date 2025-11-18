@@ -498,16 +498,54 @@ class BarqProductionDBService {
 
   /**
    * Get active shipments (assigned but not completed)
+   * Only shipments with orders in active delivery status
    */
   async getActiveShipments(limit = 100) {
     try {
-      const filters = {
-        is_assigned: true,
-        is_completed: false,
-        limit: limit,
-      };
+      let query = `
+        SELECT DISTINCT
+          s.id,
+          s.courier_id,
+          s.is_assigned,
+          s.is_completed,
+          s.latitude,
+          s.longitude,
+          s.reward,
+          s.driving_distance as total_distance,
+          s.created_at,
+          s.updated_at,
+          c.first_name as courier_first_name,
+          c.last_name as courier_last_name,
+          c.mobile_number as courier_mobile,
+          NULL as hub_code,
+          NULL as hub_manager,
+          (
+            SELECT COUNT(*)
+            FROM orders
+            WHERE shipment_id = s.id
+            AND order_status IN ('ready_for_delivery', 'accepted', 'in_transit')
+          ) as order_count
+        FROM shipments s
+        LEFT JOIN couriers c ON c.id = s.courier_id
+        WHERE s.is_assigned = true
+        AND s.is_completed = false
+        AND EXISTS (
+          SELECT 1
+          FROM orders o
+          WHERE o.shipment_id = s.id
+          AND o.order_status IN ('ready_for_delivery', 'accepted', 'in_transit')
+        )
+        ORDER BY s.created_at DESC
+        LIMIT $1
+      `;
 
-      return await this.getShipments(filters);
+      const result = await this.pool.query(query, [limit]);
+
+      logger.info('Fetched active shipments with active orders from BarqFleet production', {
+        count: result.rows.length,
+      });
+
+      return result.rows;
     } catch (error) {
       logger.error('Failed to fetch active shipments', {
         error: error.message,
@@ -561,11 +599,18 @@ class BarqProductionDBService {
       `);
       stats.online_couriers = parseInt(onlineCouriers.rows[0].count);
 
-      // Active shipments
+      // Active shipments (only those with active orders)
       const activeShipments = await this.pool.query(`
-        SELECT COUNT(*) as count
-        FROM shipments
-        WHERE is_assigned = true AND is_completed = false
+        SELECT COUNT(DISTINCT s.id) as count
+        FROM shipments s
+        WHERE s.is_assigned = true
+        AND s.is_completed = false
+        AND EXISTS (
+          SELECT 1
+          FROM orders o
+          WHERE o.shipment_id = s.id
+          AND o.order_status IN ('ready_for_delivery', 'accepted', 'in_transit')
+        )
       `);
       stats.active_shipments = parseInt(activeShipments.rows[0].count);
 

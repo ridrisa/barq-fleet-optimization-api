@@ -99,7 +99,7 @@ class BarqProductionDBService {
         paramIndex++;
       }
 
-      query += ' ORDER BY name ASC';
+      query += ' ORDER BY code ASC';
 
       if (filters.limit) {
         query += ` LIMIT $${paramIndex}`;
@@ -178,7 +178,7 @@ class BarqProductionDBService {
         paramIndex++;
       }
 
-      query += ' ORDER BY c.name ASC';
+      query += ' ORDER BY c.first_name ASC';
 
       if (filters.limit) {
         query += ` LIMIT $${paramIndex}`;
@@ -231,7 +231,7 @@ class BarqProductionDBService {
           o.cod_fee,
           o.created_at,
           o.updated_at,
-          m.company_name as merchant_name,
+          m.name as merchant_name,
           h.code as hub_code,
           h.manager as hub_manager
         FROM orders o
@@ -313,20 +313,19 @@ class BarqProductionDBService {
         SELECT
           s.id,
           s.courier_id,
-          s.hub_id,
           s.is_assigned,
           s.is_completed,
           s.latitude,
           s.longitude,
           s.reward,
-          s.total_distance,
+          s.driving_distance as total_distance,
           s.created_at,
           s.updated_at,
           c.first_name as courier_first_name,
           c.last_name as courier_last_name,
           c.mobile_number as courier_mobile,
-          h.code as hub_code,
-          h.manager as hub_manager,
+          NULL as hub_code,
+          NULL as hub_manager,
           (
             SELECT COUNT(*)
             FROM orders
@@ -334,7 +333,6 @@ class BarqProductionDBService {
           ) as order_count
         FROM shipments s
         LEFT JOIN couriers c ON c.id = s.courier_id
-        LEFT JOIN hubs h ON h.id = s.hub_id
         WHERE 1=1
       `;
 
@@ -359,11 +357,8 @@ class BarqProductionDBService {
         paramIndex++;
       }
 
-      if (filters.hub_id) {
-        query += ` AND s.hub_id = $${paramIndex}`;
-        params.push(filters.hub_id);
-        paramIndex++;
-      }
+      // Note: hub_id column doesn't exist in shipments table
+      // Shipments are not directly associated with hubs in production schema
 
       query += ' ORDER BY s.created_at DESC';
 
