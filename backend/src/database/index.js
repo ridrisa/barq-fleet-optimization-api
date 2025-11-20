@@ -30,8 +30,12 @@ class DatabaseManager {
       max: parseInt(process.env.DB_POOL_MAX || '20'),
       idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '60000'), // 60 seconds
       connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '30000'), // 30 seconds
-      statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT || '30000'), // 30 seconds
-      query_timeout: parseInt(process.env.DB_QUERY_TIMEOUT || '30000'), // 30 seconds
+      // Increased timeouts for production database with millions of records
+      statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT || '90000'), // 90 seconds (increased from 30s)
+      query_timeout: parseInt(process.env.DB_QUERY_TIMEOUT || '90000'), // 90 seconds (increased from 30s)
+      // Additional pool configuration for better performance
+      min: parseInt(process.env.DB_POOL_MIN || '2'), // Minimum connections to maintain
+      allowExitOnIdle: false, // Keep pool alive
     };
 
     // Only add port for TCP connections, not Unix sockets

@@ -205,6 +205,11 @@ CREATE INDEX IF NOT EXISTS idx_orders_sla_deadline ON orders(sla_deadline);
 CREATE INDEX IF NOT EXISTS idx_orders_pickup_location ON orders(pickup_latitude, pickup_longitude);
 CREATE INDEX IF NOT EXISTS idx_orders_dropoff_location ON orders(dropoff_latitude, dropoff_longitude);
 
+-- Composite indexes for common query patterns (performance optimization)
+CREATE INDEX IF NOT EXISTS idx_orders_active_status ON orders(status, created_at DESC) WHERE status NOT IN ('delivered', 'cancelled', 'failed');
+CREATE INDEX IF NOT EXISTS idx_orders_status_driver ON orders(status, driver_id) WHERE driver_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_sla_active ON orders(sla_deadline, status) WHERE status NOT IN ('delivered', 'cancelled', 'failed');
+
 -- ============================================
 -- ROUTE_OPTIMIZATIONS TABLE
 -- ============================================
