@@ -1,0 +1,215 @@
+{
+  "analysis_period": {
+    "start_date": "2025-11-13T06:55:11.731680",
+    "end_date": "2025-11-20T06:55:11.731680",
+    "days": 7
+  },
+  "overall": {
+    "total_deliveries": 8153,
+    "deliveries_on_time": 0,
+    "deliveries_breached": 8153,
+    "compliance_rate": 0.0,
+    "avg_duration_minutes": 724.6218319724253,
+    "avg_sla_target_minutes": -29386775.304836378,
+    "avg_breach_minutes": 29387499.92666817,
+    "max_breach_minutes": 29393038.288732,
+    "median_duration": 331.64406091666666,
+    "p95_duration": 2674.715505516667,
+    "status": "critical"
+  },
+  "by_hub": [
+    {
+      "hub_id": 942,
+      "hub_name": "\u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u062e\u0627\u0645\u0633 - \u0637\u0631\u064a\u0642 \u0623\u0628\u0648 \u0628\u0643\u0631 \u0627\u0644\u0635\u062f\u064a\u0642",
+      "total_deliveries": 16,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 393.61036627916667,
+      "status": "critical"
+    },
+    {
+      "hub_id": 1979,
+      "hub_name": "swan boutique warehouse",
+      "total_deliveries": 13,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 261.0897555705128,
+      "status": "critical"
+    },
+    {
+      "hub_id": 7532,
+      "hub_name": "6",
+      "total_deliveries": 28,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 237.43931966369044,
+      "status": "critical"
+    },
+    {
+      "hub_id": 12356,
+      "hub_name": "\u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u062e\u0627\u0645\u0633 - \u0637\u0631\u064a\u0642 \u0627\u0644\u0645\u0644\u0643 \u0641\u0647\u062f",
+      "total_deliveries": 12,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 540.3727486847222,
+      "status": "critical"
+    },
+    {
+      "hub_id": 14792,
+      "hub_name": "BULLET ",
+      "total_deliveries": 85,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 413.348507724902,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15265,
+      "hub_name": "0101",
+      "total_deliveries": 59,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 360.2508515033898,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15268,
+      "hub_name": "0105",
+      "total_deliveries": 95,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 328.47162278403516,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15270,
+      "hub_name": "0107",
+      "total_deliveries": 138,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 389.711457169686,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15271,
+      "hub_name": "0108",
+      "total_deliveries": 119,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 311.5961880960784,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15273,
+      "hub_name": "0110",
+      "total_deliveries": 136,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 505.2728686552696,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15274,
+      "hub_name": "0111",
+      "total_deliveries": 118,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 409.4339217984462,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15275,
+      "hub_name": "0112",
+      "total_deliveries": 204,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 671.9913994209967,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15277,
+      "hub_name": "0114",
+      "total_deliveries": 157,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 320.23096573588094,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15278,
+      "hub_name": "0115",
+      "total_deliveries": 240,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 294.23820566736106,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15279,
+      "hub_name": "0116",
+      "total_deliveries": 212,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 526.8409755315251,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15280,
+      "hub_name": "0117",
+      "total_deliveries": 124,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 508.73733087849456,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15281,
+      "hub_name": "0118",
+      "total_deliveries": 52,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 420.3888902314103,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15282,
+      "hub_name": "0119",
+      "total_deliveries": 41,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 209.84476753780487,
+      "status": "critical"
+    },
+    {
+      "hub_id": 15284,
+      "hub_name": "0121",
+      "total_deliveries": 86,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 441.30491434341087,
+      "status": "critical"
+    },
+    {
+      "hub_id": 941,
+      "hub_name": "\u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u062e\u0627\u0645\u0633 - \u0637\u0631\u064a\u0642 \u0623\u0646\u0633 \u0628\u0646 \u0645\u0627\u0644\u0643",
+      "total_deliveries": 11,
+      "on_time_deliveries": 0,
+      "compliance_rate": 0.0,
+      "avg_duration_minutes": 237.13198394090912,
+      "status": "critical"
+    }
+  ],
+  "performance_zones": {
+    "on_time": 0,
+    "at_risk": 0,
+    "violated": 8153,
+    "on_time_pct": 0.0,
+    "at_risk_pct": 0.0,
+    "violated_pct": 100.0
+  },
+  "recommendations": [
+    "\ud83d\udd34 CRITICAL: Overall compliance at 0.0% (target: 90.0%). Immediate action required. Average breach: 29387499.9 minutes.",
+    "\ud83c\udfaf Focus on problem hubs: \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u062e\u0627\u0645\u0633 - \u0637\u0631\u064a\u0642 \u0623\u0628\u0648 \u0628\u0643\u0631 \u0627\u0644\u0635\u062f\u064a\u0642, swan boutique warehouse, 6. These hubs have compliance below 85.0%.",
+    "\u26a0\ufe0f 100.0% of deliveries severely violated SLA. Review capacity planning and route optimization."
+  ]
+}

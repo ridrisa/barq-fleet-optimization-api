@@ -3,13 +3,28 @@
  * Type definitions for the Agent Monitoring Dashboard
  */
 
-export type AgentStatus = 'ACTIVE' | 'ERROR' | 'IDLE' | 'DISABLED';
+export type AgentStatus = 'ACTIVE' | 'ERROR' | 'IDLE' | 'DISABLED' | 'STARTING' | 'STOPPING';
 
 export interface AgentError {
   timestamp: string;
   message: string;
   stack?: string;
   severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
+export interface AgentConfiguration {
+  [key: string]: any;
+  executionInterval?: number;
+  retryLimit?: number;
+  timeout?: number;
+}
+
+export interface AgentLogEntry {
+  id: string;
+  timestamp: string;
+  level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
+  message: string;
+  metadata?: Record<string, any>;
 }
 
 export interface Agent {
@@ -27,6 +42,11 @@ export interface Agent {
   errors: AgentError[];
   enabled: boolean;
   category: string;
+  configuration?: AgentConfiguration;
+  logs?: AgentLogEntry[];
+  isControllable?: boolean;
+  canRestart?: boolean;
+  canConfigure?: boolean;
 }
 
 export interface AgentActivity {
@@ -74,4 +94,30 @@ export interface DashboardFilters {
   search?: string;
   sortBy?: 'name' | 'status' | 'healthScore' | 'lastRun';
   sortOrder?: 'asc' | 'desc';
+}
+
+export interface AgentControlRequest {
+  action: 'start' | 'stop' | 'restart' | 'configure';
+  agentId: string;
+  configuration?: AgentConfiguration;
+}
+
+export interface AgentControlResponse {
+  success: boolean;
+  message: string;
+  agent?: Agent;
+  error?: string;
+}
+
+export interface AgentLogsRequest {
+  agentId: string;
+  limit?: number;
+  level?: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
+  since?: string;
+}
+
+export interface AgentLogsResponse {
+  success: boolean;
+  logs: AgentLogEntry[];
+  total: number;
 }

@@ -22,9 +22,15 @@ interface DashboardStats {
   total_jobs: number;
   completed_jobs: number;
   failed_jobs: number;
-  success_rate: string;
-  avg_duration: string;
+  success_rate: number;
+  avg_duration: number;
   recent_jobs: AnalyticsJob[];
+}
+
+interface DashboardResponse {
+  runningJobs: AnalyticsJob[];
+  recentJobs: AnalyticsJob[];
+  pythonEnv?: any;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003';
@@ -34,6 +40,9 @@ export default function AnalyticsLabPage() {
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [runningJobs, setRunningJobs] = useState<AnalyticsJob[]>([]);
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const [pythonEnvStatus, setPythonEnvStatus] = useState<any>(null);
 
   // Route Analysis state
   const [routeParams, setRouteParams] = useState({
@@ -46,7 +55,7 @@ export default function AnalyticsLabPage() {
 
   // Fleet Performance state
   const [fleetParams, setFleetParams] = useState({
-    analysis_type: 'driver',
+    analysis_type: 'courier', // 'courier' matches backend expectation
     metric: 'delivery_rate',
     period: 'monthly',
     driver_id: '',
@@ -100,13 +109,43 @@ export default function AnalyticsLabPage() {
 
   const loadDashboard = async () => {
     try {
+      setIsLoading(true);
+      setDashboardError(null);
+      
       const response = await fetch(`${API_BASE_URL}/api/v1/analytics-lab/dashboard`);
       const data = await response.json();
+      
       if (data.success) {
-        setDashboardStats(data.dashboard);
+        const dashboardData: DashboardResponse = data.data;
+        
+        // Transform API response to match UI expectations
+        const stats: DashboardStats = {
+          running_jobs: dashboardData.runningJobs.length,
+          total_jobs: dashboardData.recentJobs.length + dashboardData.runningJobs.length,
+          completed_jobs: dashboardData.recentJobs.filter(job => job.status === 'completed').length,
+          failed_jobs: dashboardData.recentJobs.filter(job => job.status === 'failed').length,
+          success_rate: dashboardData.recentJobs.length > 0 
+            ? Math.round((dashboardData.recentJobs.filter(job => job.status === 'completed').length / dashboardData.recentJobs.length) * 100)
+            : 0,
+          avg_duration: dashboardData.recentJobs.length > 0
+            ? Math.round(dashboardData.recentJobs
+              .filter(job => job.duration)
+              .reduce((sum, job) => sum + (job.duration || 0), 0) / dashboardData.recentJobs.filter(job => job.duration).length)
+            : 0,
+          recent_jobs: dashboardData.recentJobs
+        };
+        
+        setDashboardStats(stats);
+        setRunningJobs(dashboardData.runningJobs);
+        setPythonEnvStatus(dashboardData.pythonEnv);
+      } else {
+        setDashboardError(data.error || 'Failed to load dashboard');
       }
     } catch (error) {
       console.error('Failed to load dashboard:', error);
+      setDashboardError(error instanceof Error ? error.message : 'Failed to connect to analytics service');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -114,8 +153,8 @@ export default function AnalyticsLabPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/analytics-lab/job/${jobId}`);
       const data = await response.json();
-      if (data.success && data.job) {
-        setJob(data.job as AnalyticsJob);
+      if (data.success && data.data) {
+        setJob(data.data as AnalyticsJob);
       }
     } catch (error) {
       console.error(`Failed to poll job ${jobId}:`, error);
@@ -124,6 +163,8 @@ export default function AnalyticsLabPage() {
 
   const runRouteAnalysis = async () => {
     try {
+      setRouteJob({ jobId: 'pending', status: 'running', type: 'route_analysis', startedAt: new Date().toISOString() });
+      
       const response = await fetch(`${API_BASE_URL}/api/v1/analytics-lab/run/route-analysis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -135,16 +176,42 @@ export default function AnalyticsLabPage() {
         })
       });
       const data = await response.json();
-      if (data.success) {
-        setRouteJob({ jobId: data.jobId, status: 'running', type: 'route_analysis', startedAt: new Date().toISOString() });
+      
+      if (data.success && data.data) {
+        setRouteJob({ 
+          jobId: data.data.jobId, 
+          status: 'running', 
+          type: 'route_analysis', 
+          startedAt: new Date().toISOString(),
+          params: routeParams
+        });
+      } else {
+        setRouteJob({ 
+          jobId: 'error', 
+          status: 'failed', 
+          type: 'route_analysis', 
+          startedAt: new Date().toISOString(),
+          error: data.error || 'Failed to start analysis',
+          params: routeParams
+        });
       }
     } catch (error) {
       console.error('Failed to run route analysis:', error);
+      setRouteJob({ 
+        jobId: 'error', 
+        status: 'failed', 
+        type: 'route_analysis', 
+        startedAt: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Network error',
+        params: routeParams
+      });
     }
   };
 
   const runFleetPerformance = async () => {
     try {
+      setFleetJob({ jobId: 'pending', status: 'running', type: 'fleet_performance', startedAt: new Date().toISOString() });
+      
       const response = await fetch(`${API_BASE_URL}/api/v1/analytics-lab/run/fleet-performance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,16 +222,42 @@ export default function AnalyticsLabPage() {
         })
       });
       const data = await response.json();
-      if (data.success) {
-        setFleetJob({ jobId: data.jobId, status: 'running', type: 'fleet_performance', startedAt: new Date().toISOString() });
+      
+      if (data.success && data.data) {
+        setFleetJob({ 
+          jobId: data.data.jobId, 
+          status: 'running', 
+          type: 'fleet_performance', 
+          startedAt: new Date().toISOString(),
+          params: fleetParams
+        });
+      } else {
+        setFleetJob({ 
+          jobId: 'error', 
+          status: 'failed', 
+          type: 'fleet_performance', 
+          startedAt: new Date().toISOString(),
+          error: data.error || 'Failed to start analysis',
+          params: fleetParams
+        });
       }
     } catch (error) {
       console.error('Failed to run fleet performance:', error);
+      setFleetJob({ 
+        jobId: 'error', 
+        status: 'failed', 
+        type: 'fleet_performance', 
+        startedAt: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Network error',
+        params: fleetParams
+      });
     }
   };
 
   const runDemandForecast = async () => {
     try {
+      setDemandJob({ jobId: 'pending', status: 'running', type: 'demand_forecast', startedAt: new Date().toISOString() });
+      
       const response = await fetch(`${API_BASE_URL}/api/v1/analytics-lab/run/demand-forecast`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -175,16 +268,42 @@ export default function AnalyticsLabPage() {
         })
       });
       const data = await response.json();
-      if (data.success) {
-        setDemandJob({ jobId: data.jobId, status: 'running', type: 'demand_forecast', startedAt: new Date().toISOString() });
+      
+      if (data.success && data.data) {
+        setDemandJob({ 
+          jobId: data.data.jobId, 
+          status: 'running', 
+          type: 'demand_forecast', 
+          startedAt: new Date().toISOString(),
+          params: demandParams
+        });
+      } else {
+        setDemandJob({ 
+          jobId: 'error', 
+          status: 'failed', 
+          type: 'demand_forecast', 
+          startedAt: new Date().toISOString(),
+          error: data.error || 'Failed to start analysis',
+          params: demandParams
+        });
       }
     } catch (error) {
       console.error('Failed to run demand forecast:', error);
+      setDemandJob({ 
+        jobId: 'error', 
+        status: 'failed', 
+        type: 'demand_forecast', 
+        startedAt: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Network error',
+        params: demandParams
+      });
     }
   };
 
   const runSLAAnalysis = async () => {
     try {
+      setSlaJob({ jobId: 'pending', status: 'running', type: 'sla_analysis', startedAt: new Date().toISOString() });
+      
       const response = await fetch(`${API_BASE_URL}/api/v1/analytics-lab/run/sla-analysis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -195,11 +314,35 @@ export default function AnalyticsLabPage() {
         })
       });
       const data = await response.json();
-      if (data.success) {
-        setSlaJob({ jobId: data.jobId, status: 'running', type: 'sla_analysis', startedAt: new Date().toISOString() });
+      
+      if (data.success && data.data) {
+        setSlaJob({ 
+          jobId: data.data.jobId, 
+          status: 'running', 
+          type: 'sla_analysis', 
+          startedAt: new Date().toISOString(),
+          params: slaParams
+        });
+      } else {
+        setSlaJob({ 
+          jobId: 'error', 
+          status: 'failed', 
+          type: 'sla_analysis', 
+          startedAt: new Date().toISOString(),
+          error: data.error || 'Failed to start analysis',
+          params: slaParams
+        });
       }
     } catch (error) {
       console.error('Failed to run SLA analysis:', error);
+      setSlaJob({ 
+        jobId: 'error', 
+        status: 'failed', 
+        type: 'sla_analysis', 
+        startedAt: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Network error',
+        params: slaParams
+      });
     }
   };
 
@@ -237,17 +380,79 @@ export default function AnalyticsLabPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center gap-3 mb-4">
-          <FaFlask className="text-4xl text-purple-400" />
-          <div>
-            <h1 className="text-4xl font-bold">Analytics Lab</h1>
-            <p className="text-gray-400">Run Python analytics scripts on 2.8M+ production orders</p>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <FaFlask className="text-4xl text-purple-400" />
+            <div>
+              <h1 className="text-4xl font-bold">Analytics Lab</h1>
+              <p className="text-gray-400">Run Python analytics scripts on 2.8M+ production orders</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {pythonEnvStatus && (
+              <div className="text-right">
+                <p className="text-xs text-gray-400">Environment Status</p>
+                <div className={`text-sm font-medium ${pythonEnvStatus.success ? 'text-green-400' : 'text-red-400'}`}>
+                  {pythonEnvStatus.success ? '✓ Ready' : '✗ Error'}
+                </div>
+                {pythonEnvStatus.python_version && (
+                  <p className="text-xs text-gray-500">Python {pythonEnvStatus.python_version}</p>
+                )}
+              </div>
+            )}
+            
+            <button
+              type="button"
+              onClick={loadDashboard}
+              disabled={isLoading}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              {isLoading ? <FaSpinner className="animate-spin" /> : <FaFlask />}
+              {isLoading ? 'Loading...' : 'Refresh'}
+            </button>
           </div>
         </div>
       </motion.div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-12"
+        >
+          <FaSpinner className="animate-spin text-6xl text-purple-400 mx-auto mb-4" />
+          <p className="text-xl text-gray-400">Loading Analytics Dashboard...</p>
+        </motion.div>
+      )}
+
+      {/* Error State */}
+      {dashboardError && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-900/50 backdrop-blur-sm rounded-xl p-6 border border-red-600 mb-8"
+        >
+          <div className="flex items-center gap-3">
+            <FaTimesCircle className="text-2xl text-red-400" />
+            <div>
+              <h3 className="text-lg font-bold text-red-400">Dashboard Error</h3>
+              <p className="text-red-300">{dashboardError}</p>
+              <button
+                type="button"
+                onClick={loadDashboard}
+                className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Dashboard Stats */}
-      {dashboardStats && (
+      {!isLoading && !dashboardError && dashboardStats && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -305,6 +510,41 @@ export default function AnalyticsLabPage() {
         </motion.div>
       )}
 
+      {/* Recent Jobs Section */}
+      {dashboardStats && dashboardStats.recent_jobs.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 mb-8"
+        >
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <FaClock className="text-purple-400" />
+            Recent Jobs
+          </h2>
+          <div className="space-y-3">
+            {dashboardStats.recent_jobs.slice(0, 5).map((job) => (
+              <div key={job.jobId} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                <div className="flex items-center gap-3">
+                  {getStatusIcon(job.status)}
+                  <div>
+                    <p className="font-medium">{job.type?.replace(/_/g, ' ').toUpperCase()}</p>
+                    <p className="text-sm text-gray-400">Started: {new Date(job.startedAt).toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(job.status)}`}>
+                    {job.status.toUpperCase()}
+                  </span>
+                  {job.duration && (
+                    <p className="text-sm text-gray-400 mt-1">{job.duration.toFixed(2)}s</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Analytics Modules Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
@@ -339,7 +579,7 @@ export default function AnalyticsLabPage() {
           getStatusIcon={getStatusIcon}
           getStatusColor={getStatusColor}
           fields={[
-            { name: 'analysis_type', label: 'Analysis Type', type: 'select', options: ['driver', 'vehicle', 'cohort'] },
+            { name: 'analysis_type', label: 'Analysis Type', type: 'select', options: ['courier', 'vehicle', 'cohort'] },
             { name: 'metric', label: 'Metric', type: 'select', options: ['delivery_rate', 'efficiency', 'productivity'] },
             { name: 'period', label: 'Period', type: 'select', options: ['daily', 'weekly', 'monthly'] },
             { name: 'driver_id', label: 'Driver ID (optional)', type: 'number' },
@@ -452,6 +692,8 @@ function AnalyticsModule({
                 onChange={(e) => setParams({ ...params, [field.name]: e.target.value })}
                 className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white"
                 disabled={job?.status === 'running'}
+                aria-label={field.label}
+                title={field.label}
               >
                 {field.options?.map((option) => (
                   <option key={option} value={option}>
@@ -475,6 +717,7 @@ function AnalyticsModule({
 
       {/* Run Button */}
       <button
+        type="button"
         onClick={onRun}
         disabled={job?.status === 'running'}
         className={`w-full py-3 rounded-lg font-semibold transition-all ${
@@ -483,7 +726,14 @@ function AnalyticsModule({
             : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
         }`}
       >
-        {job?.status === 'running' ? 'Running...' : 'Run Analysis'}
+        {job?.status === 'running' ? (
+          <span className="flex items-center justify-center gap-2">
+            <FaSpinner className="animate-spin" />
+            Running...
+          </span>
+        ) : (
+          'Run Analysis'
+        )}
       </button>
 
       {/* Job Info */}
@@ -499,15 +749,38 @@ function AnalyticsModule({
           {job.status === 'completed' && job.result && (
             <div>
               <button
+                type="button"
                 onClick={() => setShowResults(!showResults)}
-                className="text-blue-400 hover:text-blue-300 text-sm mb-2"
+                className="text-blue-400 hover:text-blue-300 text-sm mb-2 flex items-center gap-1"
               >
-                {showResults ? 'Hide Results' : 'Show Results'}
+                {showResults ? (
+                  <>
+                    <span>Hide Results</span>
+                    <span className="text-xs">▲</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Show Results</span>
+                    <span className="text-xs">▼</span>
+                  </>
+                )}
               </button>
               {showResults && (
-                <pre className="text-xs bg-gray-900 p-3 rounded overflow-auto max-h-60">
-                  {JSON.stringify(job.result, null, 2)}
-                </pre>
+                <div className="mt-2">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-gray-400">Results (JSON)</span>
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(JSON.stringify(job.result, null, 2))}
+                      className="text-xs text-gray-400 hover:text-white px-2 py-1 border border-gray-600 rounded"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <pre className="text-xs bg-gray-900 p-3 rounded overflow-auto max-h-60 border border-gray-600">
+                    {JSON.stringify(job.result, null, 2)}
+                  </pre>
+                </div>
               )}
             </div>
           )}

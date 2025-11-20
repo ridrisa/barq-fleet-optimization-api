@@ -1,0 +1,65 @@
+{
+  "timestamp": "2025-11-20T06:54:18.944782",
+  "database": "barqfleet_db",
+  "host": "barqfleet-db-prod-stack-read-replica.cgr02s6xqwhy.me-south-1.rds.amazonaws.com",
+  "tables": {
+    "orders": {
+      "total_count": 2855952,
+      "expected_min_count": 2800000,
+      "with_hub_id": 2855927,
+      "with_shipment_id": 2719962,
+      "last_30_days": 0,
+      "with_delivery_times": 0,
+      "status_distribution": {},
+      "sample_records": [],
+      "data_quality_score": 60.0
+    },
+    "shipments": {
+      "total_count": 0,
+      "expected_min_count": 1100000,
+      "with_courier_id": 0,
+      "with_promise_time": 0,
+      "completed": 0,
+      "with_driving_distance": 0,
+      "sample_records": [],
+      "data_quality_score": 0.0
+    },
+    "couriers": {
+      "total_count": 0,
+      "expected_min_count": 6503,
+      "with_vehicle_type": 0,
+      "online_count": 0,
+      "vehicle_type_distribution": {},
+      "sample_records": [],
+      "data_quality_score": 0.0
+    },
+    "hubs": {
+      "total_count": 0,
+      "expected_min_count": 22816,
+      "with_complete_data": 0,
+      "sample_records": [],
+      "data_quality_score": 0.0
+    }
+  },
+  "warnings": [],
+  "errors": [
+    "Query failed (Orders in last 30 days): operator does not exist: timestamp without time zone >= integer\nLINE 1: ...CT COUNT(*) as count FROM orders WHERE created_at >= 1761018...\n                                                             ^\nHINT:  No operator matches the given name and argument types. You might need to add explicit type casts.\n",
+    "Query failed (Orders with delivery times): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Order status distribution): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Sample orders): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Total shipments count): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Shipments with courier_id): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Shipments with promise_time): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Completed shipments): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Shipments with driving distance): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Sample shipments): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Total couriers count): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Couriers with vehicle_type): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Online couriers): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Vehicle type distribution): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Sample couriers): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Total hubs count): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Hubs with complete data): current transaction is aborted, commands ignored until end of transaction block\n",
+    "Query failed (Sample hubs): current transaction is aborted, commands ignored until end of transaction block\n"
+  ]
+}

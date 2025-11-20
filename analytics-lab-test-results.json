@@ -1,0 +1,55 @@
+{
+  "timestamp": "2025-11-20T05:56:37.321Z",
+  "endpoints": [
+    {
+      "name": "Route Analysis",
+      "endpoint": "/run/route-analysis",
+      "params": {
+        "analysis_type": "efficiency",
+        "date_range": 30,
+        "output": "json"
+      },
+      "status": "FAILED",
+      "error": "Error"
+    },
+    {
+      "name": "Fleet Performance",
+      "endpoint": "/run/fleet-performance",
+      "params": {
+        "analysis_type": "driver",
+        "metric": "delivery_rate",
+        "period": "monthly",
+        "output": "json"
+      },
+      "status": "FAILED",
+      "error": "Error"
+    },
+    {
+      "name": "Demand Forecast",
+      "endpoint": "/run/demand-forecast",
+      "params": {
+        "forecast_type": "daily",
+        "horizon": 7,
+        "output": "json"
+      },
+      "status": "FAILED",
+      "error": "Error"
+    },
+    {
+      "name": "SLA Analysis",
+      "endpoint": "/run/sla-analysis",
+      "params": {
+        "analysis_type": "compliance",
+        "date_range": 30,
+        "output": "json"
+      },
+      "status": "FAILED",
+      "error": "Error"
+    }
+  ],
+  "summary": {
+    "total": 4,
+    "passed": 0,
+    "failed": 4
+  }
+}

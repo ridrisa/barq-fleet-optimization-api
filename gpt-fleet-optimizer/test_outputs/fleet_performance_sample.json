@@ -1,0 +1,11 @@
+{
+  "total_couriers_analyzed": 115,
+  "avg_cpi": 52.389311012649955,
+  "median_cpi": 52.47520163520948,
+  "std_cpi": 3.9214391234164823,
+  "avg_completion_rate": 99.69783847114769,
+  "avg_on_time_rate": 0.0,
+  "avg_shipments_per_day": 4.9236339251833465,
+  "total_shipments": 13186,
+  "total_completed": 13136
+}

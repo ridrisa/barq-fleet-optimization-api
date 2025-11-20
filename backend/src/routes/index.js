@@ -114,11 +114,15 @@ router.use((req, res, next) => {
   next();
 });
 
+// Import demo routes for backward compatibility
+const demoRoutes = require('../demo/demo-routes');
+
 // Mount backward compatibility routes (without version prefix)
 router.use('/auth', authRoutes);
 router.use('/optimize', optimizationRoutes);
 router.use('/agents', agentRoutes);
 router.use('/admin', adminRoutes);
 router.use('/autonomous', autonomousRoutes);
+router.use('/demo', demoRoutes);
 
 module.exports = router;

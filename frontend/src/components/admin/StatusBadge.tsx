@@ -3,7 +3,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { AgentStatus } from '@/types/agent';
-import { Activity, AlertCircle, Circle, Power } from 'lucide-react';
+import { Activity, AlertCircle, Circle, Power, Loader2 } from 'lucide-react';
 
 interface StatusBadgeProps {
   status: AgentStatus;
@@ -46,6 +46,20 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
           icon: Power,
           className: 'bg-gray-600 hover:bg-gray-700',
         };
+      case 'STARTING':
+        return {
+          variant: 'warning' as const,
+          label: 'Starting',
+          icon: Loader2,
+          className: 'bg-blue-500 hover:bg-blue-600',
+        };
+      case 'STOPPING':
+        return {
+          variant: 'warning' as const,
+          label: 'Stopping',
+          icon: Loader2,
+          className: 'bg-orange-500 hover:bg-orange-600',
+        };
       default:
         return {
           variant: 'secondary' as const,
@@ -71,12 +85,19 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     lg: 16,
   };
 
+  const isTransitioning = status === 'STARTING' || status === 'STOPPING';
+
   return (
     <Badge
       variant={config.variant}
       className={`${config.className} ${sizeClasses[size]} flex items-center gap-1`}
     >
-      {showIcon && <Icon size={iconSizes[size]} />}
+      {showIcon && (
+        <Icon 
+          size={iconSizes[size]} 
+          className={isTransitioning ? 'animate-spin' : ''}
+        />
+      )}
       {config.label}
     </Badge>
   );

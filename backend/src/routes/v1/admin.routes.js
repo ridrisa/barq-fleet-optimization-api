@@ -876,6 +876,339 @@ router.post(
 
 /**
  * @swagger
+ * /api/admin/agents/control:
+ *   post:
+ *     summary: Control agent operations
+ *     description: Start, stop, restart, or configure an agent
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - action
+ *               - agentId
+ *             properties:
+ *               action:
+ *                 type: string
+ *                 enum: [start, stop, restart, configure]
+ *               agentId:
+ *                 type: string
+ *               configuration:
+ *                 type: object
+ *                 description: Configuration object (required for configure action)
+ *     responses:
+ *       200:
+ *         description: Agent control operation completed
+ *       400:
+ *         description: Invalid request or agent not controllable
+ *       404:
+ *         description: Agent not found
+ *       500:
+ *         description: Operation failed
+ */
+router.post(
+  '/agents/control',
+  asyncHandler(async (req, res) => {
+    const { action, agentId, configuration } = req.body;
+    const startTime = Date.now();
+
+    if (!action || !agentId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Action and agentId are required',
+      });
+    }
+
+    if (!['start', 'stop', 'restart', 'configure'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid action. Must be start, stop, restart, or configure',
+      });
+    }
+
+    try {
+      const instance = AgentInitializer.getInstance();
+      const agentManager = instance.services.agentManager;
+
+      if (!agentManager) {
+        return res.status(503).json({
+          success: false,
+          error: 'Agent manager not available',
+        });
+      }
+
+      // For demo purposes, we'll simulate the control operations
+      // In a real implementation, this would interface with actual agent lifecycle management
+      let result;
+      switch (action) {
+        case 'start':
+          result = await simulateAgentStart(agentId, agentManager);
+          break;
+        case 'stop':
+          result = await simulateAgentStop(agentId, agentManager);
+          break;
+        case 'restart':
+          result = await simulateAgentRestart(agentId, agentManager);
+          break;
+        case 'configure':
+          if (!configuration) {
+            return res.status(400).json({
+              success: false,
+              error: 'Configuration is required for configure action',
+            });
+          }
+          result = await simulateAgentConfigure(agentId, configuration, agentManager);
+          break;
+      }
+
+      const responseTime = Date.now() - startTime;
+      logger.info(`[Admin] Agent ${action} operation completed for ${agentId} in ${responseTime}ms`);
+
+      res.json({
+        success: true,
+        message: `Agent ${action} operation completed successfully`,
+        data: result,
+        meta: {
+          agentId,
+          action,
+          timestamp: Date.now(),
+          responseTime,
+        },
+      });
+    } catch (error) {
+      logger.error(`[Admin] Failed to ${action} agent ${agentId}`, { error: error.message });
+      
+      if (error.message.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          error: `Agent '${agentId}' not found`,
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: `Failed to ${action} agent`,
+        details: error.message,
+      });
+    }
+  })
+);
+
+/**
+ * @swagger
+ * /api/admin/agents/{agentId}/logs:
+ *   get:
+ *     summary: Get agent logs
+ *     description: Retrieve logs for a specific agent
+ *     tags: [Admin]
+ *     parameters:
+ *       - in: path
+ *         name: agentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Agent ID
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 100
+ *           minimum: 1
+ *           maximum: 1000
+ *         description: Number of log entries to retrieve
+ *       - in: query
+ *         name: level
+ *         schema:
+ *           type: string
+ *           enum: [INFO, WARN, ERROR, DEBUG]
+ *         description: Filter by log level
+ *       - in: query
+ *         name: since
+ *         schema:
+ *           type: string
+ *         description: Retrieve logs since this timestamp
+ *     responses:
+ *       200:
+ *         description: Agent logs retrieved successfully
+ *       404:
+ *         description: Agent not found
+ */
+router.get(
+  '/agents/:agentId/logs',
+  asyncHandler(async (req, res) => {
+    const { agentId } = req.params;
+    const limit = Math.min(1000, Math.max(1, parseInt(req.query.limit) || 100));
+    const { level, since } = req.query;
+    const startTime = Date.now();
+
+    try {
+      const instance = AgentInitializer.getInstance();
+      const agentManager = instance.services.agentManager;
+
+      if (!agentManager) {
+        return res.status(503).json({
+          success: false,
+          error: 'Agent manager not available',
+        });
+      }
+
+      // For demo purposes, return mock logs
+      // In a real implementation, this would query actual log storage
+      const mockLogs = generateMockLogs(agentId, limit, level, since);
+
+      const responseTime = Date.now() - startTime;
+      logger.debug(`[Admin] Agent logs for ${agentId} retrieved in ${responseTime}ms`);
+
+      res.json({
+        success: true,
+        logs: mockLogs,
+        total: mockLogs.length,
+        meta: {
+          agentId,
+          limit,
+          level,
+          since,
+          timestamp: Date.now(),
+          responseTime,
+        },
+      });
+    } catch (error) {
+      logger.error(`[Admin] Failed to get logs for agent ${agentId}`, { error: error.message });
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve agent logs',
+        details: error.message,
+      });
+    }
+  })
+);
+
+// Helper functions for agent control simulation
+async function simulateAgentStart(agentId, agentManager) {
+  // Simulate starting an agent
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  logger.info(`[Admin] Simulating agent start: ${agentId}`);
+  
+  return {
+    agentId,
+    status: 'STARTING',
+    message: 'Agent start initiated',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+async function simulateAgentStop(agentId, agentManager) {
+  // Simulate stopping an agent
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  logger.info(`[Admin] Simulating agent stop: ${agentId}`);
+  
+  return {
+    agentId,
+    status: 'STOPPING',
+    message: 'Agent stop initiated',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+async function simulateAgentRestart(agentId, agentManager) {
+  // Simulate restarting an agent
+  await new Promise(resolve => setTimeout(resolve, 150));
+  
+  logger.info(`[Admin] Simulating agent restart: ${agentId}`);
+  
+  return {
+    agentId,
+    status: 'STARTING',
+    message: 'Agent restart initiated',
+    timestamp: new Date().toISOString(),
+  };
+}
+
+async function simulateAgentConfigure(agentId, configuration, agentManager) {
+  // Simulate configuring an agent
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  logger.info(`[Admin] Simulating agent configure: ${agentId}`, { configuration });
+  
+  return {
+    agentId,
+    status: 'CONFIGURED',
+    message: 'Agent configuration updated',
+    configuration,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+function generateMockLogs(agentId, limit, level, since) {
+  const levels = level ? [level] : ['INFO', 'WARN', 'ERROR', 'DEBUG'];
+  const logs = [];
+  const now = Date.now();
+  const sinceTime = since ? new Date(since).getTime() : now - (24 * 60 * 60 * 1000); // 24 hours ago
+
+  for (let i = 0; i < limit; i++) {
+    const timestamp = new Date(now - (i * 60000)); // 1 minute intervals
+    
+    if (timestamp.getTime() < sinceTime) break;
+    
+    const randomLevel = levels[Math.floor(Math.random() * levels.length)];
+    const messages = {
+      INFO: [
+        'Agent execution completed successfully',
+        'Processing batch of orders',
+        'Health check passed',
+        'Configuration updated',
+        'Scheduled execution started'
+      ],
+      WARN: [
+        'High response time detected',
+        'Memory usage above threshold',
+        'Retry attempt initiated',
+        'Performance degradation detected',
+        'Queue backlog increasing'
+      ],
+      ERROR: [
+        'Failed to connect to external service',
+        'Database connection timeout',
+        'Invalid configuration parameter',
+        'Execution timeout exceeded',
+        'Critical system error'
+      ],
+      DEBUG: [
+        'Processing order batch',
+        'Cache miss detected',
+        'Optimization algorithm iteration',
+        'Internal state transition',
+        'Performance metric recorded'
+      ]
+    };
+    
+    const messageList = messages[randomLevel];
+    const message = messageList[Math.floor(Math.random() * messageList.length)];
+    
+    logs.push({
+      id: `log-${i}`,
+      timestamp: timestamp.toISOString(),
+      level: randomLevel,
+      message,
+      metadata: {
+        agentId,
+        duration: Math.floor(Math.random() * 5000),
+        threadId: `thread-${Math.floor(Math.random() * 10)}`,
+        requestId: `req-${Date.now()}-${i}`,
+      },
+    });
+  }
+  
+  return logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+}
+
+/**
+ * @swagger
  * /api/admin/reassignments:
  *   get:
  *     summary: Get reassignment history

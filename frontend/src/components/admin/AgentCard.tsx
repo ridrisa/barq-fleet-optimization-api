@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Agent, AgentError } from '@/types/agent';
+import { Agent, AgentError, AgentControlRequest } from '@/types/agent';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from './StatusBadge';
 import { HealthScoreGauge } from './HealthScoreGauge';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Activity,
   AlertTriangle,
@@ -14,15 +15,31 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronUp,
+  Play,
+  Square,
+  RotateCcw,
+  Settings,
+  ScrollText,
+  Loader2,
 } from 'lucide-react';
 
 interface AgentCardProps {
   agent: Agent;
   onClick?: (agent: Agent) => void;
+  onControl?: (request: AgentControlRequest) => Promise<void>;
+  onViewLogs?: (agentId: string) => void;
+  onConfigure?: (agentId: string) => void;
 }
 
-export const AgentCard: React.FC<AgentCardProps> = ({ agent, onClick }) => {
+export const AgentCard: React.FC<AgentCardProps> = ({ 
+  agent, 
+  onClick, 
+  onControl, 
+  onViewLogs, 
+  onConfigure 
+}) => {
   const [expanded, setExpanded] = useState(false);
+  const [isOperating, setIsOperating] = useState(false);
 
   const formatDuration = (ms: number) => {
     if (ms < 1000) return `${ms}ms`;
@@ -59,6 +76,27 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, onClick }) => {
         return 'bg-gray-500';
     }
   };
+
+  const handleControlAction = async (action: 'start' | 'stop' | 'restart') => {
+    if (!onControl || isOperating) return;
+    
+    setIsOperating(true);
+    try {
+      await onControl({
+        action,
+        agentId: agent.id,
+      });
+    } catch (error) {
+      console.error(`Failed to ${action} agent:`, error);
+    } finally {
+      setIsOperating(false);
+    }
+  };
+
+  const canStart = agent.status === 'DISABLED' || agent.status === 'ERROR' || agent.status === 'IDLE';
+  const canStop = agent.status === 'ACTIVE';
+  const canRestart = agent.status === 'ACTIVE' || agent.status === 'ERROR';
+  const isTransitioning = agent.status === 'STARTING' || agent.status === 'STOPPING' || isOperating;
 
   return (
     <Card
@@ -126,7 +164,106 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, onClick }) => {
               Disabled
             </Badge>
           )}
+          {/* Show indicator for agents with dedicated pages */}
+          {['SLA Monitor', 'Order Assignment'].includes(agent.name) && (
+            <Badge variant="secondary" className="text-xs bg-blue-500 text-white">
+              Detailed View
+            </Badge>
+          )}
         </div>
+
+        {/* Control Buttons */}
+        {agent.isControllable && onControl && (
+          <div className="mt-3 pt-3 border-t">
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!canStart || isTransitioning}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleControlAction('start');
+                }}
+                className="flex-1"
+              >
+                {isTransitioning && agent.status === 'STARTING' ? (
+                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                ) : (
+                  <Play className="w-3 h-3 mr-1" />
+                )}
+                Start
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!canStop || isTransitioning}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleControlAction('stop');
+                }}
+                className="flex-1"
+              >
+                {isTransitioning && agent.status === 'STOPPING' ? (
+                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                ) : (
+                  <Square className="w-3 h-3 mr-1" />
+                )}
+                Stop
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!canRestart || isTransitioning}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleControlAction('restart');
+                }}
+                className="flex-1"
+              >
+                {isTransitioning && !['STARTING', 'STOPPING'].includes(agent.status) ? (
+                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                ) : (
+                  <RotateCcw className="w-3 h-3 mr-1" />
+                )}
+                Restart
+              </Button>
+            </div>
+            
+            <div className="flex gap-2 mt-2">
+              {agent.canConfigure && onConfigure && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onConfigure(agent.id);
+                  }}
+                  className="flex-1"
+                >
+                  <Settings className="w-3 h-3 mr-1" />
+                  Configure
+                </Button>
+              )}
+              
+              {onViewLogs && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewLogs(agent.id);
+                  }}
+                  className="flex-1"
+                >
+                  <ScrollText className="w-3 h-3 mr-1" />
+                  Logs
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Errors Section */}
         {agent.errors.length > 0 && (

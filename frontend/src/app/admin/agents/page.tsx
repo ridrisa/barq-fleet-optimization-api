@@ -1,18 +1,27 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Agent,
   AgentActivity,
   AgentStatusResponse,
   SystemHealth,
   DashboardFilters,
+  AgentControlRequest,
+  AgentConfiguration,
+  AgentLogEntry,
 } from '@/types/agent';
 import { AgentCard } from '@/components/admin/AgentCard';
 import { AgentActivityLog } from '@/components/admin/AgentActivityLog';
 import { HealthScoreGauge } from '@/components/admin/HealthScoreGauge';
+import { AgentConfigModal } from '@/components/admin/AgentConfigModal';
+import { AgentLogsModal } from '@/components/admin/AgentLogsModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import agentControlAPI from '@/lib/agent-control-api';
+import { useRealtimeAgentStatus } from '@/hooks/useRealtimeAgentStatus';
 import {
   Activity,
   RefreshCw,
@@ -24,17 +33,18 @@ import {
   Users,
   Brain,
   ArrowRight,
+  Wifi,
+  WifiOff,
+  Settings,
+  Play,
+  Square,
+  RotateCcw,
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AgentMonitoringDashboard() {
-  const [agents, setAgents] = useState<Agent[]>([]);
   const [recentActivity, setRecentActivity] = useState<AgentActivity[]>([]);
-  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [filters, setFilters] = useState<DashboardFilters>({
     search: '',
     status: [],
@@ -42,32 +52,50 @@ export default function AgentMonitoringDashboard() {
     sortOrder: 'asc',
   });
 
-  const fetchAgentStatus = useCallback(async () => {
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003';
-      const response = await fetch(`${backendUrl}/api/admin/agents/status`);
+  // Modal states
+  const [configModalAgent, setConfigModalAgent] = useState<Agent | null>(null);
+  const [logsModalAgent, setLogsModalAgent] = useState<Agent | null>(null);
+  
+  // Control operations state
+  const [operatingAgents, setOperatingAgents] = useState<Set<string>>(new Set());
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+  // Use real-time agent status hook
+  const {
+    agents,
+    systemHealth,
+    isConnected,
+    isLoading: loading,
+    error,
+    lastUpdate,
+    refreshData,
+    startPolling,
+    stopPolling,
+  } = useRealtimeAgentStatus({
+    pollingInterval: 5000,
+    enablePolling: autoRefresh,
+    onStatusChange: (newAgents) => {
+      // Update any additional processing when agents change
+      console.log('Agent status updated:', newAgents.length, 'agents');
+    },
+    onHealthChange: (newHealth) => {
+      console.log('System health updated:', newHealth.overall);
+    },
+    onError: (err) => {
+      console.error('Real-time status error:', err.message);
+    },
+  });
 
-      const data: AgentStatusResponse = await response.json();
-
-      setAgents(data.agents);
-      setSystemHealth(data.systemHealth);
-      setRecentActivity(data.recentActivity || []);
-      setLastUpdate(new Date());
-      setError(null);
-    } catch (err) {
-      console.error('Failed to fetch agent status:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch agent status');
-
-      // Use mock data for development
-      setMockData();
-    } finally {
-      setLoading(false);
+  // Handle auto-refresh toggle
+  const handleAutoRefreshToggle = () => {
+    const newAutoRefresh = !autoRefresh;
+    setAutoRefresh(newAutoRefresh);
+    
+    if (newAutoRefresh) {
+      startPolling();
+    } else {
+      stopPolling();
     }
-  }, []);
+  };
 
   const setMockData = () => {
     // Mock data for development/testing
@@ -87,6 +115,15 @@ export default function AgentMonitoringDashboard() {
         errors: [],
         enabled: true,
         category: 'Orchestration',
+        isControllable: true,
+        canRestart: true,
+        canConfigure: true,
+        configuration: {
+          executionInterval: 5000,
+          timeout: 30000,
+          retryLimit: 3,
+          priority: 1,
+        },
       },
       {
         id: '2',
@@ -103,6 +140,17 @@ export default function AgentMonitoringDashboard() {
         errors: [],
         enabled: true,
         category: 'Optimization',
+        isControllable: true,
+        canRestart: true,
+        canConfigure: true,
+        configuration: {
+          executionInterval: 10000,
+          timeout: 60000,
+          retryLimit: 2,
+          priority: 2,
+          maxRoutes: 50,
+          optimizationDepth: 3,
+        },
       },
       {
         id: '3',
@@ -130,6 +178,17 @@ export default function AgentMonitoringDashboard() {
         ],
         enabled: true,
         category: 'Fleet Management',
+        isControllable: true,
+        canRestart: true,
+        canConfigure: true,
+        configuration: {
+          executionInterval: 15000,
+          timeout: 45000,
+          retryLimit: 4,
+          priority: 3,
+          balanceThreshold: 75,
+          maxMovements: 10,
+        },
       },
       {
         id: '4',
@@ -146,6 +205,9 @@ export default function AgentMonitoringDashboard() {
         errors: [],
         enabled: true,
         category: 'Analytics',
+        isControllable: false,
+        canRestart: false,
+        canConfigure: false,
       },
       {
         id: '5',
@@ -162,6 +224,17 @@ export default function AgentMonitoringDashboard() {
         errors: [],
         enabled: true,
         category: 'Monitoring',
+        isControllable: true,
+        canRestart: true,
+        canConfigure: true,
+        configuration: {
+          executionInterval: 60000,
+          timeout: 30000,
+          retryLimit: 2,
+          priority: 1,
+          thresholdWarning: 80,
+          thresholdCritical: 90,
+        },
       },
     ];
 
@@ -212,29 +285,90 @@ export default function AgentMonitoringDashboard() {
       lastUpdated: new Date().toISOString(),
     };
 
-    setAgents(mockAgents);
     setRecentActivity(mockActivities);
-    setSystemHealth(mockHealth);
-    setLastUpdate(new Date());
+    // Note: agents, systemHealth, and lastUpdate are managed by useRealtimeAgentStatus hook
   };
 
-  useEffect(() => {
-    fetchAgentStatus();
-  }, [fetchAgentStatus]);
+  // Agent Control Functions
+  const handleAgentControl = async (request: AgentControlRequest): Promise<void> => {
+    setOperatingAgents(prev => new Set([...Array.from(prev), request.agentId]));
+    
+    try {
+      switch (request.action) {
+        case 'start':
+          await agentControlAPI.startAgent(request.agentId);
+          break;
+        case 'stop':
+          await agentControlAPI.stopAgent(request.agentId);
+          break;
+        case 'restart':
+          await agentControlAPI.restartAgent(request.agentId);
+          break;
+        case 'configure':
+          if (request.configuration) {
+            await agentControlAPI.configureAgent(request.agentId, request.configuration);
+          }
+          break;
+      }
+      
+      // Refresh agent status after successful operation
+      await refreshData();
+    } catch (error) {
+      console.error(`Failed to ${request.action} agent:`, error);
+      throw error;
+    } finally {
+      setOperatingAgents(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(request.agentId);
+        return newSet;
+      });
+    }
+  };
 
-  useEffect(() => {
-    if (!autoRefresh) return;
+  const handleConfigureAgent = async (configuration: AgentConfiguration): Promise<void> => {
+    if (!configModalAgent) return;
+    
+    await handleAgentControl({
+      action: 'configure',
+      agentId: configModalAgent.id,
+      configuration,
+    });
+  };
 
-    const interval = setInterval(() => {
-      fetchAgentStatus();
-    }, 5000); // Refresh every 5 seconds
-
-    return () => clearInterval(interval);
-  }, [autoRefresh, fetchAgentStatus]);
+  const handleFetchLogs = async (agentId: string, params?: any): Promise<AgentLogEntry[]> => {
+    try {
+      return await agentControlAPI.getAgentLogs(agentId, params);
+    } catch (error) {
+      console.error('Failed to fetch logs:', error);
+      // Return mock logs for demonstration
+      return [
+        {
+          id: '1',
+          timestamp: new Date(Date.now() - 60000).toISOString(),
+          level: 'INFO',
+          message: 'Agent execution completed successfully',
+          metadata: { duration: 1250, status: 'success' },
+        },
+        {
+          id: '2',
+          timestamp: new Date(Date.now() - 120000).toISOString(),
+          level: 'WARN',
+          message: 'High response time detected',
+          metadata: { responseTime: 5000, threshold: 3000 },
+        },
+        {
+          id: '3',
+          timestamp: new Date(Date.now() - 180000).toISOString(),
+          level: 'ERROR',
+          message: 'Failed to connect to external service',
+          metadata: { service: 'traffic-api', error: 'ECONNREFUSED' },
+        },
+      ];
+    }
+  };
 
   const handleRefresh = () => {
-    setLoading(true);
-    fetchAgentStatus();
+    refreshData();
   };
 
   const filterAgents = (agents: Agent[]) => {
@@ -299,38 +433,102 @@ export default function AgentMonitoringDashboard() {
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Agent Monitoring Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Real-time monitoring of AI agents in the Route Optimization System
-          </p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Agent Monitoring Dashboard</h1>
+            <p className="text-muted-foreground mt-1">
+              Real-time monitoring of AI agents in the Route Optimization System
+            </p>
+          </div>
+          
+          {/* Connection Status Indicator */}
+          <div className="flex items-center gap-2">
+            {isConnected ? (
+              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <Wifi className="w-4 h-4" />
+                <span className="text-sm font-medium">Live</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                <div className="w-2 h-2 bg-red-500 rounded-full" />
+                <WifiOff className="w-4 h-4" />
+                <span className="text-sm font-medium">Offline</span>
+              </div>
+            )}
+          </div>
         </div>
+        
         <div className="flex items-center gap-3">
+          {/* Bulk Control Actions */}
+          <div className="flex items-center gap-2 mr-4">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                agents.filter(a => a.isControllable && a.status !== 'ACTIVE').forEach(agent => {
+                  handleAgentControl({ action: 'start', agentId: agent.id });
+                });
+              }}
+              disabled={loading || !agents.some(a => a.isControllable && a.status !== 'ACTIVE')}
+            >
+              <Play className="w-3 h-3 mr-1" />
+              Start All
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                agents.filter(a => a.isControllable && a.status === 'ACTIVE').forEach(agent => {
+                  handleAgentControl({ action: 'stop', agentId: agent.id });
+                });
+              }}
+              disabled={loading || !agents.some(a => a.isControllable && a.status === 'ACTIVE')}
+            >
+              <Square className="w-3 h-3 mr-1" />
+              Stop All
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                agents.filter(a => a.isControllable && a.canRestart).forEach(agent => {
+                  handleAgentControl({ action: 'restart', agentId: agent.id });
+                });
+              }}
+              disabled={loading || !agents.some(a => a.isControllable && a.canRestart)}
+            >
+              <RotateCcw className="w-3 h-3 mr-1" />
+              Restart All
+            </Button>
+          </div>
+          
           <Link href="/admin/agents/ai-monitoring">
-            <button className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 flex items-center gap-2">
+            <Button variant="secondary" className="flex items-center gap-2">
               <Brain className="w-4 h-4" />
               AI Monitoring
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </Button>
           </Link>
-          <button
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              autoRefresh
-                ? 'bg-green-500 text-white hover:bg-green-600'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300'
-            }`}
+          
+          <Button
+            variant={autoRefresh ? "default" : "outline"}
+            onClick={handleAutoRefreshToggle}
+            className="text-sm font-medium"
           >
-            {autoRefresh ? 'Auto-Refresh: ON' : 'Auto-Refresh: OFF'}
-          </button>
-          <button
+            {autoRefresh ? 'Real-time: ON' : 'Real-time: OFF'}
+          </Button>
+          
+          <Button
             onClick={handleRefresh}
             disabled={loading}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2"
+            className="flex items-center gap-2"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -549,19 +747,67 @@ export default function AgentMonitoringDashboard() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredAgents.map((agent) => (
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                onClick={(agent) => console.log('Agent clicked:', agent)}
-              />
-            ))}
+            {filteredAgents.map((agent) => {
+              // Determine if agent has a dedicated page
+              const getAgentPageUrl = (agentName: string) => {
+                const normalizedName = agentName.toLowerCase().replace(/\s+/g, '-');
+                switch (normalizedName) {
+                  case 'sla-monitor':
+                    return '/admin/agents/sla-monitor';
+                  case 'order-assignment':
+                    return '/admin/agents/order-assignment';
+                  // Add more agent pages as they are created
+                  default:
+                    return null;
+                }
+              };
+
+              const agentPageUrl = getAgentPageUrl(agent.name);
+
+              return (
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  onClick={(agent) => {
+                    if (agentPageUrl) {
+                      window.location.href = agentPageUrl;
+                    } else {
+                      console.log('Agent clicked:', agent);
+                    }
+                  }}
+                  onControl={handleAgentControl}
+                  onConfigure={(agentId) => {
+                    const agent = agents.find(a => a.id === agentId);
+                    if (agent) setConfigModalAgent(agent);
+                  }}
+                  onViewLogs={(agentId) => {
+                    const agent = agents.find(a => a.id === agentId);
+                    if (agent) setLogsModalAgent(agent);
+                  }}
+                />
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* Activity Log */}
       <AgentActivityLog activities={recentActivity} maxItems={50} showAgentName={true} />
+
+      {/* Modals */}
+      <AgentConfigModal
+        agent={configModalAgent}
+        isOpen={!!configModalAgent}
+        onClose={() => setConfigModalAgent(null)}
+        onSave={handleConfigureAgent}
+      />
+
+      <AgentLogsModal
+        agent={logsModalAgent}
+        isOpen={!!logsModalAgent}
+        onClose={() => setLogsModalAgent(null)}
+        onFetchLogs={handleFetchLogs}
+      />
     </div>
   );
 }

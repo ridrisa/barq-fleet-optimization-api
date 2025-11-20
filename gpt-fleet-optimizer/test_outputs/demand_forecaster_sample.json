@@ -1,0 +1,76 @@
+{
+  "forecast_type": "daily",
+  "horizon_days": 7,
+  "hub_id": null,
+  "forecasts": [
+    {
+      "date": "2025-11-20",
+      "day_of_week": "Thursday",
+      "forecasted_demand": 1553.3,
+      "lower_bound": 1134.6,
+      "upper_bound": 1972.1,
+      "trend_contribution": 0.0
+    },
+    {
+      "date": "2025-11-21",
+      "day_of_week": "Friday",
+      "forecasted_demand": 1253.9,
+      "lower_bound": 794.6,
+      "upper_bound": 1713.2,
+      "trend_contribution": 13.2
+    },
+    {
+      "date": "2025-11-22",
+      "day_of_week": "Saturday",
+      "forecasted_demand": 1565.9,
+      "lower_bound": 1174.0,
+      "upper_bound": 1957.8,
+      "trend_contribution": 32.5
+    },
+    {
+      "date": "2025-11-23",
+      "day_of_week": "Sunday",
+      "forecasted_demand": 1541.8,
+      "lower_bound": 1257.3,
+      "upper_bound": 1826.3,
+      "trend_contribution": 47.6
+    },
+    {
+      "date": "2025-11-24",
+      "day_of_week": "Monday",
+      "forecasted_demand": 1612.4,
+      "lower_bound": 1278.7,
+      "upper_bound": 1946.1,
+      "trend_contribution": 65.7
+    },
+    {
+      "date": "2025-11-25",
+      "day_of_week": "Tuesday",
+      "forecasted_demand": 1663.0,
+      "lower_bound": 1358.4,
+      "upper_bound": 1967.7,
+      "trend_contribution": 83.8
+    },
+    {
+      "date": "2025-11-26",
+      "day_of_week": "Wednesday",
+      "forecasted_demand": 1895.6,
+      "lower_bound": 1136.0,
+      "upper_bound": 2655.2,
+      "trend_contribution": 113.5
+    }
+  ],
+  "statistics": {
+    "total_days": 7,
+    "avg_daily_demand": 1583.7000000000003,
+    "peak_demand": 1895.6,
+    "min_demand": 1253.9,
+    "daily_growth_rate": 1.0612228486435318,
+    "total_forecasted_deliveries": 11085
+  },
+  "growth_rate_pct": 1.0612228486435318,
+  "recommendations": [
+    "Demand growing at 1.06% per day. Consider gradual expansion of fleet capacity and courier hiring.",
+    "Busiest day: Wednesday (1896 deliveries). Slowest day: Friday (1254 deliveries). Adjust courier staffing schedules accordingly."
+  ]
+}

@@ -2134,6 +2134,1270 @@
           "**Logistics Optimization Plan Summary**\n\n* **Routes:** 1\n* **Deliveries:** 2\n* **Total Distance:** 13.6 km\n* **Total Duration:** 20 minutes\n\nThis plan optimizes a single route with 2 deliveries, covering a total distance of 13.6 km in just 20 minutes."
         ]
       }
+    },
+    {
+      "id": "49a74c67-e44d-47a2-aa7b-28bf298be31c",
+      "timestamp": "2025-11-20T05:53:13.548Z",
+      "status": "completed",
+      "serviceType": "STANDARD",
+      "pickupPoints": [
+        {
+          "lat": 24.7136,
+          "lng": 46.6753,
+          "address": "Riyadh Hub",
+          "priority": 5,
+          "serviceTime": 5
+        }
+      ],
+      "deliveryPoints": [
+        {
+          "lat": 24.7419,
+          "lng": 46.7419,
+          "address": "Test Address",
+          "priority": 1,
+          "serviceTime": 5
+        }
+      ],
+      "requestId": "49a74c67-e44d-47a2-aa7b-28bf298be31c",
+      "updatedAt": "2025-11-20T05:53:16.667Z",
+      "result": {
+        "routes": [
+          {
+            "id": "route-n2axfvuw",
+            "vehicle": {
+              "id": "default-vehicle-mi70m91t-d65bdc",
+              "name": "Default Vehicle",
+              "type": "TRUCK",
+              "capacity": 3000
+            },
+            "waypoints": [
+              {
+                "id": "pickup-mi70m91t-1zyntq",
+                "name": "Pickup pickup-mi70m91t-1zyntq",
+                "type": "pickup",
+                "location": {
+                  "lat": 24.7136,
+                  "lng": 46.6753
+                },
+                "priority": 1
+              },
+              {
+                "id": "delivery-mi70m91t-5sbbnl",
+                "name": "Delivery delivery-mi70m91t-5sbbnl",
+                "type": "delivery",
+                "location": {
+                  "lat": 24.7419,
+                  "lng": 46.7419
+                },
+                "timeWindow": "09:00-17:00",
+                "priority": "HIGH",
+                "customer": "Delivery delivery-mi70m91t-5sbbnl"
+              }
+            ],
+            "stops": [
+              {
+                "id": "pickup-mi70m91t-1zyntq",
+                "name": "Pickup pickup-mi70m91t-1zyntq",
+                "type": "pickup",
+                "location": {
+                  "latitude": 24.7136,
+                  "longitude": 46.6753
+                },
+                "address": ""
+              },
+              {
+                "id": "delivery-enbrblbc",
+                "name": "Delivery delivery-mi70m91t-5sbbnl",
+                "type": "delivery",
+                "location": {
+                  "latitude": 24.7419,
+                  "longitude": 46.7419
+                },
+                "address": "",
+                "timeWindow": "09:00-17:00"
+              }
+            ],
+            "pickupId": "pickup-mi70m91t-1zyntq",
+            "deliveries": [
+              {
+                "order_id": "delivery-mi70m91t-5sbbnl",
+                "customer_name": "Unknown Customer",
+                "load_kg": 0
+              }
+            ],
+            "load_kg": 0,
+            "distance": 8.49,
+            "duration": 11,
+            "geometry": "e{yuCqg{{GHVHXZKKYACGUAECGEOaCoH}@gC]mACGAEyA_EiBuFGOWy@CO{AeEGSISOe@Yw@Uq@aB}Eq@qB[cA]cAeAaDk@aBo@gB{@kC_AqCsA_Eu@yBM]o@iBgA}C}@mCUq@EIEKk@eBq@yB{@iCy@kCi@oCeAcFkAyHu@gEcC_IaB_GoEyP{@aDmBoIsB}KSkAk@kCaAaGKq@sHwb@sMct@uDc]MmA[_DK}@SeB_@sDw@aH_@mCm@sDe@uBUcASw@_@sBUqAUmAYqAMs@Ko@CWAU@[EWDGBG@IAIEGEGGCI?G@GBEFM?MAK?KAEAGEEGmAeCi@cAkA}BuB{DeAmBMUiAt@{DbCMCMBIFGL?H@HBHHHF@BVBj@@t@Gr@Gd@A@CB?D?DEVSj@g@z@g@f@cAn@uAf@s@\\i@\\c@\\E?I@E@sCkDaAkA",
+            "osrm": {
+              "distance": 8490.8,
+              "duration": 649,
+              "geometry": "e{yuCqg{{GHVHXZKKYACGUAECGEOaCoH}@gC]mACGAEyA_EiBuFGOWy@CO{AeEGSISOe@Yw@Uq@aB}Eq@qB[cA]cAeAaDk@aBo@gB{@kC_AqCsA_Eu@yBM]o@iBgA}C}@mCUq@EIEKk@eBq@yB{@iCy@kCi@oCeAcFkAyHu@gEcC_IaB_GoEyP{@aDmBoIsB}KSkAk@kCaAaGKq@sHwb@sMct@uDc]MmA[_DK}@SeB_@sDw@aH_@mCm@sDe@uBUcASw@_@sBUqAUmAYqAMs@Ko@CWAU@[EWDGBG@IAIEGEGGCI?G@GBEFM?MAK?KAEAGEEGmAeCi@cAkA}BuB{DeAmBMUiAt@{DbCMCMBIFGL?H@HBHHHF@BVBj@@t@Gr@Gd@A@CB?D?DEVSj@g@z@g@f@cAn@uAf@s@\\i@\\c@\\E?I@E@sCkDaAkA",
+              "legs": [
+                {
+                  "steps": [
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "entry": [
+                            true
+                          ],
+                          "bearings": [
+                            246
+                          ],
+                          "location": [
+                            46.675293,
+                            24.71363
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "e{yuCqg{{GHV",
+                      "maneuver": {
+                        "bearing_after": 246,
+                        "bearing_before": 0,
+                        "location": [
+                          46.675293,
+                          24.71363
+                        ],
+                        "type": "depart"
+                      },
+                      "name": "طريق العروبة",
+                      "mode": "driving",
+                      "weight": 0.7,
+                      "duration": 0.7,
+                      "distance": 13.9
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 2,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            255,
+                            330
+                          ],
+                          "location": [
+                            46.675168,
+                            24.713579
+                          ]
+                        },
+                        {
+                          "out": 1,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            75,
+                            150,
+                            240,
+                            330
+                          ],
+                          "location": [
+                            46.675035,
+                            24.71353
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 3,
+                          "entry": [
+                            true,
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            240,
+                            330
+                          ],
+                          "location": [
+                            46.675099,
+                            24.713393
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            240,
+                            330
+                          ],
+                          "location": [
+                            46.675228,
+                            24.713447
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            240
+                          ],
+                          "location": [
+                            46.67703,
+                            24.714208
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            240
+                          ],
+                          "location": [
+                            46.678137,
+                            24.714686
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            240
+                          ],
+                          "location": [
+                            46.680441,
+                            24.715719
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            240
+                          ],
+                          "location": [
+                            46.680805,
+                            24.715864
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            240,
+                            330
+                          ],
+                          "location": [
+                            46.681901,
+                            24.716363
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            240,
+                            330
+                          ],
+                          "location": [
+                            46.681995,
+                            24.716407
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            240
+                          ],
+                          "location": [
+                            46.684736,
+                            24.717609
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            240
+                          ],
+                          "location": [
+                            46.685077,
+                            24.717758
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            90,
+                            240
+                          ],
+                          "location": [
+                            46.69233,
+                            24.720965
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 3,
+                          "entry": [
+                            true,
+                            false,
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            60,
+                            105,
+                            210,
+                            240,
+                            345
+                          ],
+                          "location": [
+                            46.692945,
+                            24.721251
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            225,
+                            240
+                          ],
+                          "location": [
+                            46.693563,
+                            24.721497
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "{zyuCyf{{GHXZKKYACGUAECGEOaCoH}@gC]mACGAEyA_EiBuFGOWy@CO{AeEGSISOe@Yw@Uq@aB}Eq@qB[cA]cAeAaDk@aBo@gB{@kC_AqCsA_Eu@yBM]o@iBgA}C}@mCUq@EIEKk@eBq@yB{@iCy@kCi@oCeAcFkAyHu@gEcC_IaB_GoEyP{@aD",
+                      "maneuver": {
+                        "bearing_after": 247,
+                        "bearing_before": 244,
+                        "location": [
+                          46.675168,
+                          24.713579
+                        ],
+                        "modifier": "uturn",
+                        "type": "continue"
+                      },
+                      "name": "طريق العروبة",
+                      "mode": "driving",
+                      "weight": 201.3,
+                      "duration": 201.3,
+                      "distance": 3443.5
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            75,
+                            90,
+                            255
+                          ],
+                          "location": [
+                            46.705916,
+                            24.72579
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            75,
+                            248,
+                            253
+                          ],
+                          "location": [
+                            46.709669,
+                            24.726923
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            71,
+                            81,
+                            255
+                          ],
+                          "location": [
+                            46.71005,
+                            24.727017
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            75,
+                            225,
+                            255
+                          ],
+                          "location": [
+                            46.712038,
+                            24.727566
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "eg|uC_ga|GmBoIsB}KSkAk@kCaAaGKq@sHwb@sMct@uDc]MmA[_DK}@SeB_@sDw@aH_@mCm@sDe@uBUcASw@",
+                      "maneuver": {
+                        "bearing_after": 70,
+                        "bearing_before": 67,
+                        "location": [
+                          46.705916,
+                          24.72579
+                        ],
+                        "modifier": "slight left",
+                        "type": "fork"
+                      },
+                      "name": "طريق العروبة",
+                      "mode": "driving",
+                      "weight": 230.6,
+                      "duration": 230.6,
+                      "distance": 3425.1
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 1,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            75,
+                            255
+                          ],
+                          "location": [
+                            46.73851,
+                            24.734023
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            75,
+                            255,
+                            270
+                          ],
+                          "location": [
+                            46.741167,
+                            24.734677
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "sz}uCurg|G_@sBUqAUmAYqAMs@Ko@CWAU@[EW",
+                      "maneuver": {
+                        "bearing_after": 73,
+                        "bearing_before": 67,
+                        "location": [
+                          46.73851,
+                          24.734023
+                        ],
+                        "modifier": "slight right",
+                        "type": "turn"
+                      },
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 26.5,
+                      "duration": 26.5,
+                      "distance": 292.5
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            135,
+                            255,
+                            330
+                          ],
+                          "location": [
+                            46.741291,
+                            24.734705
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            120,
+                            150,
+                            315
+                          ],
+                          "location": [
+                            46.741328,
+                            24.734675
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            45,
+                            210,
+                            240
+                          ],
+                          "location": [
+                            46.741514,
+                            24.734685
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            30,
+                            75,
+                            225
+                          ],
+                          "location": [
+                            46.741547,
+                            24.734719
+                          ]
+                        },
+                        {
+                          "out": 2,
+                          "in": 1,
+                          "entry": [
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            75,
+                            150,
+                            315
+                          ],
+                          "location": [
+                            46.741536,
+                            24.734888
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "}~}uCadh|GDGBG@IAIEGEGGCI?G@GBEF",
+                      "maneuver": {
+                        "exit": 3,
+                        "bearing_after": 130,
+                        "bearing_before": 75,
+                        "location": [
+                          46.741291,
+                          24.734705
+                        ],
+                        "modifier": "right",
+                        "type": "roundabout"
+                      },
+                      "name": "طريق العروبة الفرعي",
+                      "mode": "driving",
+                      "weight": 8.6,
+                      "duration": 8.6,
+                      "distance": 55.1
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            0,
+                            135,
+                            285
+                          ],
+                          "location": [
+                            46.741498,
+                            24.734918
+                          ]
+                        },
+                        {
+                          "out": 1,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            45,
+                            60,
+                            225
+                          ],
+                          "location": [
+                            46.741597,
+                            24.73528
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "g`~uCkeh|GM?MAK?KAEAGEEGmAeCi@cAkA}BuB{D",
+                      "maneuver": {
+                        "exit": 3,
+                        "bearing_after": 1,
+                        "bearing_before": 310,
+                        "location": [
+                          46.741498,
+                          24.734918
+                        ],
+                        "modifier": "right",
+                        "type": "exit roundabout"
+                      },
+                      "name": "طريق العروبة الفرعي",
+                      "mode": "driving",
+                      "weight": 32.1,
+                      "duration": 32.1,
+                      "distance": 356.7
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 1,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            45,
+                            60,
+                            240
+                          ],
+                          "location": [
+                            46.744179,
+                            24.736851
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "il~uCcvh|GeAmB",
+                      "maneuver": {
+                        "bearing_after": 54,
+                        "bearing_before": 54,
+                        "location": [
+                          46.744179,
+                          24.736851
+                        ],
+                        "modifier": "slight right",
+                        "type": "fork"
+                      },
+                      "name": "طريق العروبة الفرعي",
+                      "mode": "driving",
+                      "weight": 6.1,
+                      "duration": 6.1,
+                      "distance": 68.2
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            60,
+                            240,
+                            330
+                          ],
+                          "location": [
+                            46.744733,
+                            24.737201
+                          ]
+                        },
+                        {
+                          "out": 2,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            60,
+                            240,
+                            330
+                          ],
+                          "location": [
+                            46.74484,
+                            24.737267
+                          ]
+                        },
+                        {
+                          "out": 3,
+                          "in": 1,
+                          "entry": [
+                            false,
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            60,
+                            150,
+                            240,
+                            330
+                          ],
+                          "location": [
+                            46.744569,
+                            24.737641
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "on~uCqyh|GMUiAt@{DbC",
+                      "maneuver": {
+                        "bearing_after": 54,
+                        "bearing_before": 54,
+                        "location": [
+                          46.744733,
+                          24.737201
+                        ],
+                        "modifier": "left",
+                        "type": "turn"
+                      },
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 31.6,
+                      "duration": 31.6,
+                      "distance": 186.7
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            15,
+                            150,
+                            225
+                          ],
+                          "location": [
+                            46.743905,
+                            24.738581
+                          ]
+                        },
+                        {
+                          "out": 2,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            45,
+                            165,
+                            315
+                          ],
+                          "location": [
+                            46.743911,
+                            24.738717
+                          ]
+                        },
+                        {
+                          "out": 1,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            90,
+                            240,
+                            330
+                          ],
+                          "location": [
+                            46.743698,
+                            24.738804
+                          ]
+                        },
+                        {
+                          "out": 1,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            45,
+                            195,
+                            330
+                          ],
+                          "location": [
+                            46.743598,
+                            24.738732
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "cw~uCmth|GMCMBIFGL?H@HBHHHF@",
+                      "maneuver": {
+                        "exit": 1,
+                        "bearing_after": 14,
+                        "bearing_before": 326,
+                        "location": [
+                          46.743905,
+                          24.738581
+                        ],
+                        "modifier": "right",
+                        "type": "roundabout"
+                      },
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 9.8,
+                      "duration": 9.8,
+                      "distance": 58.8
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 2,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            15,
+                            195,
+                            255
+                          ],
+                          "location": [
+                            46.74359,
+                            24.738692
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "yw~uCmrh|GBVBj@@t@Gr@Gd@",
+                      "maneuver": {
+                        "exit": 1,
+                        "bearing_after": 255,
+                        "bearing_before": 189,
+                        "location": [
+                          46.74359,
+                          24.738692
+                        ],
+                        "modifier": "right",
+                        "type": "exit roundabout"
+                      },
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 15.6,
+                      "duration": 15.6,
+                      "distance": 108.4
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 2,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            105,
+                            150,
+                            315
+                          ],
+                          "location": [
+                            46.742532,
+                            24.738721
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "_x~uCykh|GA@CB?D?D",
+                      "maneuver": {
+                        "exit": 1,
+                        "bearing_after": 316,
+                        "bearing_before": 282,
+                        "location": [
+                          46.742532,
+                          24.738721
+                        ],
+                        "modifier": "slight right",
+                        "type": "roundabout"
+                      },
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 1.5,
+                      "duration": 1.5,
+                      "distance": 10.9
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 2,
+                          "in": 0,
+                          "entry": [
+                            false,
+                            true,
+                            true
+                          ],
+                          "bearings": [
+                            90,
+                            240,
+                            285
+                          ],
+                          "location": [
+                            46.742436,
+                            24.73875
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "ex~uCgkh|GEVSj@g@z@g@f@cAn@uAf@s@\\i@\\c@\\",
+                      "maneuver": {
+                        "exit": 1,
+                        "bearing_after": 285,
+                        "bearing_before": 265,
+                        "location": [
+                          46.742436,
+                          24.73875
+                        ],
+                        "modifier": "straight",
+                        "type": "exit roundabout"
+                      },
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 41.2,
+                      "duration": 41.2,
+                      "distance": 286.5
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            false
+                          ],
+                          "bearings": [
+                            0,
+                            150,
+                            180
+                          ],
+                          "location": [
+                            46.740709,
+                            24.740699
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "kd_vCm`h|GE?I@E@",
+                      "maneuver": {
+                        "exit": 1,
+                        "bearing_after": 2,
+                        "bearing_before": 323,
+                        "location": [
+                          46.740709,
+                          24.740699
+                        ],
+                        "modifier": "slight right",
+                        "type": "roundabout"
+                      },
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 2.1,
+                      "duration": 2.1,
+                      "distance": 12.5
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "out": 0,
+                          "in": 1,
+                          "entry": [
+                            true,
+                            false,
+                            true
+                          ],
+                          "bearings": [
+                            45,
+                            165,
+                            300
+                          ],
+                          "location": [
+                            46.740689,
+                            24.740809
+                          ]
+                        },
+                        {
+                          "out": 0,
+                          "in": 2,
+                          "entry": [
+                            true,
+                            true,
+                            false
+                          ],
+                          "bearings": [
+                            45,
+                            135,
+                            225
+                          ],
+                          "location": [
+                            46.741546,
+                            24.741548
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "ae_vCi`h|GsCkDaAkA",
+                      "maneuver": {
+                        "exit": 1,
+                        "bearing_after": 46,
+                        "bearing_before": 344,
+                        "location": [
+                          46.740689,
+                          24.740809
+                        ],
+                        "modifier": "right",
+                        "type": "exit roundabout"
+                      },
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 41.3,
+                      "duration": 41.3,
+                      "distance": 172.1
+                    },
+                    {
+                      "intersections": [
+                        {
+                          "in": 0,
+                          "entry": [
+                            true
+                          ],
+                          "bearings": [
+                            227
+                          ],
+                          "location": [
+                            46.741926,
+                            24.741875
+                          ]
+                        }
+                      ],
+                      "driving_side": "right",
+                      "geometry": "wk_vCahh|G",
+                      "maneuver": {
+                        "bearing_after": 0,
+                        "bearing_before": 47,
+                        "location": [
+                          46.741926,
+                          24.741875
+                        ],
+                        "type": "arrive"
+                      },
+                      "name": "",
+                      "mode": "driving",
+                      "weight": 0,
+                      "duration": 0,
+                      "distance": 0
+                    }
+                  ],
+                  "weight": 649,
+                  "summary": "طريق العروبة, طريق العروبة الفرعي",
+                  "duration": 649,
+                  "distance": 8490.8
+                }
+              ],
+              "alternatives": []
+            },
+            "metrics": {
+              "efficiency": 0.85,
+              "utilization": 1,
+              "serviceQuality": 0.9,
+              "stopDensity": 0.23557126030624262
+            },
+            "vehicleName": "Default Vehicle"
+          }
+        ],
+        "summary": {
+          "total_routes": 1,
+          "total_distance": 8.49,
+          "total_duration": 11,
+          "total_deliveries": 1,
+          "total_load": 0,
+          "routingStats": {
+            "totalClusters": 1,
+            "averagePointsPerCluster": "1.00",
+            "alternativeRoutesGenerated": 0
+          },
+          "engineMetrics": {
+            "engineVersion": "1.0.0",
+            "profileUsed": "driving",
+            "computationTime": 2.3
+          }
+        },
+        "requestId": "49a74c67-e44d-47a2-aa7b-28bf298be31c",
+        "timestamp": "2025-11-20T05:53:16.665Z",
+        "insights": [
+          "**Logistics Optimization Plan Summary**\n\n* **Routes:** 1\n* **Deliveries:** 1\n* **Total Distance:** 8.5 km\n* **Total Duration:** 11 minutes\n\nThis plan involves a single route with one delivery, covering a short distance of 8.5 km, expected to be completed within 11 minutes."
+        ]
+      }
     }
   ],
   "optimizations": [],
@@ -4217,6 +5481,1244 @@
       },
       "insights": [
         "**Logistics Optimization Plan Summary**\n\n* **Routes:** 1\n* **Deliveries:** 2\n* **Total Distance:** 13.6 km\n* **Total Duration:** 20 minutes\n\nThis plan optimizes a single route with 2 deliveries, covering a total distance of 13.6 km in just 20 minutes."
+      ]
+    },
+    {
+      "requestId": "49a74c67-e44d-47a2-aa7b-28bf298be31c",
+      "timestamp": "2025-11-20T05:53:16.665Z",
+      "routes": [
+        {
+          "id": "route-n2axfvuw",
+          "vehicle": {
+            "id": "default-vehicle-mi70m91t-d65bdc",
+            "name": "Default Vehicle",
+            "type": "TRUCK",
+            "capacity": 3000
+          },
+          "waypoints": [
+            {
+              "id": "pickup-mi70m91t-1zyntq",
+              "name": "Pickup pickup-mi70m91t-1zyntq",
+              "type": "pickup",
+              "location": {
+                "lat": 24.7136,
+                "lng": 46.6753
+              },
+              "priority": 1
+            },
+            {
+              "id": "delivery-mi70m91t-5sbbnl",
+              "name": "Delivery delivery-mi70m91t-5sbbnl",
+              "type": "delivery",
+              "location": {
+                "lat": 24.7419,
+                "lng": 46.7419
+              },
+              "timeWindow": "09:00-17:00",
+              "priority": "HIGH",
+              "customer": "Delivery delivery-mi70m91t-5sbbnl"
+            }
+          ],
+          "stops": [
+            {
+              "id": "pickup-mi70m91t-1zyntq",
+              "name": "Pickup pickup-mi70m91t-1zyntq",
+              "type": "pickup",
+              "location": {
+                "latitude": 24.7136,
+                "longitude": 46.6753
+              },
+              "address": ""
+            },
+            {
+              "id": "delivery-enbrblbc",
+              "name": "Delivery delivery-mi70m91t-5sbbnl",
+              "type": "delivery",
+              "location": {
+                "latitude": 24.7419,
+                "longitude": 46.7419
+              },
+              "address": "",
+              "timeWindow": "09:00-17:00"
+            }
+          ],
+          "pickupId": "pickup-mi70m91t-1zyntq",
+          "deliveries": [
+            {
+              "order_id": "delivery-mi70m91t-5sbbnl",
+              "customer_name": "Unknown Customer",
+              "load_kg": 0
+            }
+          ],
+          "load_kg": 0,
+          "distance": 8.49,
+          "duration": 11,
+          "geometry": "e{yuCqg{{GHVHXZKKYACGUAECGEOaCoH}@gC]mACGAEyA_EiBuFGOWy@CO{AeEGSISOe@Yw@Uq@aB}Eq@qB[cA]cAeAaDk@aBo@gB{@kC_AqCsA_Eu@yBM]o@iBgA}C}@mCUq@EIEKk@eBq@yB{@iCy@kCi@oCeAcFkAyHu@gEcC_IaB_GoEyP{@aDmBoIsB}KSkAk@kCaAaGKq@sHwb@sMct@uDc]MmA[_DK}@SeB_@sDw@aH_@mCm@sDe@uBUcASw@_@sBUqAUmAYqAMs@Ko@CWAU@[EWDGBG@IAIEGEGGCI?G@GBEFM?MAK?KAEAGEEGmAeCi@cAkA}BuB{DeAmBMUiAt@{DbCMCMBIFGL?H@HBHHHF@BVBj@@t@Gr@Gd@A@CB?D?DEVSj@g@z@g@f@cAn@uAf@s@\\i@\\c@\\E?I@E@sCkDaAkA",
+          "osrm": {
+            "distance": 8490.8,
+            "duration": 649,
+            "geometry": "e{yuCqg{{GHVHXZKKYACGUAECGEOaCoH}@gC]mACGAEyA_EiBuFGOWy@CO{AeEGSISOe@Yw@Uq@aB}Eq@qB[cA]cAeAaDk@aBo@gB{@kC_AqCsA_Eu@yBM]o@iBgA}C}@mCUq@EIEKk@eBq@yB{@iCy@kCi@oCeAcFkAyHu@gEcC_IaB_GoEyP{@aDmBoIsB}KSkAk@kCaAaGKq@sHwb@sMct@uDc]MmA[_DK}@SeB_@sDw@aH_@mCm@sDe@uBUcASw@_@sBUqAUmAYqAMs@Ko@CWAU@[EWDGBG@IAIEGEGGCI?G@GBEFM?MAK?KAEAGEEGmAeCi@cAkA}BuB{DeAmBMUiAt@{DbCMCMBIFGL?H@HBHHHF@BVBj@@t@Gr@Gd@A@CB?D?DEVSj@g@z@g@f@cAn@uAf@s@\\i@\\c@\\E?I@E@sCkDaAkA",
+            "legs": [
+              {
+                "steps": [
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "entry": [
+                          true
+                        ],
+                        "bearings": [
+                          246
+                        ],
+                        "location": [
+                          46.675293,
+                          24.71363
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "e{yuCqg{{GHV",
+                    "maneuver": {
+                      "bearing_after": 246,
+                      "bearing_before": 0,
+                      "location": [
+                        46.675293,
+                        24.71363
+                      ],
+                      "type": "depart"
+                    },
+                    "name": "طريق العروبة",
+                    "mode": "driving",
+                    "weight": 0.7,
+                    "duration": 0.7,
+                    "distance": 13.9
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 2,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          255,
+                          330
+                        ],
+                        "location": [
+                          46.675168,
+                          24.713579
+                        ]
+                      },
+                      {
+                        "out": 1,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          75,
+                          150,
+                          240,
+                          330
+                        ],
+                        "location": [
+                          46.675035,
+                          24.71353
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 3,
+                        "entry": [
+                          true,
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          240,
+                          330
+                        ],
+                        "location": [
+                          46.675099,
+                          24.713393
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          240,
+                          330
+                        ],
+                        "location": [
+                          46.675228,
+                          24.713447
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          240
+                        ],
+                        "location": [
+                          46.67703,
+                          24.714208
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          240
+                        ],
+                        "location": [
+                          46.678137,
+                          24.714686
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          240
+                        ],
+                        "location": [
+                          46.680441,
+                          24.715719
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          240
+                        ],
+                        "location": [
+                          46.680805,
+                          24.715864
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          240,
+                          330
+                        ],
+                        "location": [
+                          46.681901,
+                          24.716363
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          240,
+                          330
+                        ],
+                        "location": [
+                          46.681995,
+                          24.716407
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          240
+                        ],
+                        "location": [
+                          46.684736,
+                          24.717609
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          240
+                        ],
+                        "location": [
+                          46.685077,
+                          24.717758
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          90,
+                          240
+                        ],
+                        "location": [
+                          46.69233,
+                          24.720965
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 3,
+                        "entry": [
+                          true,
+                          false,
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          60,
+                          105,
+                          210,
+                          240,
+                          345
+                        ],
+                        "location": [
+                          46.692945,
+                          24.721251
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          225,
+                          240
+                        ],
+                        "location": [
+                          46.693563,
+                          24.721497
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "{zyuCyf{{GHXZKKYACGUAECGEOaCoH}@gC]mACGAEyA_EiBuFGOWy@CO{AeEGSISOe@Yw@Uq@aB}Eq@qB[cA]cAeAaDk@aBo@gB{@kC_AqCsA_Eu@yBM]o@iBgA}C}@mCUq@EIEKk@eBq@yB{@iCy@kCi@oCeAcFkAyHu@gEcC_IaB_GoEyP{@aD",
+                    "maneuver": {
+                      "bearing_after": 247,
+                      "bearing_before": 244,
+                      "location": [
+                        46.675168,
+                        24.713579
+                      ],
+                      "modifier": "uturn",
+                      "type": "continue"
+                    },
+                    "name": "طريق العروبة",
+                    "mode": "driving",
+                    "weight": 201.3,
+                    "duration": 201.3,
+                    "distance": 3443.5
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          75,
+                          90,
+                          255
+                        ],
+                        "location": [
+                          46.705916,
+                          24.72579
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          75,
+                          248,
+                          253
+                        ],
+                        "location": [
+                          46.709669,
+                          24.726923
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          71,
+                          81,
+                          255
+                        ],
+                        "location": [
+                          46.71005,
+                          24.727017
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          75,
+                          225,
+                          255
+                        ],
+                        "location": [
+                          46.712038,
+                          24.727566
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "eg|uC_ga|GmBoIsB}KSkAk@kCaAaGKq@sHwb@sMct@uDc]MmA[_DK}@SeB_@sDw@aH_@mCm@sDe@uBUcASw@",
+                    "maneuver": {
+                      "bearing_after": 70,
+                      "bearing_before": 67,
+                      "location": [
+                        46.705916,
+                        24.72579
+                      ],
+                      "modifier": "slight left",
+                      "type": "fork"
+                    },
+                    "name": "طريق العروبة",
+                    "mode": "driving",
+                    "weight": 230.6,
+                    "duration": 230.6,
+                    "distance": 3425.1
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 1,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          75,
+                          255
+                        ],
+                        "location": [
+                          46.73851,
+                          24.734023
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          75,
+                          255,
+                          270
+                        ],
+                        "location": [
+                          46.741167,
+                          24.734677
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "sz}uCurg|G_@sBUqAUmAYqAMs@Ko@CWAU@[EW",
+                    "maneuver": {
+                      "bearing_after": 73,
+                      "bearing_before": 67,
+                      "location": [
+                        46.73851,
+                        24.734023
+                      ],
+                      "modifier": "slight right",
+                      "type": "turn"
+                    },
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 26.5,
+                    "duration": 26.5,
+                    "distance": 292.5
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          135,
+                          255,
+                          330
+                        ],
+                        "location": [
+                          46.741291,
+                          24.734705
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          120,
+                          150,
+                          315
+                        ],
+                        "location": [
+                          46.741328,
+                          24.734675
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          45,
+                          210,
+                          240
+                        ],
+                        "location": [
+                          46.741514,
+                          24.734685
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          30,
+                          75,
+                          225
+                        ],
+                        "location": [
+                          46.741547,
+                          24.734719
+                        ]
+                      },
+                      {
+                        "out": 2,
+                        "in": 1,
+                        "entry": [
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          75,
+                          150,
+                          315
+                        ],
+                        "location": [
+                          46.741536,
+                          24.734888
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "}~}uCadh|GDGBG@IAIEGEGGCI?G@GBEF",
+                    "maneuver": {
+                      "exit": 3,
+                      "bearing_after": 130,
+                      "bearing_before": 75,
+                      "location": [
+                        46.741291,
+                        24.734705
+                      ],
+                      "modifier": "right",
+                      "type": "roundabout"
+                    },
+                    "name": "طريق العروبة الفرعي",
+                    "mode": "driving",
+                    "weight": 8.6,
+                    "duration": 8.6,
+                    "distance": 55.1
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          0,
+                          135,
+                          285
+                        ],
+                        "location": [
+                          46.741498,
+                          24.734918
+                        ]
+                      },
+                      {
+                        "out": 1,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          45,
+                          60,
+                          225
+                        ],
+                        "location": [
+                          46.741597,
+                          24.73528
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "g`~uCkeh|GM?MAK?KAEAGEEGmAeCi@cAkA}BuB{D",
+                    "maneuver": {
+                      "exit": 3,
+                      "bearing_after": 1,
+                      "bearing_before": 310,
+                      "location": [
+                        46.741498,
+                        24.734918
+                      ],
+                      "modifier": "right",
+                      "type": "exit roundabout"
+                    },
+                    "name": "طريق العروبة الفرعي",
+                    "mode": "driving",
+                    "weight": 32.1,
+                    "duration": 32.1,
+                    "distance": 356.7
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 1,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          45,
+                          60,
+                          240
+                        ],
+                        "location": [
+                          46.744179,
+                          24.736851
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "il~uCcvh|GeAmB",
+                    "maneuver": {
+                      "bearing_after": 54,
+                      "bearing_before": 54,
+                      "location": [
+                        46.744179,
+                        24.736851
+                      ],
+                      "modifier": "slight right",
+                      "type": "fork"
+                    },
+                    "name": "طريق العروبة الفرعي",
+                    "mode": "driving",
+                    "weight": 6.1,
+                    "duration": 6.1,
+                    "distance": 68.2
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          60,
+                          240,
+                          330
+                        ],
+                        "location": [
+                          46.744733,
+                          24.737201
+                        ]
+                      },
+                      {
+                        "out": 2,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          60,
+                          240,
+                          330
+                        ],
+                        "location": [
+                          46.74484,
+                          24.737267
+                        ]
+                      },
+                      {
+                        "out": 3,
+                        "in": 1,
+                        "entry": [
+                          false,
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          60,
+                          150,
+                          240,
+                          330
+                        ],
+                        "location": [
+                          46.744569,
+                          24.737641
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "on~uCqyh|GMUiAt@{DbC",
+                    "maneuver": {
+                      "bearing_after": 54,
+                      "bearing_before": 54,
+                      "location": [
+                        46.744733,
+                        24.737201
+                      ],
+                      "modifier": "left",
+                      "type": "turn"
+                    },
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 31.6,
+                    "duration": 31.6,
+                    "distance": 186.7
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          15,
+                          150,
+                          225
+                        ],
+                        "location": [
+                          46.743905,
+                          24.738581
+                        ]
+                      },
+                      {
+                        "out": 2,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          45,
+                          165,
+                          315
+                        ],
+                        "location": [
+                          46.743911,
+                          24.738717
+                        ]
+                      },
+                      {
+                        "out": 1,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          90,
+                          240,
+                          330
+                        ],
+                        "location": [
+                          46.743698,
+                          24.738804
+                        ]
+                      },
+                      {
+                        "out": 1,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          45,
+                          195,
+                          330
+                        ],
+                        "location": [
+                          46.743598,
+                          24.738732
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "cw~uCmth|GMCMBIFGL?H@HBHHHF@",
+                    "maneuver": {
+                      "exit": 1,
+                      "bearing_after": 14,
+                      "bearing_before": 326,
+                      "location": [
+                        46.743905,
+                        24.738581
+                      ],
+                      "modifier": "right",
+                      "type": "roundabout"
+                    },
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 9.8,
+                    "duration": 9.8,
+                    "distance": 58.8
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 2,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          15,
+                          195,
+                          255
+                        ],
+                        "location": [
+                          46.74359,
+                          24.738692
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "yw~uCmrh|GBVBj@@t@Gr@Gd@",
+                    "maneuver": {
+                      "exit": 1,
+                      "bearing_after": 255,
+                      "bearing_before": 189,
+                      "location": [
+                        46.74359,
+                        24.738692
+                      ],
+                      "modifier": "right",
+                      "type": "exit roundabout"
+                    },
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 15.6,
+                    "duration": 15.6,
+                    "distance": 108.4
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 2,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          105,
+                          150,
+                          315
+                        ],
+                        "location": [
+                          46.742532,
+                          24.738721
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "_x~uCykh|GA@CB?D?D",
+                    "maneuver": {
+                      "exit": 1,
+                      "bearing_after": 316,
+                      "bearing_before": 282,
+                      "location": [
+                        46.742532,
+                        24.738721
+                      ],
+                      "modifier": "slight right",
+                      "type": "roundabout"
+                    },
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 1.5,
+                    "duration": 1.5,
+                    "distance": 10.9
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 2,
+                        "in": 0,
+                        "entry": [
+                          false,
+                          true,
+                          true
+                        ],
+                        "bearings": [
+                          90,
+                          240,
+                          285
+                        ],
+                        "location": [
+                          46.742436,
+                          24.73875
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "ex~uCgkh|GEVSj@g@z@g@f@cAn@uAf@s@\\i@\\c@\\",
+                    "maneuver": {
+                      "exit": 1,
+                      "bearing_after": 285,
+                      "bearing_before": 265,
+                      "location": [
+                        46.742436,
+                        24.73875
+                      ],
+                      "modifier": "straight",
+                      "type": "exit roundabout"
+                    },
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 41.2,
+                    "duration": 41.2,
+                    "distance": 286.5
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          false
+                        ],
+                        "bearings": [
+                          0,
+                          150,
+                          180
+                        ],
+                        "location": [
+                          46.740709,
+                          24.740699
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "kd_vCm`h|GE?I@E@",
+                    "maneuver": {
+                      "exit": 1,
+                      "bearing_after": 2,
+                      "bearing_before": 323,
+                      "location": [
+                        46.740709,
+                        24.740699
+                      ],
+                      "modifier": "slight right",
+                      "type": "roundabout"
+                    },
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 2.1,
+                    "duration": 2.1,
+                    "distance": 12.5
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "out": 0,
+                        "in": 1,
+                        "entry": [
+                          true,
+                          false,
+                          true
+                        ],
+                        "bearings": [
+                          45,
+                          165,
+                          300
+                        ],
+                        "location": [
+                          46.740689,
+                          24.740809
+                        ]
+                      },
+                      {
+                        "out": 0,
+                        "in": 2,
+                        "entry": [
+                          true,
+                          true,
+                          false
+                        ],
+                        "bearings": [
+                          45,
+                          135,
+                          225
+                        ],
+                        "location": [
+                          46.741546,
+                          24.741548
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "ae_vCi`h|GsCkDaAkA",
+                    "maneuver": {
+                      "exit": 1,
+                      "bearing_after": 46,
+                      "bearing_before": 344,
+                      "location": [
+                        46.740689,
+                        24.740809
+                      ],
+                      "modifier": "right",
+                      "type": "exit roundabout"
+                    },
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 41.3,
+                    "duration": 41.3,
+                    "distance": 172.1
+                  },
+                  {
+                    "intersections": [
+                      {
+                        "in": 0,
+                        "entry": [
+                          true
+                        ],
+                        "bearings": [
+                          227
+                        ],
+                        "location": [
+                          46.741926,
+                          24.741875
+                        ]
+                      }
+                    ],
+                    "driving_side": "right",
+                    "geometry": "wk_vCahh|G",
+                    "maneuver": {
+                      "bearing_after": 0,
+                      "bearing_before": 47,
+                      "location": [
+                        46.741926,
+                        24.741875
+                      ],
+                      "type": "arrive"
+                    },
+                    "name": "",
+                    "mode": "driving",
+                    "weight": 0,
+                    "duration": 0,
+                    "distance": 0
+                  }
+                ],
+                "weight": 649,
+                "summary": "طريق العروبة, طريق العروبة الفرعي",
+                "duration": 649,
+                "distance": 8490.8
+              }
+            ],
+            "alternatives": []
+          },
+          "metrics": {
+            "efficiency": 0.85,
+            "utilization": 1,
+            "serviceQuality": 0.9,
+            "stopDensity": 0.23557126030624262
+          },
+          "vehicleName": "Default Vehicle"
+        }
+      ],
+      "summary": {
+        "total_routes": 1,
+        "total_distance": 8.49,
+        "total_duration": 11,
+        "total_deliveries": 1,
+        "total_load": 0,
+        "routingStats": {
+          "totalClusters": 1,
+          "averagePointsPerCluster": "1.00",
+          "alternativeRoutesGenerated": 0
+        },
+        "engineMetrics": {
+          "engineVersion": "1.0.0",
+          "profileUsed": "driving",
+          "computationTime": 2.3
+        }
+      },
+      "insights": [
+        "**Logistics Optimization Plan Summary**\n\n* **Routes:** 1\n* **Deliveries:** 1\n* **Total Distance:** 8.5 km\n* **Total Duration:** 11 minutes\n\nThis plan involves a single route with one delivery, covering a short distance of 8.5 km, expected to be completed within 11 minutes."
       ]
     }
   ]

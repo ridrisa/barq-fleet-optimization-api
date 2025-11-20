@@ -11,6 +11,7 @@ const { logger } = require('../../utils/logger');
 const authRoutes = require('./auth.routes');
 const optimizationRoutes = require('./optimization.routes');
 const agentRoutes = require('./agents.routes');
+const individualAgentsRoutes = require('./individual-agents.routes');
 const adminRoutes = require('./admin.routes');
 const autonomousRoutes = require('./autonomous.routes');
 const healthRoutes = require('./health.routes');
@@ -22,6 +23,8 @@ const fleetManagerRoutes = require('./fleet-manager.routes');
 const driverRoutes = require('./drivers.routes');
 const aiMetricsRoutes = require('./ai-metrics.routes');
 const vehiclesRoutes = require('./vehicles.routes');
+const analyticsLabRoutes = require('./analytics-lab.routes');
+const demoRoutes = require('../../demo/demo-routes');
 
 // Log v1 API usage
 router.use((req, res, next) => {
@@ -55,6 +58,7 @@ router.get('/', (req, res) => {
       auth: '/api/v1/auth',
       optimization: '/api/v1/optimize',
       agents: '/api/v1/agents',
+      individualAgents: '/api/v1/agents/individual',
       admin: '/api/v1/admin',
       autonomous: '/api/v1/autonomous',
       health: '/api/v1/health',
@@ -66,6 +70,8 @@ router.get('/', (req, res) => {
       drivers: '/api/v1/drivers',
       aiMetrics: '/api/v1/admin/ai',
       vehicles: '/api/v1/vehicles',
+      analyticsLab: '/api/v1/analytics-lab',
+      demo: '/api/v1/demo',
     },
     features: [
       'Route optimization',
@@ -77,6 +83,8 @@ router.get('/', (req, res) => {
       'Admin operations',
       'Real-time SLA analytics',
       'Performance dashboards',
+      'Interactive demo system',
+      'Live simulation engine',
     ],
   });
 });
@@ -85,6 +93,7 @@ router.get('/', (req, res) => {
 router.use('/auth', authRoutes);
 router.use('/optimize', optimizationRoutes);
 router.use('/agents', agentRoutes);
+router.use('/agents/individual', individualAgentsRoutes);
 router.use('/admin', adminRoutes);
 router.use('/autonomous', autonomousRoutes);
 router.use('/health', healthRoutes);
@@ -96,5 +105,7 @@ router.use('/fleet-manager', fleetManagerRoutes);
 router.use('/drivers', driverRoutes);
 router.use('/admin/ai', aiMetricsRoutes);
 router.use('/vehicles', vehiclesRoutes);
+router.use('/analytics-lab', analyticsLabRoutes);
+router.use('/demo', demoRoutes);
 
 module.exports = router;

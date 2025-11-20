@@ -1,37 +1,67 @@
 /**
  * Analytics Lab API Routes
  *
- * Provides endpoints for executing and managing Python analytics scripts
- * from the frontend UI.
+ * Provides HTTP endpoints for running Python analytics scripts
+ * and retrieving results through the PythonAnalyticsService.
  */
 
 const express = require('express');
 const router = express.Router();
-const pythonAnalytics = require('../../services/python-analytics.service');
+const pythonAnalyticsService = require('../../services/python-analytics.service');
 const { logger } = require('../../utils/logger');
 
 /**
- * POST /api/v1/analytics-lab/run/route-analysis
- * Execute route efficiency analysis
+ * GET /api/v1/analytics-lab/dashboard
+ * Get dashboard data with job history and running jobs
  */
-router.post('/run/route-analysis', async (req, res) => {
+router.get('/dashboard', async (req, res) => {
   try {
-    const params = req.body;
-
-    logger.info('[AnalyticsLab] Route analysis requested', { params });
-
-    const result = await pythonAnalytics.runRouteAnalysis(params);
+    const dashboard = {
+      runningJobs: pythonAnalyticsService.getRunningJobs(),
+      recentJobs: pythonAnalyticsService.getJobHistory(10),
+      pythonEnv: await pythonAnalyticsService.testEnvironment()
+    };
 
     res.json({
       success: true,
-      ...result
+      data: dashboard
     });
   } catch (error) {
-    logger.error('[AnalyticsLab] Route analysis failed', {
-      error: error.message,
-      stack: error.stack
+    logger.error('[AnalyticsLab] Dashboard error', { error: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/v1/analytics-lab/run/route-analysis
+ * Run route analysis script
+ */
+router.post('/run/route-analysis', async (req, res) => {
+  try {
+    const params = {
+      analysis_type: req.body.analysis_type || 'efficiency',
+      date_range: req.body.date_range || 30,
+      hub_id: req.body.hub_id || null,
+      min_deliveries: req.body.min_deliveries || 10,
+      output: 'json'
+    };
+
+    const jobInfo = await pythonAnalyticsService.runRouteAnalysis(params);
+
+    logger.info('[AnalyticsLab] Route analysis job started', {
+      jobId: jobInfo.jobId,
+      params
     });
 
+    res.json({
+      success: true,
+      data: jobInfo
+    });
+  } catch (error) {
+    logger.error('[AnalyticsLab] Route analysis error', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message
@@ -41,26 +71,32 @@ router.post('/run/route-analysis', async (req, res) => {
 
 /**
  * POST /api/v1/analytics-lab/run/fleet-performance
- * Execute fleet performance analysis
+ * Run fleet performance analysis script
  */
 router.post('/run/fleet-performance', async (req, res) => {
   try {
-    const params = req.body;
+    const params = {
+      analysis_type: req.body.analysis_type || 'courier',
+      metric: req.body.metric || 'delivery_rate',
+      period: req.body.period || 'monthly',
+      driver_id: req.body.driver_id || null,
+      vehicle_id: req.body.vehicle_id || null,
+      output: 'json'
+    };
 
-    logger.info('[AnalyticsLab] Fleet performance analysis requested', { params });
+    const jobInfo = await pythonAnalyticsService.runFleetPerformance(params);
 
-    const result = await pythonAnalytics.runFleetPerformance(params);
+    logger.info('[AnalyticsLab] Fleet performance job started', {
+      jobId: jobInfo.jobId,
+      params
+    });
 
     res.json({
       success: true,
-      ...result
+      data: jobInfo
     });
   } catch (error) {
-    logger.error('[AnalyticsLab] Fleet performance analysis failed', {
-      error: error.message,
-      stack: error.stack
-    });
-
+    logger.error('[AnalyticsLab] Fleet performance error', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message
@@ -70,26 +106,30 @@ router.post('/run/fleet-performance', async (req, res) => {
 
 /**
  * POST /api/v1/analytics-lab/run/demand-forecast
- * Execute demand forecasting
+ * Run demand forecasting script
  */
 router.post('/run/demand-forecast', async (req, res) => {
   try {
-    const params = req.body;
+    const params = {
+      forecast_type: req.body.forecast_type || 'daily',
+      horizon: req.body.horizon || 7,
+      hub_id: req.body.hub_id || null,
+      output: 'json'
+    };
 
-    logger.info('[AnalyticsLab] Demand forecast requested', { params });
+    const jobInfo = await pythonAnalyticsService.runDemandForecast(params);
 
-    const result = await pythonAnalytics.runDemandForecast(params);
+    logger.info('[AnalyticsLab] Demand forecast job started', {
+      jobId: jobInfo.jobId,
+      params
+    });
 
     res.json({
       success: true,
-      ...result
+      data: jobInfo
     });
   } catch (error) {
-    logger.error('[AnalyticsLab] Demand forecast failed', {
-      error: error.message,
-      stack: error.stack
-    });
-
+    logger.error('[AnalyticsLab] Demand forecast error', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message
@@ -99,26 +139,30 @@ router.post('/run/demand-forecast', async (req, res) => {
 
 /**
  * POST /api/v1/analytics-lab/run/sla-analysis
- * Execute SLA analysis
+ * Run SLA analytics script
  */
 router.post('/run/sla-analysis', async (req, res) => {
   try {
-    const params = req.body;
+    const params = {
+      analysis_type: req.body.analysis_type || 'compliance',
+      date_range: req.body.date_range || 30,
+      hub_id: req.body.hub_id || null,
+      output: 'json'
+    };
 
-    logger.info('[AnalyticsLab] SLA analysis requested', { params });
+    const jobInfo = await pythonAnalyticsService.runSLAAnalysis(params);
 
-    const result = await pythonAnalytics.runSLAAnalysis(params);
+    logger.info('[AnalyticsLab] SLA analysis job started', {
+      jobId: jobInfo.jobId,
+      params
+    });
 
     res.json({
       success: true,
-      ...result
+      data: jobInfo
     });
   } catch (error) {
-    logger.error('[AnalyticsLab] SLA analysis failed', {
-      error: error.message,
-      stack: error.stack
-    });
-
+    logger.error('[AnalyticsLab] SLA analysis error', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message
@@ -132,19 +176,22 @@ router.post('/run/sla-analysis', async (req, res) => {
  */
 router.get('/job/:jobId', (req, res) => {
   try {
-    const { jobId } = req.params;
+    const jobId = req.params.jobId;
+    const jobStatus = pythonAnalyticsService.getJobStatus(jobId);
 
-    const jobStatus = pythonAnalytics.getJobStatus(jobId);
+    if (jobStatus.status === 'not_found') {
+      return res.status(404).json({
+        success: false,
+        error: 'Job not found'
+      });
+    }
 
     res.json({
       success: true,
-      job: jobStatus
+      data: jobStatus
     });
   } catch (error) {
-    logger.error('[AnalyticsLab] Failed to get job status', {
-      error: error.message
-    });
-
+    logger.error('[AnalyticsLab] Get job status error', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message
@@ -159,19 +206,14 @@ router.get('/job/:jobId', (req, res) => {
 router.get('/jobs/history', (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
-
-    const history = pythonAnalytics.getJobHistory(limit);
+    const history = pythonAnalyticsService.getJobHistory(limit);
 
     res.json({
       success: true,
-      jobs: history,
-      total: history.length
+      data: history
     });
   } catch (error) {
-    logger.error('[AnalyticsLab] Failed to get job history', {
-      error: error.message
-    });
-
+    logger.error('[AnalyticsLab] Get job history error', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message
@@ -181,22 +223,18 @@ router.get('/jobs/history', (req, res) => {
 
 /**
  * GET /api/v1/analytics-lab/jobs/running
- * Get currently running jobs
+ * Get all running jobs
  */
 router.get('/jobs/running', (req, res) => {
   try {
-    const runningJobs = pythonAnalytics.getRunningJobs();
+    const runningJobs = pythonAnalyticsService.getRunningJobs();
 
     res.json({
       success: true,
-      jobs: runningJobs,
-      total: runningJobs.length
+      data: runningJobs
     });
   } catch (error) {
-    logger.error('[AnalyticsLab] Failed to get running jobs', {
-      error: error.message
-    });
-
+    logger.error('[AnalyticsLab] Get running jobs error', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message
@@ -205,65 +243,19 @@ router.get('/jobs/running', (req, res) => {
 });
 
 /**
- * GET /api/v1/analytics-lab/environment
+ * GET /api/v1/analytics-lab/test
  * Test Python environment
  */
-router.get('/environment', async (req, res) => {
+router.get('/test', async (req, res) => {
   try {
-    const envInfo = await pythonAnalytics.testEnvironment();
+    const envInfo = await pythonAnalyticsService.testEnvironment();
 
     res.json({
       success: true,
-      environment: envInfo
+      data: envInfo
     });
   } catch (error) {
-    logger.error('[AnalyticsLab] Environment test failed', {
-      error: error.message
-    });
-
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      message: 'Python environment not configured properly'
-    });
-  }
-});
-
-/**
- * GET /api/v1/analytics-lab/dashboard
- * Get dashboard overview
- */
-router.get('/dashboard', (req, res) => {
-  try {
-    const runningJobs = pythonAnalytics.getRunningJobs();
-    const history = pythonAnalytics.getJobHistory(10);
-
-    // Calculate statistics
-    const totalJobs = history.length;
-    const completedJobs = history.filter(j => j.status === 'completed').length;
-    const failedJobs = history.filter(j => j.status === 'failed').length;
-
-    const avgDuration = history.length > 0
-      ? history.reduce((sum, j) => sum + (j.duration || 0), 0) / history.length
-      : 0;
-
-    res.json({
-      success: true,
-      dashboard: {
-        running_jobs: runningJobs.length,
-        total_jobs: totalJobs,
-        completed_jobs: completedJobs,
-        failed_jobs: failedJobs,
-        success_rate: totalJobs > 0 ? (completedJobs / totalJobs * 100).toFixed(1) : 0,
-        avg_duration: avgDuration.toFixed(2),
-        recent_jobs: history.slice(0, 5)
-      }
-    });
-  } catch (error) {
-    logger.error('[AnalyticsLab] Dashboard failed', {
-      error: error.message
-    });
-
+    logger.error('[AnalyticsLab] Test environment error', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message

@@ -7,6 +7,7 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
+import { Progress } from './ui/progress';
 import { apiClient } from '@/lib/api-client';
 import {
   Activity,
@@ -20,8 +21,30 @@ import {
   PlayCircle,
   StopCircle,
   RefreshCw,
+  Users,
+  Settings,
+  BarChart3,
+  Brain,
+  Zap,
+  FastForward,
+  Pause,
+  SkipForward,
+  ChevronRight,
+  ChevronLeft,
+  Crown,
+  UserCheck,
+  Radio,
+  TrendingUp,
+  DollarSign,
+  Target,
+  Shield
 } from 'lucide-react';
 import { RootState, AppDispatch } from '@/store/store';
+import ExecutiveScenario from './demo-scenarios/executive-scenario';
+import FleetManagerScenario from './demo-scenarios/fleet-manager-scenario';
+import DispatcherScenario from './demo-scenarios/dispatcher-scenario';
+import AnalyticsScenario from './demo-scenarios/analytics-scenario';
+import AIAgentsScenario from './demo-scenarios/ai-agents-scenario';
 import {
   setConnectionStatus,
   setDemoStatus,
@@ -34,6 +57,70 @@ import {
 } from '@/store/demoSlice';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
+// Demo scenario definitions
+const DEMO_SCENARIOS = [
+  {
+    id: 'executive',
+    title: 'Executive Dashboard',
+    subtitle: 'Strategic Overview & ROI Analysis',
+    duration: 5,
+    icon: Crown,
+    description: 'High-level KPIs, cost savings (SAR 10.95M/year), and business impact',
+    highlights: ['Real-time KPIs', 'ROI Calculations', 'Performance Benchmarks', 'Cost Savings Analysis'],
+    color: 'purple'
+  },
+  {
+    id: 'fleet-manager',
+    title: 'Fleet Manager',
+    subtitle: 'Operations & Optimization',
+    duration: 7,
+    icon: Users,
+    description: 'Live fleet monitoring (800+ vehicles), route optimization, SLA tracking',
+    highlights: ['Fleet Status (800+ vehicles)', 'Order Assignment', 'SLA Compliance', 'CVRP Optimization'],
+    color: 'blue'
+  },
+  {
+    id: 'dispatcher',
+    title: 'Dispatcher Workflow',
+    subtitle: 'Real-time Operations',
+    duration: 10,
+    icon: Radio,
+    description: 'Emergency handling, autonomous agents, traffic adaptation, order recovery',
+    highlights: ['Emergency Escalation', 'Agent Orchestration', 'Traffic Adaptation', 'Order Recovery'],
+    color: 'green'
+  },
+  {
+    id: 'analytics',
+    title: 'Analytics Deep Dive',
+    subtitle: 'Data Intelligence',
+    duration: 8,
+    icon: BarChart3,
+    description: 'Demand forecasting, performance insights, predictive analytics with real data',
+    highlights: ['Demand Forecasting', 'Route Analysis (7,444 deliveries)', 'Fleet Performance', 'Predictive Analytics'],
+    color: 'orange'
+  },
+  {
+    id: 'ai-agents',
+    title: 'AI Agent Showcase',
+    subtitle: '18+ Autonomous Agents',
+    duration: 10,
+    icon: Brain,
+    description: 'Master orchestrator, agent coordination, autonomous decision-making',
+    highlights: ['18+ AI Agents', 'Master Orchestrator', 'Real-time Decisions', 'Autonomous Operations'],
+    color: 'pink'
+  },
+  {
+    id: 'integration',
+    title: 'Full System Integration',
+    subtitle: 'End-to-End Workflow',
+    duration: 5,
+    icon: Zap,
+    description: 'Complete order lifecycle, multi-agent coordination, real-time optimization',
+    highlights: ['End-to-End Lifecycle', 'Multi-agent Coordination', 'Real-time Optimization', 'Complete Automation'],
+    color: 'indigo'
+  }
+];
+
 export default function DemoDashboard() {
   const dispatch = useDispatch<AppDispatch>();
   const { isConnected, isRunning, orders, drivers, metrics, events, config } = useSelector(
@@ -43,6 +130,14 @@ export default function DemoDashboard() {
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [demoAvailable, setDemoAvailable] = useState(false);
+  
+  // New demo scenario state
+  const [currentScenario, setCurrentScenario] = useState<string | null>(null);
+  const [scenarioStep, setScenarioStep] = useState(0);
+  const [scenarioProgress, setScenarioProgress] = useState(0);
+  const [isScenarioRunning, setIsScenarioRunning] = useState(false);
+  const [scenarioSpeed, setScenarioSpeed] = useState(1);
+  const [showScenarioSelector, setShowScenarioSelector] = useState(true);
 
   // Check if demo is available (HTTP-only, no WebSocket required)
   React.useEffect(() => {
@@ -328,6 +423,78 @@ export default function DemoDashboard() {
     }
   };
 
+  const startScenario = async (scenarioId: string) => {
+    setCurrentScenario(scenarioId);
+    setScenarioStep(0);
+    setScenarioProgress(0);
+    setIsScenarioRunning(true);
+    setShowScenarioSelector(false);
+    
+    // Start the demo backend if not running
+    if (!isRunning) {
+      await startDemo();
+    }
+    
+    // Initialize scenario-specific data
+    try {
+      await apiClient.post('/demo/scenario', { 
+        scenarioId, 
+        step: 0,
+        speed: scenarioSpeed 
+      });
+    } catch (error) {
+      console.error('Failed to start scenario:', error);
+    }
+  };
+
+  const pauseScenario = () => {
+    setIsScenarioRunning(!isScenarioRunning);
+  };
+
+  const nextScenarioStep = async () => {
+    const scenario = DEMO_SCENARIOS.find(s => s.id === currentScenario);
+    if (scenario && scenarioStep < scenario.highlights.length - 1) {
+      const newStep = scenarioStep + 1;
+      setScenarioStep(newStep);
+      setScenarioProgress((newStep / (scenario.highlights.length - 1)) * 100);
+      
+      try {
+        await apiClient.post('/demo/scenario', { 
+          scenarioId: currentScenario, 
+          step: newStep,
+          speed: scenarioSpeed 
+        });
+      } catch (error) {
+        console.error('Failed to advance scenario:', error);
+      }
+    }
+  };
+
+  const resetScenario = () => {
+    setCurrentScenario(null);
+    setScenarioStep(0);
+    setScenarioProgress(0);
+    setIsScenarioRunning(false);
+    setShowScenarioSelector(true);
+    dispatch(resetDemo());
+  };
+
+  const getCurrentScenario = () => {
+    return DEMO_SCENARIOS.find(s => s.id === currentScenario);
+  };
+
+  const getColorClass = (color: string) => {
+    const colors = {
+      purple: 'border-purple-500 bg-purple-50 hover:bg-purple-100',
+      blue: 'border-blue-500 bg-blue-50 hover:bg-blue-100',
+      green: 'border-green-500 bg-green-50 hover:bg-green-100',
+      orange: 'border-orange-500 bg-orange-50 hover:bg-orange-100',
+      pink: 'border-pink-500 bg-pink-50 hover:bg-pink-100',
+      indigo: 'border-indigo-500 bg-indigo-50 hover:bg-indigo-100'
+    };
+    return colors[color as keyof typeof colors] || colors.blue;
+  };
+
   return (
     <div className="p-4 space-y-4">
       {!demoAvailable && (
@@ -335,81 +502,301 @@ export default function DemoDashboard() {
           Demo backend is unavailable. The demo endpoints may not be deployed or accessible.
         </div>
       )}
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">AI Route Optimization Demo</h1>
-          <p className="text-muted-foreground">
-            Real-time fleet management for BARQ and BULLET delivery services
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Badge variant={isConnected ? 'success' : 'destructive'}>
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </Badge>
-          <Badge variant={isRunning ? 'default' : 'secondary'}>
-            {isRunning ? 'Demo Running' : 'Demo Stopped'}
-          </Badge>
-        </div>
-      </div>
-
-      {/* Control Panel */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Demo Control Panel</CardTitle>
-          <CardDescription>Configure and control the demo simulation</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <Button
-              onClick={startDemo}
-              disabled={isRunning || isStarting || !demoAvailable}
-              className="flex items-center gap-2"
-            >
-              <PlayCircle className="w-4 h-4" />
-              {isStarting ? 'Starting...' : 'Start Demo'}
-            </Button>
-            <Button
-              onClick={stopDemo}
-              disabled={!isRunning || isStopping}
-              variant="destructive"
-              className="flex items-center gap-2"
-            >
-              <StopCircle className="w-4 h-4" />
-              {isStopping ? 'Stopping...' : 'Stop Demo'}
-            </Button>
-            <Button
-              onClick={() => createOrder('BARQ')}
-              disabled={!isRunning}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Package className="w-4 h-4" />
-              Create BARQ Order
-            </Button>
-            <Button
-              onClick={() => createOrder('BULLET')}
-              disabled={!isRunning}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Package className="w-4 h-4" />
-              Create BULLET Order
-            </Button>
-            <Button
-              onClick={() => dispatch(resetDemo())}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Reset
-            </Button>
+      
+      {/* Scenario Selector */}
+      {showScenarioSelector && (
+        <div className="space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              AI Route Optimization Platform
+            </h1>
+            <p className="text-xl text-muted-foreground">
+              Choose a demonstration scenario to explore our comprehensive fleet management solution
+            </p>
+            <div className="flex justify-center gap-4 mt-4">
+              <Badge variant="outline" className="bg-green-50">
+                <TrendingUp className="w-4 h-4 mr-1" />
+                SAR 10.95M Annual Savings
+              </Badge>
+              <Badge variant="outline" className="bg-blue-50">
+                <Target className="w-4 h-4 mr-1" />
+                800+ Vehicles Managed
+              </Badge>
+              <Badge variant="outline" className="bg-purple-50">
+                <Brain className="w-4 h-4 mr-1" />
+                18+ AI Agents
+              </Badge>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {DEMO_SCENARIOS.map((scenario) => {
+              const IconComponent = scenario.icon;
+              return (
+                <Card 
+                  key={scenario.id} 
+                  className={`cursor-pointer transition-all hover:shadow-lg ${getColorClass(scenario.color)} border-2`}
+                  onClick={() => startScenario(scenario.id)}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg bg-${scenario.color}-100`}>
+                        <IconComponent className={`w-6 h-6 text-${scenario.color}-600`} />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{scenario.title}</CardTitle>
+                        <CardDescription className="font-medium">{scenario.subtitle}</CardDescription>
+                      </div>
+                      <Badge variant="outline">
+                        {scenario.duration} min
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">{scenario.description}</p>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">KEY HIGHLIGHTS:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {scenario.highlights.map((highlight, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {highlight}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <Button className="w-full mt-3" variant="outline">
+                      <PlayCircle className="w-4 h-4 mr-2" />
+                      Start Demo
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      
+      {/* Scenario Runner */}
+      {!showScenarioSelector && currentScenario && (
+        <div className="space-y-6">
+          {/* Scenario Header */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" size="sm" onClick={resetScenario}>
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back to Scenarios
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                  {React.createElement(getCurrentScenario()?.icon || Activity, { className: 'w-6 h-6' })}
+                  {getCurrentScenario()?.title}
+                </h1>
+                <p className="text-muted-foreground">{getCurrentScenario()?.subtitle}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Badge variant={isConnected ? 'default' : 'destructive'}>
+                {isConnected ? 'Connected' : 'Disconnected'}
+              </Badge>
+              <Badge variant={isRunning ? 'default' : 'secondary'}>
+                {isRunning ? 'Demo Active' : 'Demo Stopped'}
+              </Badge>
+            </div>
+          </div>
+          
+          {/* Scenario Controls */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Scenario Progress</CardTitle>
+                  <CardDescription>
+                    Step {scenarioStep + 1} of {getCurrentScenario()?.highlights.length}: {getCurrentScenario()?.highlights[scenarioStep]}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={pauseScenario}
+                    disabled={!demoAvailable}
+                  >
+                    {isScenarioRunning ? <Pause className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                    {isScenarioRunning ? 'Pause' : 'Resume'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={nextScenarioStep}
+                    disabled={!demoAvailable || scenarioStep >= (getCurrentScenario()?.highlights.length || 0) - 1}
+                  >
+                    <SkipForward className="w-4 h-4 mr-1" />
+                    Next Step
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setScenarioSpeed(scenarioSpeed === 1 ? 2 : scenarioSpeed === 2 ? 5 : 1)}
+                  >
+                    <FastForward className="w-4 h-4 mr-1" />
+                    {scenarioSpeed}x Speed
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Progress value={scenarioProgress} className="w-full" />
+              <div className="flex justify-between text-sm text-muted-foreground mt-2">
+                <span>Progress: {Math.round(scenarioProgress)}%</span>
+                <span>Duration: ~{getCurrentScenario()?.duration} minutes</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Scenario-Specific Content */}
+          {currentScenario === 'executive' && (
+            <ExecutiveScenario 
+              step={scenarioStep} 
+              metrics={metrics} 
+              isRunning={isRunning && isScenarioRunning} 
+            />
+          )}
+          
+          {currentScenario === 'fleet-manager' && (
+            <FleetManagerScenario 
+              step={scenarioStep} 
+              metrics={metrics} 
+              isRunning={isRunning && isScenarioRunning} 
+            />
+          )}
+          
+          {/* Add placeholders for other scenarios */}
+          {currentScenario === 'dispatcher' && (
+            <DispatcherScenario 
+              step={scenarioStep} 
+              metrics={metrics} 
+              isRunning={isRunning && isScenarioRunning} 
+            />
+          )}
+          
+          {currentScenario === 'analytics' && (
+            <AnalyticsScenario 
+              step={scenarioStep} 
+              metrics={metrics} 
+              isRunning={isRunning && isScenarioRunning} 
+            />
+          )}
+          
+          {currentScenario === 'ai-agents' && (
+            <AIAgentsScenario 
+              step={scenarioStep} 
+              metrics={metrics} 
+              isRunning={isRunning && isScenarioRunning} 
+            />
+          )}
+          
+          {currentScenario === 'integration' && (
+            <Card className="border-indigo-200 bg-indigo-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-indigo-600" />
+                  Full System Integration Demo
+                </CardTitle>
+                <CardDescription>
+                  Step {scenarioStep + 1}: End-to-end workflow and multi-agent coordination
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  System integration demo content coming soon...
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+      
+      {/* Original Header (when scenario is running) */}
+      {!showScenarioSelector && (
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-semibold">Live Demo Dashboard</h2>
+            <p className="text-muted-foreground">
+              Real-time fleet management for BARQ and BULLET delivery services
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Badge variant={isConnected ? 'default' : 'destructive'}>
+              {isConnected ? 'Connected' : 'Disconnected'}
+            </Badge>
+            <Badge variant={isRunning ? 'default' : 'secondary'}>
+              {isRunning ? 'Demo Running' : 'Demo Stopped'}
+            </Badge>
+          </div>
+        </div>
+      )}
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+      {/* Control Panel - only show when scenario is running */}
+      {!showScenarioSelector && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Demo Control Panel</CardTitle>
+            <CardDescription>Configure and control the demo simulation</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <Button
+                onClick={startDemo}
+                disabled={isRunning || isStarting || !demoAvailable}
+                className="flex items-center gap-2"
+              >
+                <PlayCircle className="w-4 h-4" />
+                {isStarting ? 'Starting...' : 'Start Demo'}
+              </Button>
+              <Button
+                onClick={stopDemo}
+                disabled={!isRunning || isStopping}
+                variant="destructive"
+                className="flex items-center gap-2"
+              >
+                <StopCircle className="w-4 h-4" />
+                {isStopping ? 'Stopping...' : 'Stop Demo'}
+              </Button>
+              <Button
+                onClick={() => createOrder('BARQ')}
+                disabled={!isRunning}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Package className="w-4 h-4" />
+                Create BARQ Order
+              </Button>
+              <Button
+                onClick={() => createOrder('BULLET')}
+                disabled={!isRunning}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Package className="w-4 h-4" />
+                Create BULLET Order
+              </Button>
+              <Button
+                onClick={() => dispatch(resetDemo())}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Reset
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Metrics Cards - only show when scenario is running */}
+      {!showScenarioSelector && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
@@ -481,10 +868,10 @@ export default function DemoDashboard() {
             <p className="text-xs text-muted-foreground">Per order</p>
           </CardContent>
         </Card>
-      </div>
+          </div>
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="orders" className="space-y-4">
+          {/* Main Content Tabs */}
+          <Tabs defaultValue="orders" className="space-y-4">
         <TabsList>
           <TabsTrigger value="orders">Active Orders</TabsTrigger>
           <TabsTrigger value="drivers">Driver Fleet</TabsTrigger>
@@ -646,7 +1033,9 @@ export default function DemoDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+          </Tabs>
+        </>
+      )}
     </div>
   );
 }
