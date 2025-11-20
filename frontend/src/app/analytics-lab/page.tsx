@@ -27,7 +27,7 @@ interface DashboardStats {
   recent_jobs: AnalyticsJob[];
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3002';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003';
 
 export default function AnalyticsLabPage() {
   // Dashboard state

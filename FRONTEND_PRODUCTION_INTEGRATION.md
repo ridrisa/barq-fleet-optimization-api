@@ -355,9 +355,9 @@ GET  /api/v1/analytics-lab/environment
 
 **Example Usage:**
 ```bash
-# From UI at http://localhost:3000/analytics-lab
+# From UI at http://localhost:3001/analytics-lab
 # Or via API:
-curl -X POST http://localhost:3002/api/v1/analytics-lab/run/route-analysis \
+curl -X POST http://localhost:3003/api/v1/analytics-lab/run/route-analysis \
   -H "Content-Type: application/json" \
   -d '{
     "analysis_type": "efficiency",
@@ -366,7 +366,7 @@ curl -X POST http://localhost:3002/api/v1/analytics-lab/run/route-analysis \
   }'
 
 # Check job status:
-curl http://localhost:3002/api/v1/analytics-lab/job/job_1234567890_abc123def
+curl http://localhost:3003/api/v1/analytics-lab/job/job_1234567890_abc123def
 ```
 
 ---

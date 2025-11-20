@@ -53,7 +53,7 @@ export default function AIMonitoringDashboard() {
   const fetchAIMetrics = useCallback(async () => {
     try {
       setLoading(true);
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003';
 
       const params = new URLSearchParams();
       if (startDate) params.append('startDate', startDate);

@@ -89,7 +89,7 @@ export function ProductionStatistics() {
               {error || 'Unable to connect to production database. Using demo mode.'}
             </p>
             <p className="text-xs text-yellow-600 mt-2">
-              Ensure the backend server is running on http://localhost:3002
+              Ensure the backend server is running on http://localhost:3003
             </p>
           </div>
         </div>

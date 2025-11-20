@@ -44,7 +44,7 @@ export default function AgentMonitoringDashboard() {
 
   const fetchAgentStatus = useCallback(async () => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003';
       const response = await fetch(`${backendUrl}/api/admin/agents/status`);
 
       if (!response.ok) {
