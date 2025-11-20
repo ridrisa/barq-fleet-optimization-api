@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """
 Fleet Performance Analyzer - Fleet Optimizer GPT Module
-Analyzes driver and vehicle performance metrics from barqfleet_db.
+Analyzes courier performance metrics from BarqFleet production database.
+
+**PRODUCTION SCHEMA COMPATIBLE**
+Works with actual BarqFleet schema:
+- Couriers (NOT drivers/vehicles) - courier_id in shipments
+- Uses vehicle_type from couriers table
+- No separate driver_id or vehicle_id fields
 
 Usage:
     python fleet_performance.py --metric delivery_rate --period monthly
-    python fleet_performance.py --metric time_compliance --driver_id 123
-    python fleet_performance.py --metric efficiency --vehicle_id 456
+    python fleet_performance.py --metric delivery_rate --period daily --courier_id 123
+    python fleet_performance.py --analysis_type cohort --period weekly
 """
 
 import os
@@ -23,7 +29,7 @@ from scipy import stats
 
 
 class FleetPerformanceAnalyzer:
-    """Analyzes fleet (driver and vehicle) performance metrics."""
+    """Analyzes fleet (courier) performance metrics."""
 
     def __init__(self, db_config: Dict[str, str] = None):
         """
@@ -36,7 +42,7 @@ class FleetPerformanceAnalyzer:
             db_config = {
                 'host': os.getenv('DB_HOST', 'localhost'),
                 'port': int(os.getenv('DB_PORT', 5432)),
-                'database': os.getenv('DB_NAME', 'barq_logistics'),
+                'database': os.getenv('DB_NAME', 'barqfleet_db'),
                 'user': os.getenv('DB_USER', 'postgres'),
                 'password': os.getenv('DB_PASSWORD', 'postgres')
             }
@@ -48,7 +54,7 @@ class FleetPerformanceAnalyzer:
         """Establish database connection."""
         try:
             self.conn = psycopg2.connect(**self.db_config)
-            print("✓ Connected to database successfully")
+            print("✓ Connected to BarqFleet production database successfully")
         except Exception as e:
             print(f"✗ Database connection failed: {e}")
             sys.exit(1)
@@ -61,27 +67,28 @@ class FleetPerformanceAnalyzer:
 
     def analyze_driver_performance(self, period: str = 'monthly', driver_id: int = None) -> Dict:
         """
-        Analyze driver performance with comprehensive metrics.
+        Analyze courier performance with comprehensive metrics.
 
         Metrics:
-        - Delivery success rate (first attempt)
-        - On-time delivery rate
+        - Delivery success rate
         - Average deliveries per day
         - Average delivery time
-        - Customer satisfaction (if available)
+        - Total distance covered
 
         Args:
-            period: Analysis period ('weekly', 'monthly', 'quarterly')
-            driver_id: Specific driver to analyze (optional)
+            period: Analysis period ('daily', 'weekly', 'monthly', 'quarterly')
+            driver_id: Specific courier to analyze (optional) - maps to courier_id
 
         Returns:
-            Dictionary with driver performance rankings and statistics
+            Dictionary with courier performance rankings and statistics
         """
-        print(f"\n👨‍✈️ Analyzing driver performance ({period})...")
+        print(f"\n👨‍✈️ Analyzing courier performance ({period})...")
 
         # Calculate date range based on period
         end_date = datetime.now()
-        if period == 'weekly':
+        if period == 'daily':
+            start_date = end_date - timedelta(days=1)
+        elif period == 'weekly':
             start_date = end_date - timedelta(days=7)
         elif period == 'monthly':
             start_date = end_date - timedelta(days=30)
@@ -90,44 +97,65 @@ class FleetPerformanceAnalyzer:
         else:
             start_date = end_date - timedelta(days=30)
 
+        # Use actual production schema - courier_id in shipments
         query = """
-        WITH driver_metrics AS (
+        WITH courier_metrics AS (
             SELECT
-                s.driver_id,
+                s.courier_id,
+                c.first_name,
+                c.last_name,
+                c.mobile_number,
+                c.vehicle_type,
                 COUNT(*) as total_deliveries,
-                SUM(CASE WHEN s.status = 'delivered' THEN 1 ELSE 0 END) as successful_deliveries,
-                SUM(CASE
-                    WHEN s.delivered_at <= s.sla_deadline THEN 1
-                    ELSE 0
-                END) as on_time_deliveries,
-                AVG(EXTRACT(EPOCH FROM (s.delivered_at - s.created_at)) / 3600.0) as avg_delivery_hours,
-                STDDEV(EXTRACT(EPOCH FROM (s.delivered_at - s.created_at)) / 3600.0) as stddev_delivery_hours,
-                MIN(EXTRACT(EPOCH FROM (s.delivered_at - s.created_at)) / 3600.0) as min_delivery_hours,
-                MAX(EXTRACT(EPOCH FROM (s.delivered_at - s.created_at)) / 3600.0) as max_delivery_hours,
-                COUNT(DISTINCT DATE(s.created_at)) as active_days,
-                SUM(
-                    ST_Distance(
-                        ST_SetSRID(ST_MakePoint(s.pickup_longitude, s.pickup_latitude), 4326)::geography,
-                        ST_SetSRID(ST_MakePoint(s.delivery_longitude, s.delivery_latitude), 4326)::geography
-                    ) / 1000.0
-                ) as total_distance_km
-            FROM orders s
-            WHERE s.created_at >= %s
-            AND s.created_at <= %s
-            AND s.driver_id IS NOT NULL
+                SUM(CASE WHEN o.order_status = 'delivered' THEN 1 ELSE 0 END) as successful_deliveries,
+                AVG(
+                    CASE
+                        WHEN o.delivery_finish IS NOT NULL AND o.delivery_start IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (o.delivery_finish - o.delivery_start)) / 3600.0
+                        ELSE NULL
+                    END
+                ) as avg_delivery_hours,
+                STDDEV(
+                    CASE
+                        WHEN o.delivery_finish IS NOT NULL AND o.delivery_start IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (o.delivery_finish - o.delivery_start)) / 3600.0
+                        ELSE NULL
+                    END
+                ) as stddev_delivery_hours,
+                MIN(
+                    CASE
+                        WHEN o.delivery_finish IS NOT NULL AND o.delivery_start IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (o.delivery_finish - o.delivery_start)) / 3600.0
+                        ELSE NULL
+                    END
+                ) as min_delivery_hours,
+                MAX(
+                    CASE
+                        WHEN o.delivery_finish IS NOT NULL AND o.delivery_start IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (o.delivery_finish - o.delivery_start)) / 3600.0
+                        ELSE NULL
+                    END
+                ) as max_delivery_hours,
+                COUNT(DISTINCT DATE(o.created_at)) as active_days,
+                SUM(COALESCE(s.driving_distance, 0)) as total_distance_km
+            FROM shipments s
+            INNER JOIN orders o ON o.shipment_id = s.id
+            LEFT JOIN couriers c ON c.id = s.courier_id
+            WHERE o.created_at >= %s
+            AND o.created_at <= %s
+            AND s.courier_id IS NOT NULL
             {}
-            GROUP BY s.driver_id
+            GROUP BY s.courier_id, c.first_name, c.last_name, c.mobile_number, c.vehicle_type
             HAVING COUNT(*) >= 5
         )
         SELECT
-            dm.*,
-            (dm.successful_deliveries::float / dm.total_deliveries * 100) as success_rate,
-            (dm.on_time_deliveries::float / dm.total_deliveries * 100) as on_time_rate,
-            (dm.total_deliveries::float / dm.active_days) as deliveries_per_day,
-            (dm.total_distance_km / dm.total_deliveries) as avg_distance_per_delivery_km
-        FROM driver_metrics dm
-        ORDER BY success_rate DESC, on_time_rate DESC
-        """.format("AND s.driver_id = %s" if driver_id else "")
+            cm.*,
+            (cm.successful_deliveries::float / cm.total_deliveries * 100) as success_rate,
+            (cm.total_deliveries::float / NULLIF(cm.active_days, 0)) as deliveries_per_day,
+            (cm.total_distance_km / NULLIF(cm.total_deliveries, 0)) as avg_distance_per_delivery_km
+        FROM courier_metrics cm
+        ORDER BY success_rate DESC
+        """.format("AND s.courier_id = %s" if driver_id else "")
 
         try:
             cursor = self.conn.cursor(cursor_factory=RealDictCursor)
@@ -140,21 +168,24 @@ class FleetPerformanceAnalyzer:
             cursor.close()
 
             if not results:
-                print("⚠ No driver performance data found")
+                print("⚠ No courier performance data found")
                 return {"error": "No data available"}
 
             df = pd.DataFrame(results)
 
+            # Handle null values
+            df['avg_delivery_hours'] = df['avg_delivery_hours'].fillna(df['avg_delivery_hours'].median())
+            df['deliveries_per_day'] = df['deliveries_per_day'].fillna(0)
+
             # Calculate Driver Performance Index (DPI)
-            # Composite score: success_rate (40%) + on_time_rate (30%) + deliveries_per_day normalized (20%) + speed (10%)
-            max_deliveries_per_day = df['deliveries_per_day'].max()
-            min_avg_hours = df['avg_delivery_hours'].min()
+            # Composite score: success_rate (40%) + deliveries_per_day normalized (30%) + speed (30%)
+            max_deliveries_per_day = df['deliveries_per_day'].max() if df['deliveries_per_day'].max() > 0 else 1
+            min_avg_hours = df['avg_delivery_hours'].min() if df['avg_delivery_hours'].min() > 0 else 1
 
             df['dpi'] = (
                 (df['success_rate'] * 0.40) +
-                (df['on_time_rate'] * 0.30) +
-                ((df['deliveries_per_day'] / max_deliveries_per_day) * 100 * 0.20) +
-                ((min_avg_hours / df['avg_delivery_hours']) * 100 * 0.10)
+                ((df['deliveries_per_day'] / max_deliveries_per_day) * 100 * 0.30) +
+                ((min_avg_hours / df['avg_delivery_hours']) * 100 * 0.30)
             ).clip(0, 100)
 
             # Rank drivers
@@ -163,8 +194,11 @@ class FleetPerformanceAnalyzer:
 
             # Statistical analysis
             # Identify outliers using z-score
-            z_scores = np.abs(stats.zscore(df['dpi']))
-            df['is_outlier'] = z_scores > 2
+            if len(df) > 2:
+                z_scores = np.abs(stats.zscore(df['dpi'].fillna(df['dpi'].mean())))
+                df['is_outlier'] = z_scores > 2
+            else:
+                df['is_outlier'] = False
 
             # Top and bottom performers
             top_performers = df.head(10).to_dict('records')
@@ -175,9 +209,8 @@ class FleetPerformanceAnalyzer:
                 'total_drivers_analyzed': len(df),
                 'avg_dpi': float(df['dpi'].mean()),
                 'median_dpi': float(df['dpi'].median()),
-                'std_dpi': float(df['dpi'].std()),
+                'std_dpi': float(df['dpi'].std()) if len(df) > 1 else 0,
                 'avg_success_rate': float(df['success_rate'].mean()),
-                'avg_on_time_rate': float(df['on_time_rate'].mean()),
                 'avg_deliveries_per_day': float(df['deliveries_per_day'].mean()),
                 'total_deliveries': int(df['total_deliveries'].sum())
             }
@@ -191,7 +224,7 @@ class FleetPerformanceAnalyzer:
 
             tier_distribution = df['tier'].value_counts().to_dict()
 
-            print(f"✓ Analyzed {len(df)} drivers with {overall_stats['total_deliveries']} total deliveries")
+            print(f"✓ Analyzed {len(df)} couriers with {overall_stats['total_deliveries']} total deliveries")
 
             return {
                 'analysis_type': 'driver_performance',
@@ -209,32 +242,35 @@ class FleetPerformanceAnalyzer:
         except Exception as e:
             if self.conn:
                 self.conn.rollback()
-            print(f"✗ Driver performance analysis failed: {e}")
+            print(f"✗ Courier performance analysis failed: {e}")
             import traceback
             traceback.print_exc()
             return {"error": str(e)}
 
     def analyze_vehicle_performance(self, period: str = 'monthly', vehicle_id: int = None) -> Dict:
         """
-        Analyze vehicle performance and utilization.
+        Analyze vehicle type performance and utilization.
+
+        Note: In production schema, there's no separate vehicle_id - we analyze by vehicle_type
 
         Metrics:
-        - Utilization rate
-        - Average deliveries per vehicle
+        - Utilization rate by vehicle type
+        - Average deliveries per vehicle type
         - Efficiency (deliveries per km)
-        - Maintenance needs (inferred from patterns)
 
         Args:
             period: Analysis period
-            vehicle_id: Specific vehicle to analyze (optional)
+            vehicle_id: Specific vehicle type to analyze (optional) - actually filters by courier
 
         Returns:
-            Dictionary with vehicle performance metrics
+            Dictionary with vehicle type performance metrics
         """
         print(f"\n🚚 Analyzing vehicle performance ({period})...")
 
         end_date = datetime.now()
-        if period == 'weekly':
+        if period == 'daily':
+            start_date = end_date - timedelta(days=1)
+        elif period == 'weekly':
             start_date = end_date - timedelta(days=7)
         elif period == 'monthly':
             start_date = end_date - timedelta(days=30)
@@ -243,38 +279,42 @@ class FleetPerformanceAnalyzer:
         else:
             start_date = end_date - timedelta(days=30)
 
+        # Analyze by vehicle_type since we don't have individual vehicle IDs
         query = """
         WITH vehicle_metrics AS (
             SELECT
-                s.vehicle_id,
+                c.vehicle_type,
                 COUNT(*) as total_trips,
-                COUNT(DISTINCT s.driver_id) as drivers_used,
-                COUNT(DISTINCT DATE(s.created_at)) as active_days,
-                SUM(CASE WHEN s.status = 'delivered' THEN 1 ELSE 0 END) as successful_deliveries,
-                AVG(EXTRACT(EPOCH FROM (s.delivered_at - s.created_at)) / 3600.0) as avg_trip_hours,
-                SUM(
-                    ST_Distance(
-                        ST_SetSRID(ST_MakePoint(s.pickup_longitude, s.pickup_latitude), 4326)::geography,
-                        ST_SetSRID(ST_MakePoint(s.delivery_longitude, s.delivery_latitude), 4326)::geography
-                    ) / 1000.0
-                ) as total_distance_km
-            FROM orders s
-            WHERE s.created_at >= %s
-            AND s.created_at <= %s
-            AND s.vehicle_id IS NOT NULL
+                COUNT(DISTINCT s.courier_id) as couriers_used,
+                COUNT(DISTINCT DATE(o.created_at)) as active_days,
+                SUM(CASE WHEN o.order_status = 'delivered' THEN 1 ELSE 0 END) as successful_deliveries,
+                AVG(
+                    CASE
+                        WHEN o.delivery_finish IS NOT NULL AND o.delivery_start IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (o.delivery_finish - o.delivery_start)) / 3600.0
+                        ELSE NULL
+                    END
+                ) as avg_trip_hours,
+                SUM(COALESCE(s.driving_distance, 0)) as total_distance_km
+            FROM shipments s
+            INNER JOIN orders o ON o.shipment_id = s.id
+            LEFT JOIN couriers c ON c.id = s.courier_id
+            WHERE o.created_at >= %s
+            AND o.created_at <= %s
+            AND c.vehicle_type IS NOT NULL
             {}
-            GROUP BY s.vehicle_id
+            GROUP BY c.vehicle_type
             HAVING COUNT(*) >= 5
         )
         SELECT
             vm.*,
             (vm.successful_deliveries::float / vm.total_trips * 100) as success_rate,
-            (vm.total_trips::float / vm.active_days) as trips_per_day,
-            (vm.total_distance_km / vm.total_trips) as avg_distance_per_trip_km,
-            (vm.total_trips::float / vm.total_distance_km) as deliveries_per_km_efficiency
+            (vm.total_trips::float / NULLIF(vm.active_days, 0)) as trips_per_day,
+            (vm.total_distance_km / NULLIF(vm.total_trips, 0)) as avg_distance_per_trip_km,
+            (vm.total_trips::float / NULLIF(vm.total_distance_km, 0)) as deliveries_per_km_efficiency
         FROM vehicle_metrics vm
         ORDER BY success_rate DESC, trips_per_day DESC
-        """.format("AND s.vehicle_id = %s" if vehicle_id else "")
+        """.format("AND s.courier_id = %s" if vehicle_id else "")
 
         try:
             cursor = self.conn.cursor(cursor_factory=RealDictCursor)
@@ -292,10 +332,14 @@ class FleetPerformanceAnalyzer:
 
             df = pd.DataFrame(results)
 
+            # Handle null values
+            df['trips_per_day'] = df['trips_per_day'].fillna(0)
+            df['deliveries_per_km_efficiency'] = df['deliveries_per_km_efficiency'].fillna(0)
+
             # Calculate Vehicle Performance Index (VPI)
             # success_rate (50%) + utilization (30%) + efficiency (20%)
-            max_trips_per_day = df['trips_per_day'].max()
-            max_efficiency = df['deliveries_per_km_efficiency'].max()
+            max_trips_per_day = df['trips_per_day'].max() if df['trips_per_day'].max() > 0 else 1
+            max_efficiency = df['deliveries_per_km_efficiency'].max() if df['deliveries_per_km_efficiency'].max() > 0 else 1
 
             df['vpi'] = (
                 (df['success_rate'] * 0.50) +
@@ -303,22 +347,25 @@ class FleetPerformanceAnalyzer:
                 ((df['deliveries_per_km_efficiency'] / max_efficiency) * 100 * 0.20)
             ).clip(0, 100)
 
-            # Rank vehicles
+            # Rank vehicle types
             df = df.sort_values('vpi', ascending=False)
             df['rank'] = range(1, len(df) + 1)
 
             # Utilization categories
-            df['utilization'] = pd.cut(
-                df['trips_per_day'],
-                bins=[0, df['trips_per_day'].quantile(0.33), df['trips_per_day'].quantile(0.66), float('inf')],
-                labels=['Low', 'Medium', 'High']
-            )
+            if len(df) > 1:
+                df['utilization'] = pd.cut(
+                    df['trips_per_day'],
+                    bins=[0, df['trips_per_day'].quantile(0.33), df['trips_per_day'].quantile(0.66), float('inf')],
+                    labels=['Low', 'Medium', 'High']
+                )
+            else:
+                df['utilization'] = 'Medium'
 
             top_performers = df.head(10).to_dict('records')
-            underutilized = df[df['utilization'] == 'Low'].to_dict('records')
+            underutilized = df[df['utilization'] == 'Low'].to_dict('records') if len(df) > 1 else []
 
             overall_stats = {
-                'total_vehicles_analyzed': len(df),
+                'total_vehicle_types_analyzed': len(df),
                 'avg_vpi': float(df['vpi'].mean()),
                 'avg_success_rate': float(df['success_rate'].mean()),
                 'avg_trips_per_day': float(df['trips_per_day'].mean()),
@@ -328,7 +375,7 @@ class FleetPerformanceAnalyzer:
 
             utilization_dist = df['utilization'].value_counts().to_dict()
 
-            print(f"✓ Analyzed {len(df)} vehicles with {overall_stats['total_trips']} total trips")
+            print(f"✓ Analyzed {len(df)} vehicle types with {overall_stats['total_trips']} total trips")
 
             return {
                 'analysis_type': 'vehicle_performance',
@@ -353,7 +400,7 @@ class FleetPerformanceAnalyzer:
 
     def compare_driver_cohorts(self, metric: str = 'dpi', period: str = 'monthly') -> Dict:
         """
-        Compare driver performance across cohorts with statistical testing.
+        Compare courier performance across cohorts with statistical testing.
 
         Performs:
         - ANOVA to detect significant differences
@@ -361,13 +408,13 @@ class FleetPerformanceAnalyzer:
         - Cohort segmentation
 
         Args:
-            metric: Metric to compare ('dpi', 'success_rate', 'on_time_rate')
+            metric: Metric to compare ('dpi', 'success_rate')
             period: Analysis period
 
         Returns:
             Dictionary with statistical comparison results
         """
-        print(f"\n📊 Comparing driver cohorts on metric: {metric}...")
+        print(f"\n📊 Comparing courier cohorts on metric: {metric}...")
 
         # First get driver performance data
         driver_data = self.analyze_driver_performance(period=period)
@@ -425,7 +472,7 @@ class FleetPerformanceAnalyzer:
             for tier, values in cohorts.items() if len(values) > 0
         }
 
-        print(f"✓ Compared {len(cohorts)} cohorts with {len(df)} total drivers")
+        print(f"✓ Compared {len(cohorts)} cohorts with {len(df)} total couriers")
 
         return {
             'analysis_type': 'cohort_comparison',
@@ -442,69 +489,55 @@ class FleetPerformanceAnalyzer:
         }
 
     def _generate_driver_recommendations(self, df: pd.DataFrame) -> List[str]:
-        """Generate actionable recommendations based on driver performance."""
+        """Generate actionable recommendations based on courier performance."""
         recommendations = []
 
         # Check bottom 10% performers
-        bottom_10_pct = df[df['rank'] > len(df) * 0.9]
-        if len(bottom_10_pct) > 0:
-            avg_dpi_bottom = bottom_10_pct['dpi'].mean()
-            recommendations.append(
-                f"Bottom 10% drivers ({len(bottom_10_pct)} drivers) have avg DPI of {avg_dpi_bottom:.1f}. "
-                "Consider providing additional training or reassignment."
-            )
-
-        # Check on-time rate
-        low_on_time = df[df['on_time_rate'] < 80]
-        if len(low_on_time) > 0:
-            recommendations.append(
-                f"{len(low_on_time)} drivers have on-time rate below 80%. "
-                "Review route assignments and time estimates for these drivers."
-            )
+        if len(df) > 10:
+            bottom_10_pct = df[df['rank'] > len(df) * 0.9]
+            if len(bottom_10_pct) > 0:
+                avg_dpi_bottom = bottom_10_pct['dpi'].mean()
+                recommendations.append(
+                    f"Bottom 10% couriers ({len(bottom_10_pct)} couriers) have avg DPI of {avg_dpi_bottom:.1f}. "
+                    "Consider providing additional training or reassignment."
+                )
 
         # Check success rate
         low_success = df[df['success_rate'] < 85]
         if len(low_success) > 0:
             recommendations.append(
-                f"{len(low_success)} drivers have success rate below 85%. "
+                f"{len(low_success)} couriers have success rate below 85%. "
                 "Investigate common failure patterns and provide support."
             )
 
         # Recognize top performers
-        top_5 = df.head(5)
-        if len(top_5) > 0:
+        if len(df) >= 5:
+            top_5 = df.head(5)
             recommendations.append(
-                f"Top 5 drivers have avg DPI of {top_5['dpi'].mean():.1f}. "
+                f"Top 5 couriers have avg DPI of {top_5['dpi'].mean():.1f}. "
                 "Consider using them as trainers or for high-priority deliveries."
             )
 
-        return recommendations if recommendations else ["All drivers performing within acceptable ranges."]
+        return recommendations if recommendations else ["All couriers performing within acceptable ranges."]
 
     def _generate_vehicle_recommendations(self, df: pd.DataFrame, underutilized: List) -> List[str]:
-        """Generate actionable recommendations based on vehicle performance."""
+        """Generate actionable recommendations based on vehicle type performance."""
         recommendations = []
 
         if len(underutilized) > 0:
             recommendations.append(
-                f"{len(underutilized)} vehicles are underutilized (low trips per day). "
-                "Consider reallocating to higher-demand areas or reviewing vehicle pool size."
+                f"{len(underutilized)} vehicle types are underutilized (low trips per day). "
+                "Consider reallocating to higher-demand areas."
             )
 
         low_success = df[df['success_rate'] < 85]
         if len(low_success) > 0:
             recommendations.append(
-                f"{len(low_success)} vehicles have success rate below 85%. "
-                "Check for mechanical issues or driver training needs."
+                f"{len(low_success)} vehicle types have success rate below 85%. "
+                "Check for mechanical issues or courier training needs."
             )
 
-        high_distance = df[df['avg_distance_per_trip_km'] > df['avg_distance_per_trip_km'].quantile(0.75)]
-        if len(high_distance) > 0:
-            recommendations.append(
-                f"{len(high_distance)} vehicles have unusually high distance per trip. "
-                "Review route assignments for these vehicles to optimize fuel efficiency."
-            )
-
-        return recommendations if recommendations else ["All vehicles performing within acceptable ranges."]
+        return recommendations if recommendations else ["All vehicle types performing within acceptable ranges."]
 
     def _interpret_cohort_comparison(self, f_stat: float, p_value: float, comparisons: List) -> str:
         """Interpret statistical comparison results."""
@@ -524,7 +557,7 @@ class FleetPerformanceAnalyzer:
 
 def main():
     """Main execution function."""
-    parser = argparse.ArgumentParser(description='Analyze fleet (driver/vehicle) performance')
+    parser = argparse.ArgumentParser(description='Analyze fleet (courier/vehicle) performance')
     parser.add_argument(
         '--metric',
         choices=['delivery_rate', 'time_compliance', 'efficiency'],
@@ -533,19 +566,24 @@ def main():
     )
     parser.add_argument(
         '--period',
-        choices=['weekly', 'monthly', 'quarterly'],
+        choices=['daily', 'weekly', 'monthly', 'quarterly'],
         default='monthly',
         help='Analysis period (default: monthly)'
     )
     parser.add_argument(
         '--driver_id',
         type=int,
-        help='Specific driver ID to analyze'
+        help='Specific courier ID to analyze (maps to courier_id)'
     )
     parser.add_argument(
         '--vehicle_id',
         type=int,
-        help='Specific vehicle ID to analyze'
+        help='Specific courier ID for vehicle analysis (maps to courier_id)'
+    )
+    parser.add_argument(
+        '--courier_id',
+        type=int,
+        help='Specific courier ID to analyze'
     )
     parser.add_argument(
         '--analysis_type',
@@ -567,9 +605,12 @@ def main():
     analyzer.connect()
 
     try:
+        # Map driver_id or courier_id to actual courier ID
+        courier_id = args.courier_id or args.driver_id
+
         # Perform analysis
         if args.analysis_type == 'driver':
-            results = analyzer.analyze_driver_performance(period=args.period, driver_id=args.driver_id)
+            results = analyzer.analyze_driver_performance(period=args.period, driver_id=courier_id)
         elif args.analysis_type == 'vehicle':
             results = analyzer.analyze_vehicle_performance(period=args.period, vehicle_id=args.vehicle_id)
         elif args.analysis_type == 'cohort':
@@ -591,9 +632,9 @@ def main():
                     for key, value in results['overall_stats'].items():
                         print(f"  {key}: {value}")
 
-                    print(f"\n🏆 Top 10 Drivers:")
+                    print(f"\n🏆 Top 10 Couriers:")
                     for driver in results['top_performers']:
-                        print(f"  Driver {driver['driver_id']}: DPI={driver['dpi']:.1f}, Success={driver['success_rate']:.1f}%, OnTime={driver['on_time_rate']:.1f}%")
+                        print(f"  Courier {driver['courier_id']} ({driver.get('first_name', 'Unknown')}): DPI={driver['dpi']:.1f}, Success={driver['success_rate']:.1f}%")
 
                     print(f"\n💡 Recommendations:")
                     for rec in results['recommendations']:
@@ -604,9 +645,9 @@ def main():
                     for key, value in results['overall_stats'].items():
                         print(f"  {key}: {value}")
 
-                    print(f"\n🏆 Top 10 Vehicles:")
+                    print(f"\n🏆 Top Vehicle Types:")
                     for vehicle in results['top_performers']:
-                        print(f"  Vehicle {vehicle['vehicle_id']}: VPI={vehicle['vpi']:.1f}, Trips/Day={vehicle['trips_per_day']:.1f}")
+                        print(f"  Vehicle Type: {vehicle['vehicle_type']}, VPI={vehicle['vpi']:.1f}, Trips/Day={vehicle['trips_per_day']:.1f}")
 
                     print(f"\n💡 Recommendations:")
                     for rec in results['recommendations']:

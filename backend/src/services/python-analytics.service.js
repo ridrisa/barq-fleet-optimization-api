@@ -312,9 +312,19 @@ class PythonAnalyticsService {
       command: `${this.pythonPath} ${args.join(' ')}`
     });
 
+    // Pass BarqFleet production database credentials to Python scripts
+    const pythonEnv = {
+      ...process.env,
+      DB_HOST: process.env.BARQ_PROD_DB_HOST || 'barqfleet-db-prod-stack-read-replica.cgr02s6xqwhy.me-south-1.rds.amazonaws.com',
+      DB_PORT: process.env.BARQ_PROD_DB_PORT || '5432',
+      DB_NAME: process.env.BARQ_PROD_DB_NAME || 'barqfleet_db',
+      DB_USER: process.env.BARQ_PROD_DB_USER || 'ventgres',
+      DB_PASSWORD: process.env.BARQ_PROD_DB_PASSWORD || 'Jk56tt4HkzePFfa3ht'
+    };
+
     const pythonProcess = spawn(this.pythonPath, args, {
       cwd: this.scriptsDir,
-      env: { ...process.env }
+      env: pythonEnv
     });
 
     let outputBuffer = '';

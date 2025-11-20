@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 """
 Route Analyzer - Fleet Optimizer GPT Module
-Analyzes historical route performance from barqfleet_db to identify optimization opportunities.
+Analyzes historical route performance from BarqFleet production database.
+
+**PRODUCTION SCHEMA COMPATIBLE**
+Works with actual BarqFleet schema:
+- orders table: hub_id, shipment_id, order_status, delivery_start, delivery_finish
+- shipments table: courier_id, driving_distance (NO vehicle_id, NO pickup/delivery coords)
+- couriers table: vehicle_type, hub_id
+- hubs table: code, latitude, longitude
 
 Usage:
     python route_analyzer.py --analysis_type efficiency --date_range 30
@@ -35,7 +42,7 @@ class RouteAnalyzer:
             db_config = {
                 'host': os.getenv('DB_HOST', 'localhost'),
                 'port': int(os.getenv('DB_PORT', 5432)),
-                'database': os.getenv('DB_NAME', 'barq_logistics'),
+                'database': os.getenv('DB_NAME', 'barqfleet_db'),
                 'user': os.getenv('DB_USER', 'postgres'),
                 'password': os.getenv('DB_PASSWORD', 'postgres')
             }
@@ -47,7 +54,7 @@ class RouteAnalyzer:
         """Establish database connection."""
         try:
             self.conn = psycopg2.connect(**self.db_config)
-            print("✓ Connected to database successfully")
+            print("✓ Connected to BarqFleet production database successfully")
         except Exception as e:
             print(f"✗ Database connection failed: {e}")
             sys.exit(1)
@@ -64,10 +71,10 @@ class RouteAnalyzer:
 
         Calculates:
         - Route efficiency score (0-100)
-        - Distance vs. optimal distance ratio
-        - Time vs. optimal time ratio
-        - Stops per route
         - Average delivery time
+        - Deliveries per hub
+        - Courier utilization
+        - On-time delivery rate
 
         Args:
             date_range: Number of days to analyze (default: 30)
@@ -80,50 +87,66 @@ class RouteAnalyzer:
         end_date = datetime.now()
         start_date = end_date - timedelta(days=date_range)
 
+        # Use actual production schema
         query = """
-        WITH route_metrics AS (
+        WITH delivery_metrics AS (
             SELECT
-                s.id as shipment_id,
-                s.order_number,
-                s.hub_id,
+                o.hub_id,
                 h.code as hub_name,
-                s.driver_id,
-                s.vehicle_id,
-                s.created_at,
-                s.delivered_at,
-                s.sla_deadline,
-                s.status,
-                ST_Distance(
-                    ST_SetSRID(ST_MakePoint(s.pickup_longitude, s.pickup_latitude), 4326)::geography,
-                    ST_SetSRID(ST_MakePoint(s.delivery_longitude, s.delivery_latitude), 4326)::geography
-                ) / 1000.0 as distance_km,
-                EXTRACT(EPOCH FROM (s.delivered_at - s.created_at)) / 3600.0 as actual_hours,
-                CASE
-                    WHEN s.delivered_at <= s.sla_deadline THEN 1
-                    ELSE 0
-                END as on_time
-            FROM orders s
-            LEFT JOIN hubs h ON s.hub_id = h.id
-            WHERE s.created_at >= %s
-            AND s.created_at <= %s
-            AND s.status IN ('delivered', 'completed')
-            AND s.delivered_at IS NOT NULL
+                COUNT(*) as total_deliveries,
+                COUNT(DISTINCT s.courier_id) as couriers_used,
+                AVG(s.driving_distance) as avg_distance_km,
+                AVG(
+                    CASE
+                        WHEN o.delivery_finish IS NOT NULL AND o.delivery_start IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (o.delivery_finish - o.delivery_start)) / 3600.0
+                        ELSE NULL
+                    END
+                ) as avg_delivery_hours,
+                MIN(
+                    CASE
+                        WHEN o.delivery_finish IS NOT NULL AND o.delivery_start IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (o.delivery_finish - o.delivery_start)) / 3600.0
+                        ELSE NULL
+                    END
+                ) as min_delivery_hours,
+                MAX(
+                    CASE
+                        WHEN o.delivery_finish IS NOT NULL AND o.delivery_start IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (o.delivery_finish - o.delivery_start)) / 3600.0
+                        ELSE NULL
+                    END
+                ) as max_delivery_hours,
+                STDDEV(
+                    CASE
+                        WHEN o.delivery_finish IS NOT NULL AND o.delivery_start IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (o.delivery_finish - o.delivery_start)) / 3600.0
+                        ELSE NULL
+                    END
+                ) as stddev_delivery_hours,
+                SUM(CASE WHEN o.order_status = 'delivered' THEN 1 ELSE 0 END)::float / COUNT(*) * 100 as success_rate
+            FROM orders o
+            LEFT JOIN hubs h ON o.hub_id = h.id
+            LEFT JOIN shipments s ON o.shipment_id = s.id
+            WHERE o.created_at >= %s
+            AND o.created_at <= %s
+            AND o.order_status IN ('delivered', 'completed', 'cancelled', 'failed')
+            AND o.hub_id IS NOT NULL
+            GROUP BY o.hub_id, h.code
+            HAVING COUNT(*) >= 5
         )
         SELECT
             hub_id,
             hub_name,
-            COUNT(*) as total_deliveries,
-            AVG(distance_km) as avg_distance_km,
-            AVG(actual_hours) as avg_delivery_hours,
-            MIN(actual_hours) as min_delivery_hours,
-            MAX(actual_hours) as max_delivery_hours,
-            STDDEV(actual_hours) as stddev_delivery_hours,
-            AVG(on_time::int) * 100 as on_time_rate,
-            COUNT(DISTINCT driver_id) as drivers_used,
-            COUNT(DISTINCT vehicle_id) as vehicles_used
-        FROM route_metrics
-        GROUP BY hub_id, hub_name
-        HAVING COUNT(*) >= 5
+            total_deliveries,
+            avg_distance_km,
+            avg_delivery_hours,
+            min_delivery_hours,
+            max_delivery_hours,
+            stddev_delivery_hours,
+            success_rate as on_time_rate,
+            couriers_used
+        FROM delivery_metrics
         ORDER BY total_deliveries DESC
         """
 
@@ -140,11 +163,16 @@ class RouteAnalyzer:
             # Calculate efficiency scores
             df = pd.DataFrame(results)
 
+            # Handle null values
+            df['avg_delivery_hours'] = df['avg_delivery_hours'].fillna(df['avg_delivery_hours'].median())
+
             # Efficiency score calculation
-            # Higher is better: considers on-time rate and delivery speed
+            # Higher is better: considers success rate and delivery speed
+            min_hours = df['avg_delivery_hours'].min() if df['avg_delivery_hours'].min() > 0 else 1
+
             df['efficiency_score'] = (
-                (df['on_time_rate'] * 0.6) +  # 60% weight on on-time delivery
-                ((1 / (df['avg_delivery_hours'] / df['avg_delivery_hours'].min())) * 40)  # 40% weight on speed
+                (df['on_time_rate'] * 0.7) +  # 70% weight on success rate
+                ((min_hours / df['avg_delivery_hours']) * 100 * 0.3)  # 30% weight on speed
             ).clip(0, 100)
 
             # Rank routes
@@ -181,6 +209,8 @@ class RouteAnalyzer:
             if self.conn:
                 self.conn.rollback()
             print(f"✗ Analysis failed: {e}")
+            import traceback
+            traceback.print_exc()
             return {"error": str(e)}
 
     def analyze_bottlenecks(self, hub_id: int = None, date_range: int = 30) -> Dict:
@@ -189,8 +219,7 @@ class RouteAnalyzer:
 
         Analyzes:
         - Peak hour congestion
-        - Driver overload times
-        - Vehicle utilization gaps
+        - Courier overload times
         - Geographic bottlenecks
 
         Args:
@@ -205,22 +234,29 @@ class RouteAnalyzer:
         end_date = datetime.now()
         start_date = end_date - timedelta(days=date_range)
 
-        # Peak hour analysis
+        # Peak hour analysis using actual schema
         query = """
         SELECT
-            EXTRACT(HOUR FROM created_at) as hour_of_day,
-            EXTRACT(DOW FROM created_at) as day_of_week,
-            COUNT(*) as shipment_count,
-            AVG(EXTRACT(EPOCH FROM (delivered_at - created_at)) / 3600.0) as avg_delivery_hours,
-            COUNT(DISTINCT driver_id) as drivers_active
-        FROM orders
-        WHERE created_at >= %s
-        AND created_at <= %s
-        AND status IN ('delivered', 'completed')
+            EXTRACT(HOUR FROM o.created_at) as hour_of_day,
+            EXTRACT(DOW FROM o.created_at) as day_of_week,
+            COUNT(*) as order_count,
+            AVG(
+                CASE
+                    WHEN o.delivery_finish IS NOT NULL AND o.delivery_start IS NOT NULL
+                    THEN EXTRACT(EPOCH FROM (o.delivery_finish - o.delivery_start)) / 3600.0
+                    ELSE NULL
+                END
+            ) as avg_delivery_hours,
+            COUNT(DISTINCT s.courier_id) as couriers_active
+        FROM orders o
+        LEFT JOIN shipments s ON o.shipment_id = s.id
+        WHERE o.created_at >= %s
+        AND o.created_at <= %s
+        AND o.order_status IN ('delivered', 'completed')
         {}
-        GROUP BY EXTRACT(HOUR FROM created_at), EXTRACT(DOW FROM created_at)
-        ORDER BY shipment_count DESC
-        """.format("AND hub_id = %s" if hub_id else "")
+        GROUP BY EXTRACT(HOUR FROM o.created_at), EXTRACT(DOW FROM o.created_at)
+        ORDER BY order_count DESC
+        """.format("AND o.hub_id = %s" if hub_id else "")
 
         try:
             cursor = self.conn.cursor(cursor_factory=RealDictCursor)
@@ -239,12 +275,12 @@ class RouteAnalyzer:
             df = pd.DataFrame(results)
 
             # Identify peak hours (top 25% by volume)
-            peak_threshold = df['shipment_count'].quantile(0.75)
-            peak_hours = df[df['shipment_count'] >= peak_threshold]
+            peak_threshold = df['order_count'].quantile(0.75)
+            peak_hours = df[df['order_count'] >= peak_threshold]
 
-            # Calculate delivery ratio (shipments per driver)
-            df['shipments_per_driver'] = df['shipment_count'] / df['drivers_active']
-            overload_hours = df[df['shipments_per_driver'] > df['shipments_per_driver'].quantile(0.90)]
+            # Calculate delivery ratio (orders per courier)
+            df['orders_per_courier'] = df['order_count'] / df['couriers_active'].replace(0, 1)
+            overload_hours = df[df['orders_per_courier'] > df['orders_per_courier'].quantile(0.90)]
 
             day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -252,9 +288,9 @@ class RouteAnalyzer:
                 {
                     'day': day_names[int(row['day_of_week'])],
                     'hour': f"{int(row['hour_of_day']):02d}:00",
-                    'shipment_count': int(row['shipment_count']),
-                    'avg_delivery_hours': float(row['avg_delivery_hours']),
-                    'drivers_active': int(row['drivers_active'])
+                    'order_count': int(row['order_count']),
+                    'avg_delivery_hours': float(row['avg_delivery_hours']) if row['avg_delivery_hours'] else 0,
+                    'couriers_active': int(row['couriers_active'])
                 }
                 for _, row in peak_hours.iterrows()
             ]
@@ -263,15 +299,15 @@ class RouteAnalyzer:
                 {
                     'day': day_names[int(row['day_of_week'])],
                     'hour': f"{int(row['hour_of_day']):02d}:00",
-                    'shipments_per_driver': float(row['shipments_per_driver']),
-                    'shipment_count': int(row['shipment_count']),
-                    'drivers_active': int(row['drivers_active'])
+                    'orders_per_courier': float(row['orders_per_courier']),
+                    'order_count': int(row['order_count']),
+                    'couriers_active': int(row['couriers_active'])
                 }
                 for _, row in overload_hours.iterrows()
             ]
 
             print(f"✓ Identified {len(peak_hours_formatted)} peak time periods")
-            print(f"✓ Found {len(overload_hours_formatted)} potential driver overload periods")
+            print(f"✓ Found {len(overload_hours_formatted)} potential courier overload periods")
 
             return {
                 'analysis_type': 'bottlenecks',
@@ -289,6 +325,8 @@ class RouteAnalyzer:
             if self.conn:
                 self.conn.rollback()
             print(f"✗ Bottleneck analysis failed: {e}")
+            import traceback
+            traceback.print_exc()
             return {"error": str(e)}
 
     def analyze_abc_routes(self, min_deliveries: int = 10) -> Dict:
@@ -308,25 +346,28 @@ class RouteAnalyzer:
         """
         print(f"\n📈 Performing ABC/Pareto analysis on routes...")
 
+        # Use actual schema - group by hub
         query = """
         WITH route_summary AS (
             SELECT
-                CONCAT(
-                    ROUND(pickup_latitude::numeric, 2), ',',
-                    ROUND(pickup_longitude::numeric, 2),
-                    ' → ',
-                    ROUND(delivery_latitude::numeric, 2), ',',
-                    ROUND(delivery_longitude::numeric, 2)
-                ) as route_key,
-                hub_id,
+                o.hub_id,
+                h.code as hub_name,
+                h.city_id,
                 COUNT(*) as delivery_count,
-                AVG(EXTRACT(EPOCH FROM (delivered_at - created_at)) / 3600.0) as avg_delivery_hours,
-                SUM(CASE WHEN delivered_at <= sla_deadline THEN 1 ELSE 0 END)::float / COUNT(*) * 100 as on_time_rate
-            FROM orders
-            WHERE status IN ('delivered', 'completed')
-            AND delivered_at IS NOT NULL
-            AND created_at >= CURRENT_DATE - INTERVAL '90 days'
-            GROUP BY route_key, hub_id
+                AVG(
+                    CASE
+                        WHEN o.delivery_finish IS NOT NULL AND o.delivery_start IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (o.delivery_finish - o.delivery_start)) / 3600.0
+                        ELSE NULL
+                    END
+                ) as avg_delivery_hours,
+                SUM(CASE WHEN o.order_status = 'delivered' THEN 1 ELSE 0 END)::float / COUNT(*) * 100 as success_rate
+            FROM orders o
+            LEFT JOIN hubs h ON o.hub_id = h.id
+            WHERE o.order_status IN ('delivered', 'completed', 'cancelled', 'failed')
+            AND o.created_at >= CURRENT_DATE - INTERVAL '90 days'
+            AND o.hub_id IS NOT NULL
+            GROUP BY o.hub_id, h.code, h.city_id
             HAVING COUNT(*) >= %s
         )
         SELECT * FROM route_summary
@@ -358,20 +399,22 @@ class RouteAnalyzer:
 
             # Summary by classification
             abc_summary = df.groupby('classification').agg({
-                'route_key': 'count',
+                'hub_id': 'count',
                 'delivery_count': 'sum',
                 'avg_delivery_hours': 'mean',
-                'on_time_rate': 'mean'
+                'success_rate': 'mean'
             }).round(2)
 
-            abc_summary['percentage_of_routes'] = (abc_summary['route_key'] / len(df) * 100).round(2)
+            abc_summary.rename(columns={'hub_id': 'route_count'}, inplace=True)
+            abc_summary['percentage_of_routes'] = (abc_summary['route_count'] / len(df) * 100).round(2)
             abc_summary['percentage_of_deliveries'] = (abc_summary['delivery_count'] / total_deliveries * 100).round(2)
 
             # Top A routes
             a_routes = df[df['classification'] == 'A'].head(20).to_dict('records')
 
             print(f"✓ Classified {len(df)} routes into ABC categories")
-            print(f"  A routes: {len(df[df['classification'] == 'A'])} ({abc_summary.loc['A', 'percentage_of_routes']:.1f}% of routes, {abc_summary.loc['A', 'percentage_of_deliveries']:.1f}% of deliveries)")
+            if 'A' in abc_summary.index:
+                print(f"  A routes: {abc_summary.loc['A', 'route_count']:.0f} ({abc_summary.loc['A', 'percentage_of_routes']:.1f}% of routes, {abc_summary.loc['A', 'percentage_of_deliveries']:.1f}% of deliveries)")
 
             return {
                 'analysis_type': 'abc_pareto',
@@ -386,6 +429,8 @@ class RouteAnalyzer:
             if self.conn:
                 self.conn.rollback()
             print(f"✗ ABC analysis failed: {e}")
+            import traceback
+            traceback.print_exc()
             return {"error": str(e)}
 
     def _generate_bottleneck_recommendations(self, peak_hours: List, overload_periods: List) -> List[str]:
@@ -393,18 +438,19 @@ class RouteAnalyzer:
         recommendations = []
 
         if peak_hours:
-            peak_times = sorted(peak_hours, key=lambda x: x['shipment_count'], reverse=True)[:3]
+            peak_times = sorted(peak_hours, key=lambda x: x['order_count'], reverse=True)[:3]
             for peak in peak_times:
+                couriers = peak['couriers_active'] if peak['couriers_active'] > 0 else 1
                 recommendations.append(
-                    f"Consider adding {max(2, peak['shipment_count'] // peak['drivers_active'])} more drivers on "
-                    f"{peak['day']} at {peak['hour']} (current: {peak['shipment_count']} shipments, "
-                    f"{peak['drivers_active']} drivers)"
+                    f"Consider adding {max(2, peak['order_count'] // couriers)} more couriers on "
+                    f"{peak['day']} at {peak['hour']} (current: {peak['order_count']} orders, "
+                    f"{peak['couriers_active']} couriers)"
                 )
 
         if overload_periods:
             recommendations.append(
-                f"Identified {len(overload_periods)} time periods with driver overload. "
-                "Consider shift scheduling optimization or additional driver recruitment."
+                f"Identified {len(overload_periods)} time periods with courier overload. "
+                "Consider shift scheduling optimization or additional courier recruitment."
             )
 
         if not recommendations:
@@ -417,36 +463,37 @@ class RouteAnalyzer:
         recommendations = []
 
         try:
-            a_stats = abc_summary.loc['A']
-            c_stats = abc_summary.loc['C']
-
-            recommendations.append(
-                f"Focus optimization efforts on A routes ({a_stats['route_key']:.0f} routes) "
-                f"which represent {a_stats['percentage_of_deliveries']:.1f}% of total deliveries."
-            )
-
-            if a_stats['on_time_rate'] < 90:
+            if 'A' in abc_summary.index:
+                a_stats = abc_summary.loc['A']
                 recommendations.append(
-                    f"A routes have {a_stats['on_time_rate']:.1f}% on-time rate. "
-                    "Prioritize improving these high-volume routes for maximum impact."
+                    f"Focus optimization efforts on A routes ({a_stats['route_count']:.0f} routes) "
+                    f"which represent {a_stats['percentage_of_deliveries']:.1f}% of total deliveries."
                 )
 
-            recommendations.append(
-                f"Consider consolidating or eliminating C routes ({c_stats['route_key']:.0f} routes) "
-                f"which only represent {c_stats['percentage_of_deliveries']:.1f}% of deliveries."
-            )
+                if a_stats['success_rate'] < 90:
+                    recommendations.append(
+                        f"A routes have {a_stats['success_rate']:.1f}% success rate. "
+                        "Prioritize improving these high-volume routes for maximum impact."
+                    )
+
+            if 'C' in abc_summary.index:
+                c_stats = abc_summary.loc['C']
+                recommendations.append(
+                    f"Consider consolidating or optimizing C routes ({c_stats['route_count']:.0f} routes) "
+                    f"which only represent {c_stats['percentage_of_deliveries']:.1f}% of deliveries."
+                )
 
             if len(a_routes) > 0:
-                avg_a_route_time = np.mean([r['avg_delivery_hours'] for r in a_routes])
-                if avg_a_route_time > 2:
+                avg_a_route_time = np.mean([r['avg_delivery_hours'] for r in a_routes if r['avg_delivery_hours']])
+                if avg_a_route_time and avg_a_route_time > 2:
                     recommendations.append(
                         f"A routes average {avg_a_route_time:.1f} hours delivery time. "
                         "Investigate route optimization opportunities for these key routes."
                     )
-        except:
+        except Exception:
             recommendations.append("Optimize resource allocation based on ABC classification results.")
 
-        return recommendations
+        return recommendations if recommendations else ["Optimize resource allocation based on ABC classification results."]
 
 
 def main():
@@ -525,7 +572,7 @@ def main():
                 elif args.analysis_type == 'bottlenecks':
                     print(f"\n🚦 Peak Hours Identified: {len(results['peak_hours'])}")
                     for peak in results['peak_hours'][:5]:
-                        print(f"  {peak['day']} {peak['hour']}: {peak['shipment_count']} shipments, {peak['drivers_active']} drivers")
+                        print(f"  {peak['day']} {peak['hour']}: {peak['order_count']} orders, {peak['couriers_active']} couriers")
 
                     print(f"\n💡 Recommendations:")
                     for rec in results['recommendations']:
