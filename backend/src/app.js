@@ -30,6 +30,7 @@ const healthRoutes = require('./routes/v1/health.routes');
 const autonomousRoutes = require('./routes/v1/autonomous.routes');
 const barqProductionRoutes = require('./routes/v1/barq-production.routes');
 const analyticsLabRoutes = require('./routes/v1/analytics-lab.routes');
+const monitoringRoutes = require('./routes/v1/monitoring.routes');
 const swaggerConfig = require('./api/swagger');
 const AgentInitializer = require('./services/agent-initializer');
 const autonomousInitializer = require('./services/autonomous-initializer');
@@ -360,6 +361,9 @@ app.use('/api/v1/analytics-lab', analyticsLabRoutes);
 
 // Health route (not versioned - system endpoint)
 app.use('/health', healthRoutes);
+
+// Error monitoring routes
+app.use('/api/v1/monitoring', monitoringRoutes);
 
 // Demo routes - Integrated into main server
 const demoRoutes = require('./demo/demo-routes');

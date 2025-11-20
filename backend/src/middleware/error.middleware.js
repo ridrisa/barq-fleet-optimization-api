@@ -4,6 +4,7 @@
  */
 
 const { logger } = require('../utils/logger');
+const { errorMonitoringService } = require('../services/error-monitoring.service');
 
 /**
  * Custom error classes
@@ -246,6 +247,26 @@ const sendErrorDev = (err, req, res) => {
   const status = err.status || 'error';
   const errorCode = getErrorCode(err);
 
+  // Log to error monitoring service
+  errorMonitoringService.logError({
+    message: err.message,
+    stack: err.stack,
+    statusCode,
+    code: errorCode,
+    agentName: err.agentName,
+    service: err.service,
+    path: req.path,
+    method: req.method,
+    userId: req.user?.id,
+    requestId: req.headers['x-request-id'],
+    isOperational: err.isOperational,
+    metadata: {
+      body: req.body,
+      query: req.query,
+      errors: err.errors,
+    },
+  });
+
   // Log error details in development
   logger.error('Error occurred', {
     error: err.message,
@@ -289,6 +310,24 @@ const sendErrorProd = (err, req, res) => {
   const statusCode = err.statusCode || 500;
   const status = err.status || 'error';
   const errorCode = getErrorCode(err);
+
+  // Log to error monitoring service
+  errorMonitoringService.logError({
+    message: err.message,
+    stack: err.stack,
+    statusCode,
+    code: errorCode,
+    agentName: err.agentName,
+    service: err.service,
+    path: req.path,
+    method: req.method,
+    userId: req.user?.id,
+    requestId: req.headers['x-request-id'],
+    isOperational: err.isOperational,
+    metadata: {
+      errors: err.errors,
+    },
+  });
 
   // Operational errors - safe to send to client
   if (err.isOperational) {

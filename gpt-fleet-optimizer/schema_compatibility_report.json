@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-20T11:58:13.287592",
+  "environment": {
+    "USE_PRODUCTION_SCHEMA": "not set",
+    "DB_HOST": "not set",
+    "DB_NAME": "not set"
+  },
+  "tests": {
+    "schema_adapter": true,
+    "database_connection": true,
+    "production_queries": true,
+    "analytics_compatibility": true
+  }
+}

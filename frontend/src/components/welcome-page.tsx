@@ -14,7 +14,8 @@ import {
   Users,
   Target,
   Brain,
-  Beaker
+  Beaker,
+  AlertTriangle
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -86,6 +87,13 @@ export function WelcomePage() {
       description: 'Run Python analytics scripts on 2.8M+ production orders. Route efficiency, fleet performance, demand forecasting, and SLA analytics with real-time results.',
       status: 'active',
       href: '/analytics-lab'
+    },
+    {
+      icon: <AlertTriangle className="h-8 w-8" />,
+      title: 'Error Monitoring',
+      description: 'Real-time error tracking and system health monitoring. Track errors by category, severity, and component with comprehensive alerting.',
+      status: 'active',
+      href: '/monitoring'
     }
   ];
 
@@ -130,6 +138,16 @@ export function WelcomePage() {
       method: 'GET',
       path: '/api/v1/health',
       description: 'System health check'
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/monitoring/dashboard',
+      description: 'Error monitoring dashboard data'
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/monitoring/health',
+      description: 'Comprehensive system component health'
     }
   ];
 
