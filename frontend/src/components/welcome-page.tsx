@@ -14,7 +14,7 @@ import {
   Users,
   Target,
   Brain,
-  Flask
+  Beaker
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,7 +81,7 @@ export function WelcomePage() {
       href: '/fleet-manager'
     },
     {
-      icon: <Flask className="h-8 w-8" />,
+      icon: <Beaker className="h-8 w-8" />,
       title: 'Analytics Lab',
       description: 'Run Python analytics scripts on 2.8M+ production orders. Route efficiency, fleet performance, demand forecasting, and SLA analytics with real-time results.',
       status: 'active',
