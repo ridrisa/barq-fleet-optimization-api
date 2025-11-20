@@ -73,7 +73,7 @@ export const DatabaseHealthStatus: React.FC<DatabaseHealthStatusProps> = ({
   const getHealthIcon = () => {
     if (connectionData?.circuitBreaker.isOpen) {
       return <FaTimesCircle className="h-5 w-5 text-red-500" />;
-    } else if (connectionData?.consecutiveFailures > 0) {
+    } else if ((connectionData?.consecutiveFailures ?? 0) > 0) {
       return <FaExclamationTriangle className="h-5 w-5 text-yellow-500" />;
     } else if (connectionData?.isHealthy) {
       return <FaCheckCircle className="h-5 w-5 text-green-500" />;
@@ -89,7 +89,7 @@ export const DatabaseHealthStatus: React.FC<DatabaseHealthStatusProps> = ({
       return <Badge variant="default">Production</Badge>;
     } else if (connectionData?.circuitBreaker.isOpen) {
       return <Badge variant="destructive">Circuit Open</Badge>;
-    } else if (connectionData?.consecutiveFailures > 0) {
+    } else if ((connectionData?.consecutiveFailures ?? 0) > 0) {
       return <Badge variant="secondary">Degraded</Badge>;
     } else {
       return <Badge variant="default">Healthy</Badge>;
@@ -193,7 +193,7 @@ export const DatabaseHealthStatus: React.FC<DatabaseHealthStatusProps> = ({
       )}
 
       {/* Last Error */}
-      {connectionData?.lastError && connectionData.consecutiveFailures > 0 && (
+      {connectionData?.lastError && (connectionData?.consecutiveFailures ?? 0) > 0 && (
         <Alert variant="destructive">
           <FaExclamationTriangle className="h-4 w-4" />
           <AlertTitle>Connection Issues</AlertTitle>
