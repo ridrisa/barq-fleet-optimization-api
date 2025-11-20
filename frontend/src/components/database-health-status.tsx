@@ -128,7 +128,7 @@ export const DatabaseHealthStatus: React.FC<DatabaseHealthStatusProps> = ({
               </span>
             </div>
             <div className="text-sm text-muted-foreground">
-              Last Check: {formatTime(connectionData?.lastHealthCheck)}
+              Last Check: {formatTime(connectionData?.lastHealthCheck ?? null)}
             </div>
           </div>
 

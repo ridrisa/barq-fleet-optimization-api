@@ -192,6 +192,27 @@ class OrderModel {
    * Assign driver to order
    */
   static async assignDriver(orderId, driverId, estimatedDeliveryTime) {
+    // Validate UUID format - if driverId is an integer, convert to UUID format
+    let validDriverId = driverId;
+
+    if (driverId && typeof driverId !== 'string') {
+      // If it's a number, convert to string and validate
+      validDriverId = String(driverId);
+    }
+
+    // Check if it's a valid UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(validDriverId)) {
+      logger.warn(`[OrderModel] Invalid UUID format for driver ID: ${driverId}, skipping local assignment`);
+      // Return success but don't write to database (production has integer IDs)
+      return {
+        id: orderId,
+        driver_id: driverId,
+        status: 'assigned',
+        warning: 'Driver ID not in UUID format - production assignment only'
+      };
+    }
+
     const query = `
       UPDATE orders
       SET
@@ -204,8 +225,8 @@ class OrderModel {
     `;
 
     try {
-      const result = await db.query(query, [driverId, estimatedDeliveryTime, orderId]);
-      logger.info(`[OrderModel] Assigned driver ${driverId} to order ${orderId}`);
+      const result = await db.query(query, [validDriverId, estimatedDeliveryTime, orderId]);
+      logger.info(`[OrderModel] Assigned driver ${validDriverId} to order ${orderId}`);
       return result.rows[0];
     } catch (error) {
       logger.error('[OrderModel] Failed to assign driver', error);

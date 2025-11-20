@@ -17,11 +17,14 @@ DO $$ BEGIN
     CREATE TYPE order_status AS ENUM (
       'pending',
       'assigned',
+      'ASSIGNED',
       'picked_up',
       'in_transit',
       'delivered',
       'failed',
-      'cancelled'
+      'cancelled',
+      'PICKED_UP',
+      'OUT_FOR_DELIVERY'
     );
 EXCEPTION
     WHEN duplicate_object THEN null;
