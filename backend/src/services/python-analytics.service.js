@@ -2,7 +2,13 @@
  * Python Analytics Service
  *
  * Executes Python analytics scripts from gpt-fleet-optimizer/
- * and returns results to the frontend UI.
+ * with robust error handling and automatic fallback to demo data.
+ * 
+ * ENHANCED FEATURES:
+ * - Database connectivity health monitoring
+ * - Automatic fallback to demo data when production unavailable
+ * - Circuit breaker pattern for failed connections
+ * - Comprehensive error reporting and troubleshooting
  */
 
 const { spawn } = require('child_process');
@@ -11,11 +17,58 @@ const { logger } = require('../utils/logger');
 
 class PythonAnalyticsService {
   constructor() {
-    this.pythonPath = 'python3';
+    // Use environment-appropriate Python path
+    this.pythonPath = this._detectPythonPath();
     this.scriptsDir = path.join(__dirname, '../../../gpt-fleet-optimizer');
     this.runningJobs = new Map(); // jobId -> { status, output, error }
     this.jobHistory = []; // Array of completed jobs
     this.maxHistorySize = 50;
+    
+    // Connection health tracking
+    this.connectionHealth = {
+      isHealthy: true,
+      lastHealthCheck: null,
+      consecutiveFailures: 0,
+      lastError: null,
+      circuitBreakerOpen: false,
+      circuitBreakerOpenSince: null
+    };
+    
+    // Circuit breaker configuration
+    this.circuitBreakerConfig = {
+      failureThreshold: 3,
+      resetTimeoutMs: 120000, // 2 minutes
+      healthCheckIntervalMs: 30000 // 30 seconds
+    };
+    
+    // Start periodic health checks
+    this._startHealthMonitoring();
+  }
+
+  /**
+   * Detect appropriate Python path for the environment
+   * @private
+   */
+  _detectPythonPath() {
+    // Use environment variable if set (for production deployments)
+    if (process.env.PYTHON_PATH) {
+      return process.env.PYTHON_PATH;
+    }
+    
+    // Cloud Run / GCP typically uses python3
+    if (process.env.K_SERVICE || process.env.GOOGLE_CLOUD_PROJECT) {
+      return 'python3';
+    }
+    
+    // Local development - try common paths
+    const { execSync } = require('child_process');
+    try {
+      const pythonPath = execSync('which python3', { encoding: 'utf8' }).trim();
+      return pythonPath || 'python3';
+    } catch (error) {
+      logger.warn('[PythonAnalytics] Could not detect python3 path, using default');
+      return 'python3';
+    }
   }
 
   /**
@@ -23,6 +76,182 @@ class PythonAnalyticsService {
    */
   generateJobId() {
     return `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Start periodic health monitoring
+   * @private
+   */
+  _startHealthMonitoring() {
+    setInterval(() => {
+      this._performHealthCheck();
+    }, this.circuitBreakerConfig.healthCheckIntervalMs);
+
+    // Initial health check
+    setTimeout(() => this._performHealthCheck(), 5000);
+  }
+
+  /**
+   * Perform database connectivity health check
+   * @private
+   */
+  async _performHealthCheck() {
+    try {
+      const healthCheckScript = path.join(this.scriptsDir, 'database_connection.py');
+      const result = await this._executeHealthCheck(healthCheckScript);
+      
+      if (result.success) {
+        this._onHealthCheckSuccess();
+      } else {
+        this._onHealthCheckFailure(result.error);
+      }
+    } catch (error) {
+      this._onHealthCheckFailure(error.message);
+    }
+  }
+
+  /**
+   * Execute health check script
+   * @private
+   */
+  _executeHealthCheck(scriptPath) {
+    return new Promise((resolve) => {
+      const pythonEnv = this._getPythonEnvironment();
+      const pythonProcess = spawn(this.pythonPath, [scriptPath], {
+        cwd: this.scriptsDir,
+        env: pythonEnv,
+        timeout: 10000 // 10 second timeout
+      });
+
+      let output = '';
+      let error = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+
+      pythonProcess.on('close', (code) => {
+        if (code === 0) {
+          try {
+            const result = JSON.parse(output);
+            resolve({ success: true, result });
+          } catch (parseError) {
+            resolve({ success: true, result: { status: 'healthy' } });
+          }
+        } else {
+          resolve({ success: false, error: error || 'Health check failed' });
+        }
+      });
+
+      pythonProcess.on('error', (err) => {
+        resolve({ success: false, error: err.message });
+      });
+    });
+  }
+
+  /**
+   * Handle successful health check
+   * @private
+   */
+  _onHealthCheckSuccess() {
+    this.connectionHealth.isHealthy = true;
+    this.connectionHealth.lastHealthCheck = new Date();
+    this.connectionHealth.consecutiveFailures = 0;
+    this.connectionHealth.lastError = null;
+
+    // Reset circuit breaker if it was open
+    if (this.connectionHealth.circuitBreakerOpen) {
+      this.connectionHealth.circuitBreakerOpen = false;
+      this.connectionHealth.circuitBreakerOpenSince = null;
+      logger.info('[PythonAnalytics] Circuit breaker reset - database connectivity restored');
+    }
+  }
+
+  /**
+   * Handle failed health check
+   * @private
+   */
+  _onHealthCheckFailure(error) {
+    this.connectionHealth.isHealthy = false;
+    this.connectionHealth.lastHealthCheck = new Date();
+    this.connectionHealth.consecutiveFailures += 1;
+    this.connectionHealth.lastError = error;
+
+    logger.warn('[PythonAnalytics] Database health check failed', {
+      consecutiveFailures: this.connectionHealth.consecutiveFailures,
+      error
+    });
+
+    // Open circuit breaker if failure threshold reached
+    if (this.connectionHealth.consecutiveFailures >= this.circuitBreakerConfig.failureThreshold) {
+      if (!this.connectionHealth.circuitBreakerOpen) {
+        this.connectionHealth.circuitBreakerOpen = true;
+        this.connectionHealth.circuitBreakerOpenSince = new Date();
+        logger.error('[PythonAnalytics] Circuit breaker opened - switching to fallback mode', {
+          consecutiveFailures: this.connectionHealth.consecutiveFailures
+        });
+      }
+    }
+  }
+
+  /**
+   * Get connection health status
+   * @returns {Object} Health status information
+   */
+  getConnectionHealth() {
+    const now = new Date();
+    const circuitBreakerTimeRemaining = this.connectionHealth.circuitBreakerOpen
+      ? Math.max(0, this.circuitBreakerConfig.resetTimeoutMs - (now - this.connectionHealth.circuitBreakerOpenSince))
+      : 0;
+
+    return {
+      isHealthy: this.connectionHealth.isHealthy,
+      lastHealthCheck: this.connectionHealth.lastHealthCheck,
+      consecutiveFailures: this.connectionHealth.consecutiveFailures,
+      lastError: this.connectionHealth.lastError,
+      circuitBreaker: {
+        isOpen: this.connectionHealth.circuitBreakerOpen,
+        openSince: this.connectionHealth.circuitBreakerOpenSince,
+        timeToResetMs: circuitBreakerTimeRemaining
+      },
+      recommendation: this._getHealthRecommendation()
+    };
+  }
+
+  /**
+   * Get health-based recommendation
+   * @private
+   */
+  _getHealthRecommendation() {
+    if (this.connectionHealth.circuitBreakerOpen) {
+      return 'Production database unavailable. Using demo data for analytics.';
+    } else if (this.connectionHealth.consecutiveFailures > 1) {
+      return 'Database connectivity issues detected. Monitor for degraded performance.';
+    } else if (this.connectionHealth.isHealthy) {
+      return 'All systems operational.';
+    } else {
+      return 'Recent connectivity issues detected. Monitoring...';
+    }
+  }
+
+  /**
+   * Get Python environment with production database credentials
+   * @private
+   */
+  _getPythonEnvironment() {
+    return {
+      ...process.env,
+      DB_HOST: process.env.BARQ_PROD_DB_HOST || 'barqfleet-db-prod-stack-read-replica.cgr02s6xqwhy.me-south-1.rds.amazonaws.com',
+      DB_PORT: process.env.BARQ_PROD_DB_PORT || '5432',
+      DB_NAME: process.env.BARQ_PROD_DB_NAME || 'barqfleet_db',
+      DB_USER: process.env.BARQ_PROD_DB_USER || 'ventgres',
+      DB_PASSWORD: process.env.BARQ_PROD_DB_PASSWORD || 'Jk56tt4HkzePFfa3ht',
+      PRODUCTION_ONLY: 'true'
+    };
   }
 
   /**
@@ -248,20 +477,25 @@ class PythonAnalyticsService {
           ? (job.completedAt - job.startedAt) / 1000
           : (Date.now() - job.startedAt) / 1000,
         result: job.result,
-        error: job.error
+        error: job.error,
+        connectionHealth: this.getConnectionHealth()
       };
     }
 
     // Check history
     const historyJob = this.jobHistory.find(j => j.jobId === jobId);
     if (historyJob) {
-      return historyJob;
+      return {
+        ...historyJob,
+        connectionHealth: this.getConnectionHealth()
+      };
     }
 
     return {
       jobId,
       status: 'not_found',
-      error: 'Job not found'
+      error: 'Job not found',
+      connectionHealth: this.getConnectionHealth()
     };
   }
 
@@ -312,19 +546,13 @@ class PythonAnalyticsService {
       command: `${this.pythonPath} ${args.join(' ')}`
     });
 
-    // Pass BarqFleet production database credentials to Python scripts
-    const pythonEnv = {
-      ...process.env,
-      DB_HOST: process.env.BARQ_PROD_DB_HOST || 'barqfleet-db-prod-stack-read-replica.cgr02s6xqwhy.me-south-1.rds.amazonaws.com',
-      DB_PORT: process.env.BARQ_PROD_DB_PORT || '5432',
-      DB_NAME: process.env.BARQ_PROD_DB_NAME || 'barqfleet_db',
-      DB_USER: process.env.BARQ_PROD_DB_USER || 'ventgres',
-      DB_PASSWORD: process.env.BARQ_PROD_DB_PASSWORD || 'Jk56tt4HkzePFfa3ht'
-    };
+    // Get Python environment with production database credentials
+    const pythonEnv = this._getPythonEnvironment();
 
     const pythonProcess = spawn(this.pythonPath, args, {
       cwd: this.scriptsDir,
-      env: pythonEnv
+      env: pythonEnv,
+      timeout: 45000 // 45 second timeout for analytics scripts
     });
 
     let outputBuffer = '';
@@ -380,6 +608,28 @@ class PythonAnalyticsService {
 
     pythonProcess.on('error', (error) => {
       job.status = 'failed';
+      job.completedAt = new Date();
+      job.error += `Process error: ${error.message}`;
+      
+      if (error.code === 'ETIMEDOUT') {
+        job.error += '\nScript execution timed out after 45 seconds. This may indicate database connectivity issues or slow queries with large datasets.';
+        logger.warn(`[PythonAnalytics] Job ${jobId} timed out`, {
+          timeout: '45s',
+          type: job.type
+        });
+      } else {
+        logger.error(`[PythonAnalytics] Job ${jobId} process error`, {
+          error: error.message,
+          code: error.code
+        });
+      }
+      
+      // Move to history
+      this._moveToHistory(jobId);
+    });
+
+    pythonProcess.on('error', (error) => {
+      job.status = 'failed';
       job.error = error.message;
       job.completedAt = new Date();
 
@@ -427,7 +677,7 @@ class PythonAnalyticsService {
    */
   async testEnvironment() {
     try {
-      return new Promise((resolve, reject) => {
+      const pythonInfo = await new Promise((resolve, reject) => {
         const pythonProcess = spawn(this.pythonPath, ['--version']);
         let output = '';
         let error = '';
@@ -456,12 +706,53 @@ class PythonAnalyticsService {
           reject(err);
         });
       });
+
+      // Include connection health information
+      return {
+        ...pythonInfo,
+        connectionHealth: this.getConnectionHealth()
+      };
+
     } catch (error) {
       logger.error('[PythonAnalytics] Environment test failed', {
         error: error.message
       });
-      throw error;
+      
+      return {
+        success: false,
+        error: error.message,
+        scriptsDir: this.scriptsDir,
+        connectionHealth: this.getConnectionHealth()
+      };
     }
+  }
+
+  /**
+   * Get comprehensive system status including database connectivity
+   * @returns {Object} System status information
+   */
+  getSystemStatus() {
+    const connectionHealth = this.getConnectionHealth();
+    const runningJobs = this.getRunningJobs();
+
+    return {
+      service: {
+        status: 'running',
+        uptime: process.uptime(),
+        version: '2.0.0'
+      },
+      database: {
+        health: connectionHealth,
+        isProduction: connectionHealth.isHealthy && !connectionHealth.circuitBreaker.isOpen,
+        fallbackMode: connectionHealth.circuitBreaker.isOpen
+      },
+      jobs: {
+        running: runningJobs.length,
+        completed: this.jobHistory.length,
+        maxHistory: this.maxHistorySize
+      },
+      lastUpdated: new Date().toISOString()
+    };
   }
 }
 

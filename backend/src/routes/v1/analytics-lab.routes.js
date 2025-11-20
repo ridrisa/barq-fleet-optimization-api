@@ -12,14 +12,15 @@ const { logger } = require('../../utils/logger');
 
 /**
  * GET /api/v1/analytics-lab/dashboard
- * Get dashboard data with job history and running jobs
+ * Get dashboard data with job history, running jobs, and system health
  */
 router.get('/dashboard', async (req, res) => {
   try {
     const dashboard = {
       runningJobs: pythonAnalyticsService.getRunningJobs(),
       recentJobs: pythonAnalyticsService.getJobHistory(10),
-      pythonEnv: await pythonAnalyticsService.testEnvironment()
+      pythonEnv: await pythonAnalyticsService.testEnvironment(),
+      systemStatus: pythonAnalyticsService.getSystemStatus()
     };
 
     res.json({
@@ -256,6 +257,52 @@ router.get('/test', async (req, res) => {
     });
   } catch (error) {
     logger.error('[AnalyticsLab] Test environment error', { error: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/v1/analytics-lab/health
+ * Get database connectivity health status
+ */
+router.get('/health', (req, res) => {
+  try {
+    const health = pythonAnalyticsService.getConnectionHealth();
+    const systemStatus = pythonAnalyticsService.getSystemStatus();
+
+    res.json({
+      success: true,
+      data: {
+        database: health,
+        system: systemStatus
+      }
+    });
+  } catch (error) {
+    logger.error('[AnalyticsLab] Health check error', { error: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/v1/analytics-lab/system-status
+ * Get comprehensive system status
+ */
+router.get('/system-status', (req, res) => {
+  try {
+    const systemStatus = pythonAnalyticsService.getSystemStatus();
+
+    res.json({
+      success: true,
+      data: systemStatus
+    });
+  } catch (error) {
+    logger.error('[AnalyticsLab] System status error', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message

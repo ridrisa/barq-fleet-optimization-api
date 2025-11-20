@@ -24,7 +24,7 @@ const standardLimiter = rateLimit({
   // Skip failed requests for counting
   skipFailedRequests: false,
   // Trust proxy is enabled globally in app.js for Cloud Run compatibility
-  validate: { trustProxy: false },
+  validate: { trustProxy: true },
 });
 
 /**
@@ -44,7 +44,7 @@ const aiLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: false,
   skipFailedRequests: true, // Don't count failed requests for AI endpoints
-  validate: { trustProxy: false },
+  validate: { trustProxy: true },
 });
 
 /**
@@ -64,7 +64,7 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Only count failed auth attempts
   skipFailedRequests: false,
-  validate: { trustProxy: false },
+  validate: { trustProxy: true },
 });
 
 /**
@@ -84,7 +84,7 @@ const optimizationLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: false,
   skipFailedRequests: true,
-  validate: { trustProxy: false },
+  validate: { trustProxy: true },
 });
 
 /**
@@ -102,7 +102,7 @@ function createCustomLimiter(options = {}) {
       success: false,
       error: 'Rate limit exceeded. Please try again later.',
     },
-    validate: { trustProxy: false },
+    validate: { trustProxy: true },
   };
 
   return rateLimit({ ...defaults, ...options });

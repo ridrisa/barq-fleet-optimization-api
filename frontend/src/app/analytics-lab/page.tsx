@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaFlask, FaChartLine, FaUsers, FaClock, FaCheckCircle, FaTimesCircle, FaSpinner, FaTachometerAlt } from 'react-icons/fa';
+import DatabaseHealthStatus from '@/components/database-health-status';
+import { DataSourceIndicator, ResultsWithDataSource } from '@/components/data-source-indicator';
 
 // Define types
 interface AnalyticsJob {
@@ -31,6 +33,24 @@ interface DashboardResponse {
   runningJobs: AnalyticsJob[];
   recentJobs: AnalyticsJob[];
   pythonEnv?: any;
+  systemStatus?: {
+    service: {
+      status: string;
+      uptime: number;
+      version: string;
+    };
+    database: {
+      health: any;
+      isProduction: boolean;
+      fallbackMode: boolean;
+    };
+    jobs: {
+      running: number;
+      completed: number;
+      maxHistory: number;
+    };
+    lastUpdated: string;
+  };
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003';
@@ -43,6 +63,7 @@ export default function AnalyticsLabPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
   const [pythonEnvStatus, setPythonEnvStatus] = useState<any>(null);
+  const [systemStatus, setSystemStatus] = useState<any>(null);
 
   // Route Analysis state
   const [routeParams, setRouteParams] = useState({
@@ -138,6 +159,7 @@ export default function AnalyticsLabPage() {
         setDashboardStats(stats);
         setRunningJobs(dashboardData.runningJobs);
         setPythonEnvStatus(dashboardData.pythonEnv);
+        setSystemStatus(dashboardData.systemStatus);
       } else {
         setDashboardError(data.error || 'Failed to load dashboard');
       }
@@ -448,6 +470,20 @@ export default function AnalyticsLabPage() {
               </button>
             </div>
           </div>
+        </motion.div>
+      )}
+
+      {/* Database Health Status */}
+      {!isLoading && !dashboardError && systemStatus && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <DatabaseHealthStatus 
+            systemStatus={systemStatus}
+            health={systemStatus.database.health}
+          />
         </motion.div>
       )}
 
@@ -766,7 +802,7 @@ function AnalyticsModule({
                 )}
               </button>
               {showResults && (
-                <div className="mt-2">
+                <ResultsWithDataSource result={job.result} className="mt-2">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xs text-gray-400">Results (JSON)</span>
                     <button
@@ -780,7 +816,7 @@ function AnalyticsModule({
                   <pre className="text-xs bg-gray-900 p-3 rounded overflow-auto max-h-60 border border-gray-600">
                     {JSON.stringify(job.result, null, 2)}
                   </pre>
-                </div>
+                </ResultsWithDataSource>
               )}
             </div>
           )}

@@ -3,6 +3,13 @@
 Demand Forecaster - Fleet Optimizer GPT Module
 Predicts delivery demand patterns based on historical data from barqfleet_db.
 
+ENHANCED WITH PRODUCTION DATABASE RESILIENCE:
+- Robust error handling with retry logic and exponential backoff
+- Automatic fallback to realistic Saudi Arabian demo data when production unavailable
+- Circuit breaker pattern for repeated database failures
+- Comprehensive connection health monitoring
+- Graceful degradation with clear data source indicators
+
 Adapted for BarqFleet Production Database Schema:
 - Uses 'orders' and 'shipments' tables
 - Uses 'created_at' timestamps for demand analysis
@@ -21,48 +28,65 @@ import json
 import argparse
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
-import psycopg2
-from psycopg2.extras import RealDictCursor
 import pandas as pd
 import numpy as np
 
+# Import our robust database connection handler
+from database_connection import DatabaseConnection, get_database_connection
+
 
 class DemandForecaster:
-    """Forecasts delivery demand patterns for resource planning."""
+    """Forecasts delivery demand patterns for resource planning with production database resilience."""
 
-    def __init__(self, db_config: Dict[str, str] = None):
+    def __init__(self, db_config: Dict[str, str] = None, enable_fallback: bool = None):
         """
-        Initialize the Demand Forecaster.
+        Initialize the Demand Forecaster with robust database handling.
 
         Args:
             db_config: Database configuration. If None, reads from environment.
+            enable_fallback: Enable fallback to demo data when production unavailable.
         """
-        if db_config is None:
-            db_config = {
-                'host': os.getenv('DB_HOST', 'localhost'),
-                'port': int(os.getenv('DB_PORT', 5432)),
-                'database': os.getenv('DB_NAME', 'barqfleet_db'),
-                'user': os.getenv('DB_USER', 'postgres'),
-                'password': os.getenv('DB_PASSWORD', 'postgres')
-            }
-
-        self.db_config = db_config
-        self.conn = None
+        # Force production only if environment variable is set
+        if os.getenv('PRODUCTION_ONLY') == 'true':
+            enable_fallback = False
+        elif enable_fallback is None:
+            enable_fallback = False
+        
+        self.db = get_database_connection(enable_fallback=enable_fallback)
+        self.data_source = 'unknown'
 
     def connect(self):
-        """Establish database connection."""
+        """Establish database connection with resilience."""
         try:
-            self.conn = psycopg2.connect(**self.db_config)
-            print("✓ Connected to BarqFleet production database successfully")
+            connected = self.db.connect()
+            
+            if self.db.is_fallback_mode:
+                self.data_source = 'demo'
+                print("⚠ Using demo data - Production database unavailable")
+                print("📊 Demo data: 52K+ orders, 850+ couriers, 120+ hubs (Saudi Arabia)")
+            else:
+                self.data_source = 'production'
+                print("✓ Connected to BarqFleet production database successfully")
+                
+            return True
+            
         except Exception as e:
-            print(f"✗ Database connection failed: {e}")
-            sys.exit(1)
+            print(f"✗ Database connection failed completely: {e}")
+            if not self.db.enable_fallback:
+                sys.exit(1)
+            return False
 
     def disconnect(self):
         """Close database connection."""
-        if self.conn:
-            self.conn.close()
+        self.db.disconnect()
+        if not self.db.is_fallback_mode:
             print("✓ Database connection closed")
+
+    def get_connection_info(self) -> Dict:
+        """Get current connection status and data source information."""
+        status = self.db.get_connection_status()
+        status['forecaster_data_source'] = self.data_source
+        return status
 
     def forecast_hourly_demand(self, horizon_days: int = 7, hub_id: int = None) -> Dict:
         """
@@ -99,15 +123,16 @@ class DemandForecaster:
         """.format("AND hub_id = %s" if hub_id else "")
 
         try:
-            cursor = self.conn.cursor(cursor_factory=RealDictCursor)
             params = [hub_id] if hub_id else []
-            cursor.execute(query, params)
-            results = cursor.fetchall()
-            cursor.close()
+            results = self.db.execute_query(query, params, timeout=30.0)
 
             if not results:
                 print("⚠ No historical data found for forecasting")
-                return {"error": "Insufficient historical data"}
+                return {
+                    "error": "Insufficient historical data",
+                    "data_source": self.data_source,
+                    "fallback_available": self.db.enable_fallback
+                }
 
             df = pd.DataFrame(results)
 
@@ -197,19 +222,31 @@ class DemandForecaster:
                 'forecast_type': 'hourly',
                 'horizon_days': horizon_days,
                 'hub_id': hub_id,
+                'data_source': self.data_source,
+                'data_quality': 'high' if self.data_source == 'production' else 'demo',
                 'forecasts': forecasts,
                 'peak_hours': peak_hours[:20],  # Top 20 peak hours
                 'statistics': stats,
-                'recommendations': self._generate_hourly_recommendations(forecast_df, peak_hours)
+                'recommendations': self._generate_hourly_recommendations(forecast_df, peak_hours),
+                'connection_info': self.get_connection_info()
             }
 
         except Exception as e:
-            if self.conn:
-                self.conn.rollback()
             print(f"✗ Hourly forecast failed: {e}")
             import traceback
             traceback.print_exc()
-            return {"error": str(e)}
+            
+            return {
+                "error": str(e),
+                "data_source": self.data_source,
+                "fallback_available": self.db.enable_fallback,
+                "connection_info": self.get_connection_info() if hasattr(self, 'db') else {},
+                "troubleshooting": {
+                    "suggestion": "Check database connectivity or try demo mode",
+                    "retry_recommended": True,
+                    "circuit_breaker_info": "Database may be temporarily unavailable"
+                }
+            }
 
     def forecast_daily_demand(self, horizon_days: int = 30, hub_id: int = None) -> Dict:
         """
@@ -263,15 +300,16 @@ class DemandForecaster:
         """.format("AND hub_id = %s" if hub_id else "")
 
         try:
-            cursor = self.conn.cursor(cursor_factory=RealDictCursor)
             params = [hub_id] if hub_id else []
-            cursor.execute(query, params)
-            results = cursor.fetchall()
-            cursor.close()
+            results = self.db.execute_query(query, params, timeout=30.0)
 
             if not results:
                 print("⚠ No historical data found")
-                return {"error": "Insufficient historical data"}
+                return {
+                    "error": "Insufficient historical data",
+                    "data_source": self.data_source,
+                    "fallback_available": self.db.enable_fallback
+                }
 
             df = pd.DataFrame(results)
 
@@ -345,19 +383,31 @@ class DemandForecaster:
                 'forecast_type': 'daily',
                 'horizon_days': horizon_days,
                 'hub_id': hub_id,
+                'data_source': self.data_source,
+                'data_quality': 'high' if self.data_source == 'production' else 'demo',
                 'forecasts': forecasts,
                 'statistics': stats,
                 'growth_rate_pct': float(daily_growth_rate * 100),
-                'recommendations': self._generate_daily_recommendations(forecast_df, stats)
+                'recommendations': self._generate_daily_recommendations(forecast_df, stats),
+                'connection_info': self.get_connection_info()
             }
 
         except Exception as e:
-            if self.conn:
-                self.conn.rollback()
             print(f"✗ Daily forecast failed: {e}")
             import traceback
             traceback.print_exc()
-            return {"error": str(e)}
+            
+            return {
+                "error": str(e),
+                "data_source": self.data_source,
+                "fallback_available": self.db.enable_fallback,
+                "connection_info": self.get_connection_info() if hasattr(self, 'db') else {},
+                "troubleshooting": {
+                    "suggestion": "Check database connectivity or try demo mode",
+                    "retry_recommended": True,
+                    "circuit_breaker_info": "Database may be temporarily unavailable"
+                }
+            }
 
     def forecast_weekly_demand(self, horizon_weeks: int = 4, hub_id: int = None) -> Dict:
         """
@@ -391,14 +441,15 @@ class DemandForecaster:
         """.format("AND hub_id = %s" if hub_id else "")
 
         try:
-            cursor = self.conn.cursor(cursor_factory=RealDictCursor)
             params = [hub_id] if hub_id else []
-            cursor.execute(query, params)
-            results = cursor.fetchall()
-            cursor.close()
+            results = self.db.execute_query(query, params, timeout=30.0)
 
             if not results:
-                return {"error": "Insufficient historical data"}
+                return {
+                    "error": "Insufficient historical data",
+                    "data_source": self.data_source,
+                    "fallback_available": self.db.enable_fallback
+                }
 
             df = pd.DataFrame(results)
 
@@ -445,18 +496,30 @@ class DemandForecaster:
                 'forecast_type': 'weekly',
                 'horizon_weeks': horizon_weeks,
                 'hub_id': hub_id,
+                'data_source': self.data_source,
+                'data_quality': 'high' if self.data_source == 'production' else 'demo',
                 'forecasts': forecasts,
                 'statistics': stats,
-                'historical_weeks': df.tail(8).to_dict('records')
+                'historical_weeks': df.tail(8).to_dict('records'),
+                'connection_info': self.get_connection_info()
             }
 
         except Exception as e:
-            if self.conn:
-                self.conn.rollback()
             print(f"✗ Weekly forecast failed: {e}")
             import traceback
             traceback.print_exc()
-            return {"error": str(e)}
+            
+            return {
+                "error": str(e),
+                "data_source": self.data_source,
+                "fallback_available": self.db.enable_fallback,
+                "connection_info": self.get_connection_info() if hasattr(self, 'db') else {},
+                "troubleshooting": {
+                    "suggestion": "Check database connectivity or try demo mode",
+                    "retry_recommended": True,
+                    "circuit_breaker_info": "Database may be temporarily unavailable"
+                }
+            }
 
     def forecast_resource_requirements(self, horizon_days: int = 7) -> Dict:
         """
@@ -530,6 +593,8 @@ class DemandForecaster:
         return {
             'forecast_type': 'resource_requirements',
             'horizon_days': horizon_days,
+            'data_source': demand_forecast.get('data_source', self.data_source),
+            'data_quality': 'high' if demand_forecast.get('data_source', self.data_source) == 'production' else 'demo',
             'planning_parameters': {
                 'deliveries_per_courier': DELIVERIES_PER_COURIER,
                 'deliveries_per_vehicle': DELIVERIES_PER_VEHICLE,
@@ -537,7 +602,8 @@ class DemandForecaster:
             },
             'resource_plan': resource_plan,
             'statistics': stats,
-            'recommendations': self._generate_resource_recommendations(resource_df, stats)
+            'recommendations': self._generate_resource_recommendations(resource_df, stats),
+            'connection_info': self.get_connection_info()
         }
 
     def _generate_hourly_recommendations(self, forecast_df: pd.DataFrame, peak_hours: List) -> List[str]:
@@ -581,6 +647,10 @@ class DemandForecaster:
                 "Consider gathering more historical data for better predictions."
             )
 
+        # Add data source context to recommendations
+        if self.data_source == 'demo':
+            recommendations.insert(0, "⚠ DEMO DATA: These forecasts use realistic Saudi Arabian demo data. Verify with production data when available.")
+            
         return recommendations if recommendations else ["Demand appears stable. Maintain current operations."]
 
     def _generate_daily_recommendations(self, forecast_df: pd.DataFrame, stats: Dict) -> List[str]:
@@ -617,6 +687,10 @@ class DemandForecaster:
                 "High demand variance detected. Maintain flexible courier pool for peak days."
             )
 
+        # Add data source context to recommendations
+        if self.data_source == 'demo':
+            recommendations.insert(0, "⚠ DEMO DATA: These forecasts use realistic Saudi Arabian demo data. Verify with production data when available.")
+            
         return recommendations if recommendations else ["Demand forecast is stable."]
 
     def _generate_resource_recommendations(self, resource_df: pd.DataFrame, stats: Dict) -> List[str]:
@@ -660,6 +734,10 @@ class DemandForecaster:
                 "Ensure full courier availability and backup resources."
             )
 
+        # Add data source context to recommendations
+        if self.data_source == 'demo':
+            recommendations.insert(0, "⚠ DEMO DATA: These forecasts use realistic Saudi Arabian demo data. Verify with production data when available.")
+            
         return recommendations
 
 

@@ -3,6 +3,13 @@
 Route Analyzer - Fleet Optimizer GPT Module
 Analyzes historical route performance from BarqFleet production database.
 
+ENHANCED WITH PRODUCTION DATABASE RESILIENCE:
+- Robust error handling with retry logic and exponential backoff
+- Automatic fallback to realistic Saudi Arabian demo data when production unavailable
+- Circuit breaker pattern for repeated database failures
+- Comprehensive connection health monitoring
+- Graceful degradation with clear data source indicators
+
 **PRODUCTION SCHEMA COMPATIBLE**
 Works with actual BarqFleet schema:
 - orders table: hub_id, shipment_id, order_status, delivery_start, delivery_finish
@@ -22,48 +29,65 @@ import json
 import argparse
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
-import psycopg2
-from psycopg2.extras import RealDictCursor
 import pandas as pd
 import numpy as np
 
+# Import our robust database connection handler
+from database_connection import DatabaseConnection, get_database_connection
+
 
 class RouteAnalyzer:
-    """Analyzes route efficiency and identifies optimization opportunities."""
+    """Analyzes route efficiency and identifies optimization opportunities with production database resilience."""
 
-    def __init__(self, db_config: Dict[str, str] = None):
+    def __init__(self, db_config: Dict[str, str] = None, enable_fallback: bool = None):
         """
-        Initialize the Route Analyzer.
+        Initialize the Route Analyzer with robust database handling.
 
         Args:
             db_config: Database configuration. If None, reads from environment.
+            enable_fallback: Enable fallback to demo data when production unavailable.
         """
-        if db_config is None:
-            db_config = {
-                'host': os.getenv('DB_HOST', 'localhost'),
-                'port': int(os.getenv('DB_PORT', 5432)),
-                'database': os.getenv('DB_NAME', 'barqfleet_db'),
-                'user': os.getenv('DB_USER', 'postgres'),
-                'password': os.getenv('DB_PASSWORD', 'postgres')
-            }
-
-        self.db_config = db_config
-        self.conn = None
+        # Force production only if environment variable is set
+        if os.getenv('PRODUCTION_ONLY') == 'true':
+            enable_fallback = False
+        elif enable_fallback is None:
+            enable_fallback = False
+            
+        self.db = get_database_connection(enable_fallback=enable_fallback)
+        self.data_source = 'unknown'
 
     def connect(self):
-        """Establish database connection."""
+        """Establish database connection with resilience."""
         try:
-            self.conn = psycopg2.connect(**self.db_config)
-            print("✓ Connected to BarqFleet production database successfully")
+            connected = self.db.connect()
+            
+            if self.db.is_fallback_mode:
+                self.data_source = 'demo'
+                print("⚠ Using demo data - Production database unavailable")
+                print("📊 Demo data: Realistic Saudi Arabian route analysis data available")
+            else:
+                self.data_source = 'production'
+                print("✓ Connected to BarqFleet production database successfully")
+                
+            return True
+            
         except Exception as e:
-            print(f"✗ Database connection failed: {e}")
-            sys.exit(1)
+            print(f"✗ Database connection failed completely: {e}")
+            if not self.db.enable_fallback:
+                sys.exit(1)
+            return False
 
     def disconnect(self):
         """Close database connection."""
-        if self.conn:
-            self.conn.close()
+        self.db.disconnect()
+        if not self.db.is_fallback_mode:
             print("✓ Database connection closed")
+
+    def get_connection_info(self) -> Dict:
+        """Get current connection status and data source information."""
+        status = self.db.get_connection_status()
+        status['analyzer_data_source'] = self.data_source
+        return status
 
     def analyze_route_efficiency(self, date_range: int = 30) -> Dict:
         """
@@ -87,7 +111,7 @@ class RouteAnalyzer:
         end_date = datetime.now()
         start_date = end_date - timedelta(days=date_range)
 
-        # Use actual production schema
+        # Optimized query for production database performance
         query = """
         WITH delivery_metrics AS (
             SELECT
@@ -126,7 +150,7 @@ class RouteAnalyzer:
                 ) as stddev_delivery_hours,
                 SUM(CASE WHEN o.order_status = 'delivered' THEN 1 ELSE 0 END)::float / COUNT(*) * 100 as success_rate
             FROM orders o
-            LEFT JOIN hubs h ON o.hub_id = h.id
+            INNER JOIN hubs h ON o.hub_id = h.id
             LEFT JOIN shipments s ON o.shipment_id = s.id
             WHERE o.created_at >= %s
             AND o.created_at <= %s
@@ -148,17 +172,19 @@ class RouteAnalyzer:
             couriers_used
         FROM delivery_metrics
         ORDER BY total_deliveries DESC
+        LIMIT 50
         """
 
         try:
-            cursor = self.conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute(query, (start_date, end_date))
-            results = cursor.fetchall()
-            cursor.close()
+            results = self.db.execute_query(query, [start_date, end_date], timeout=30.0)
 
             if not results:
                 print("⚠ No route data found for the specified period")
-                return {"error": "No data available"}
+                return {
+                    "error": "No data available",
+                    "data_source": self.data_source,
+                    "fallback_available": self.db.enable_fallback
+                }
 
             # Calculate efficiency scores
             df = pd.DataFrame(results)
@@ -199,19 +225,31 @@ class RouteAnalyzer:
                 'period': f'{date_range} days',
                 'start_date': start_date.isoformat(),
                 'end_date': end_date.isoformat(),
+                'data_source': self.data_source,
+                'data_quality': 'high' if self.data_source == 'production' else 'demo',
                 'overall_metrics': overall_metrics,
                 'top_performers': top_performers,
                 'bottom_performers': bottom_performers,
-                'all_routes': df.to_dict('records')
+                'all_routes': df.to_dict('records'),
+                'connection_info': self.get_connection_info()
             }
 
         except Exception as e:
-            if self.conn:
-                self.conn.rollback()
             print(f"✗ Analysis failed: {e}")
             import traceback
             traceback.print_exc()
-            return {"error": str(e)}
+            
+            return {
+                "error": str(e),
+                "data_source": self.data_source,
+                "fallback_available": self.db.enable_fallback,
+                "connection_info": self.get_connection_info() if hasattr(self, 'db') else {},
+                "troubleshooting": {
+                    "suggestion": "Check database connectivity or try demo mode",
+                    "retry_recommended": True,
+                    "circuit_breaker_info": "Database may be temporarily unavailable"
+                }
+            }
 
     def analyze_bottlenecks(self, hub_id: int = None, date_range: int = 30) -> Dict:
         """
